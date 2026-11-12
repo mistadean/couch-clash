@@ -9,7 +9,12 @@ Free arcade party games for 2–4 players. The TV is the console, phones are the
 3. The leader's phone controls everything: game choice, bots, sound, music, TV screen size, start, restart, quit.
 4. Anyone can pause from their phone (⏸). Press P on a keyboard to pause too.
 
-Games: Goal Guard, Ice Sumo, Tile Takeover, or the 3-game Cup. Keyboard players: WASD + Space, Arrows + Right Shift.
+Modes:
+- **Party Cup**: Goal Guard, Ice Sumo and Tile Takeover back to back (or play any one on its own).
+- **Battle Arena**: floating-platform brawl. A = punch, B = character ability. Stats matter: speed, power, weight.
+  Rumble: Horn Charge · Nova: Warp Step · Zip: Jet Burst · Glorp: Goo Trap. 3 lives, last one standing.
+
+Keyboard players: WASD + Space (A) + E (B), Arrows + Right Shift (A) + / (B).
 
 Characters: Rumble, Nova, Zip and Glorp. Pick yours on your phone in the lobby (keyboard players: ◀ ▶). The roster lives in `ROSTER` in index.html; art in `assets/`.
 
