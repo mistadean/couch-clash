@@ -6189,7 +6189,9 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10 };
+// Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
+const botTarget = m => MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6430,8 +6432,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -6465,7 +6467,8 @@ function setPaused(on, p) {
 function cleanName(n) { return String(n || '').replace(/[^\p{L}\p{N} _\-!.']/gu, '').trim().slice(0, 10); }
 
 function makePlayer(slot, kind, name) {
-  const ci = freeChars()[0] ?? 0;
+  let ci = freeChars()[0];
+  if (ci == null) { const n = ROSTER.map((_, i) => host.players.filter(q => q && q.char === i).length), lo = Math.min(...n), opts = n.map((v, i) => v === lo ? i : -1).filter(i => i >= 0); ci = opts[Math.floor(Math.random() * opts.length)]; } // least-used once everyone's taken
   return { slot, kind, name, char: ci, color: PLAYER_COLORS[slot][0], dark: PLAYER_COLORS[slot][1], pid: '', conn: null, connected: true,
     input: { x: 0, y: 0, a: false, b: false }, prevA: false, prevB: false, aDown: false, aUp: false, bDown: false, cupPts: 0, keyset: null };
 }
@@ -6486,6 +6489,7 @@ function currentGameDef() { return host.game ? GAMES[host.cup[host.cupIndex]] : 
 function phaseInfo(p) {
   const G = currentGameDef();
   const msg = { t: 'ph', phase: host.phase, slot: p.slot, color: p.color, name: p.name, leader: leader() === p };
+  if (host.game && host.game.teamColor && host.phase !== 'lobby') { const tc = host.game.teamColor(p.slot); if (tc) msg.color = tc; }
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; msg.buttonB = G.buttonB ? ROSTER[p.char].ability.name : ''; msg.ability = G.buttonB ? ROSTER[p.char].ability : null; }
   const l = leader();
   Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music,
@@ -6536,7 +6540,7 @@ function pollKeys() {
 function startMatch() {
   if (host.phase !== 'lobby') return;
   const n = humans().length;
-  const want = Math.min(4, MODE_MAX[host.mode] || 4);
+  const want = botTarget(host.mode);
   for (let i = 0; i < MAXP && active().length < want; i++) {
     if (!host.players[i] && (host.botsFill || n < 2 || host.mode === 'tag')) {
       const b = makePlayer(i, 'bot', ''); b.name = ROSTER[b.char].name; b.prevA = false; host.players[i] = b;
@@ -7136,24 +7140,25 @@ function drawLobby() {
   // mode selection
   const cat = MODE_CAT[host.mode] || 'party';
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const cats = [['party', '🎉 Party', 132, host.lastParty || 'cup', TOY.sun], ['arena', '⚔ Arena', 126, 'arena', TOY.grape], ['fight', '🥊 Fighters', 150, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Racing', 138, 'race', TOY.mint], ['coop', '🤝 Co-op', 130, host.lastCoop || 'raid', TOY.aqua]];
+  const cats = [['party', '🎉 Party', 112, host.lastParty || 'cup', TOY.sun], ['arena', '⚔ Arena', 108, 'arena', TOY.grape], ['fight', '🥊 Fight', 108, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Race', 104, 'race', TOY.mint], ['coop', '🤝 Co-op', 116, host.lastCoop || 'raid', TOY.aqua], ['team', '🏆 5v5', 102, host.lastTeam || 'gems', TOY.coral]];
   let bx = 40;
-  for (const [c, label, w, def, col] of cats) { toyButton(bx, 222, w, 54, label, cat === c, () => setMode(def), col, { bounce: cat === c, id: 'cat-' + c }); bx += w + 12; }
+  for (const [c, label, w, def, col] of cats) { toyButton(bx, 222, w, 54, label, cat === c, () => setMode(def), col, { bounce: cat === c, id: 'cat-' + c, px: 21 }); bx += w + 10; }
   const subs = cat === 'party' ? [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]
     : cat === 'fight' ? [['smash', 'Sky Brawl · FFA', 200], ['duel', 'Duel · 1v1', 158], ['tag', 'Tag Team · 2v2', 196]]
-    : cat === 'coop' ? [['raid', '👊 Gloom Raid', 190], ['fort', '🏰 Fort Frenzy', 196]] : [];
+    : cat === 'coop' ? [['raid', '👊 Gloom Raid', 190], ['fort', '🏰 Fort Frenzy', 196]]
+    : cat === 'team' ? [['gems', '💎 Gem Grab', 168], ['zones', '🚩 Zones', 140], ['ball', '⚽ Toy Ball', 156], ['train', '🚂 Train', 128]] : [];
   let sx = 40;
-  for (const [m, label, w] of subs) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { if (cat === 'party') host.lastParty = m; else if (cat === 'coop') host.lastCoop = m; else host.lastFight = m; setMode(m); }, cat === 'fight' ? TOY.coral : TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
+  for (const [m, label, w] of subs) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { if (cat === 'party') host.lastParty = m; else if (cat === 'coop') host.lastCoop = m; else if (cat === 'team') host.lastTeam = m; else host.lastFight = m; setMode(m); }, cat === 'fight' ? TOY.coral : TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
   const blurb = cat === 'arena' ? 'Top-down brawl · abilities · power-ups' : cat === 'race' ? 'Sunshine Circuit · 3 laps · items · split-screen' : cat === 'coop' ? '' : '';
   if (blurb) { rr(40, 294, 600, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(blurb, 60, 317, 21, TOY.navy, 'left', null); }
   if (host.mode === 'fort') toyButton(452, 294, 150, 44, host.fortEndless ? '♾ Endless' : '8 Waves', !!host.fortEndless, () => { host.fortEndless = !host.fortEndless; lsSet('cc_fort_endless', host.fortEndless ? '1' : ''); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 19, id: 'endless' });
   if (cat === 'arena' || cat === 'fight') toyButton(660, 294, 120, 44, host.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons', host.controls === 'gestures', () => { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 18, id: 'ctl' });
 
   // player cards: two rows of five seats
-  const cw = 230, chh = 108, gap = 12, cx0 = (W - (cw * 5 + gap * 4)) / 2, spare = freeChars(), botSeats = Math.max(0, Math.min(4, MODE_MAX[host.mode] || 4) - active().length);
+  const cw = 230, chh = 108, gap = 12, cx0 = (W - (cw * 5 + gap * 4)) / 2, spare = freeChars(), botSeats = Math.max(0, botTarget(host.mode) - active().length);
   let sp = 0, bots = 0;
   for (let i = 0; i < MAXP; i++) {
-    const p = host.players[i], x = cx0 + (i % 5) * (cw + gap), y0 = 368 + Math.floor(i / 5) * (chh + 10), ci = p ? p.char : spare[sp] ?? 0;
+    const p = host.players[i], x = cx0 + (i % 5) * (cw + gap), y0 = 368 + Math.floor(i / 5) * (chh + 10), ci = p ? p.char : spare[sp] ?? ((i * 3) % ROSTER.length);
     const col = PLAYER_COLORS[i][0];
     if (p) {
       toyPanel(x, y0, cw, chh, 22, shade(col, 0.72), 7, shade(col, -0.2));
@@ -7224,7 +7229,7 @@ function drawResults() {
   ctx.fillStyle = 'rgba(30,70,160,.5)'; ctx.fillRect(0, 0, W, H);
   const G = currentGameDef(), age = 7 - host.timer;
   headline(G.title.toUpperCase(), W / 2, 74 + Math.sin(host.t * 2) * 3, 58, '#fff', shade(G.accent, 0.5));
-  if (G.coop && host.game) toyText(host.game.resultLine ? host.game.resultLine() : host.game.won ? '🤝 TEAM WIN! Everyone scores big' : 'The fort fell… everyone gets a point', W / 2, 128, 26, host.game.won ? TOY.sun : '#ffd0d8', 'center', TOY.navy);
+  if ((G.coop || G.team) && host.game) toyText(host.game.resultLine ? host.game.resultLine() : host.game.won ? '🤝 TEAM WIN! Everyone scores big' : 'The fort fell… everyone gets a point', W / 2, 128, 26, host.game.won ? TOY.sun : '#ffd0d8', 'center', TOY.navy);
   else toyText('RESULTS', W / 2, 128, 26, TOY.sun, 'center', TOY.navy);
   const medal = [TOY.sun, '#d9e2f2', '#f0a35a', '#b9c3dc'];
   host.results.forEach((r, i) => {
@@ -9816,7 +9821,338 @@ const GloomRaid = {
   },
 };
 
-const GAMES = { raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   TEAM 5v5. One shared arena engine with roles, four objective rule-sets on top:
+   Gem Grab (capture the flag) · Zone Control (king of the hill) · Toy Ball (team sport) · Push the Train (tug of war on a track).
+   A = attack the nearest enemy in range (hold to keep attacking) · B = your ability.
+   ===================================================================== */
+const TEAM_ROLES = {
+  rumble: { role: 'Tank', hp: 260, spd: 150, range: 62, dmg: 22, cd: 0.75, melee: true, ab: 'charge', abCD: 7 },
+  frost: { role: 'Tank', hp: 240, spd: 140, range: 62, dmg: 18, cd: 0.75, melee: true, ab: 'wall', abCD: 9 },
+  moxie: { role: 'Bruiser', hp: 200, spd: 172, range: 68, dmg: 24, cd: 0.6, melee: true, ab: 'stomp', abCD: 6 },
+  vex: { role: 'Assassin', hp: 140, spd: 192, range: 60, dmg: 26, cd: 0.55, melee: true, ab: 'vanish', abCD: 8 },
+  zip: { role: 'Scout', hp: 130, spd: 222, range: 230, dmg: 11, cd: 0.36, shot: 620, ab: 'jet', abCD: 5 },
+  shell: { role: 'Marksman', hp: 140, spd: 158, range: 520, dmg: 20, cd: 0.85, shot: 760, ab: 'plasma', abCD: 6 },
+  nova: { role: 'Mage', hp: 150, spd: 164, range: 380, dmg: 15, cd: 0.8, shot: 520, splash: 64, ab: 'warp', abCD: 6 },
+  glorp: { role: 'Support', hp: 180, spd: 158, range: 300, dmg: 11, cd: 0.75, shot: 480, slowHit: 1.2, ab: 'goo', abCD: 9 },
+};
+const TEAM_INFO = [{ name: 'Team Sun', col: '#ff9f1c', dark: '#c46a00', light: '#ffe1b0' }, { name: 'Team Sky', col: '#2fa8ff', dark: '#136bb0', light: '#c4e6ff' }];
+const TEAM_MODES = {
+  gems: { title: 'Gem Grab', accent: '#ff6fcf', how: 'Two teams. Steal the other team\'s gem from their base and carry it home while yours is safe. First to 3! Tanks guard, scouts run, snipers stop carriers, Glorp heals.' },
+  zones: { title: 'Zone Control', accent: '#22d39b', how: 'Two teams, three zones. Stand in a zone to take it; every zone you hold scores points. First to 240 wins! Tanks hold the zones, ranged players keep enemies out.' },
+  ball: { title: 'Toy Ball', accent: '#ffd23f', how: 'Two teams, one giant ball. Hit ATTACK next to the ball to kick it (aim with the joystick). First to 5 goals! Tanks guard the goal, scouts dribble, snipers knock the ball away.' },
+  train: { title: 'Push the Train', accent: '#b48cff', how: 'Two teams, one toy train. Have more of your team next to it to push it toward the other base. Get it all the way there to win!' },
+};
+function makeTeamMode(key) {
+  const M = TEAM_MODES[key];
+  return { title: M.title, accent: M.accent, button: 'ATTACK', buttonB: 'ABILITY', team: true, how: M.how, create(players) { return createTeam(key, players); } };
+}
+function createTeam(key, players) {
+  const GEM = key === 'gems', ZON = key === 'zones', BALL = key === 'ball', TRAIN = key === 'train';
+  const TOP = 86, BOT = H - 16, LEFT = 24, RIGHT = W - 24, R = 18, LIMIT = BALL ? 300 : 360;
+  const g = { t: 0, done: false, team: true, qs: [], shots: [], pools: [], walls: [], fx: [], pops: [], score: [0, 0], winner: -1, endT: 0, freeze: 3, banner: TEAM_MODES[key].title.toUpperCase(), bannerT: 3, feed: [] };
+  // teams: humans alternate first, bots fill whichever side is smaller
+  const hum = players.filter(p => p.kind !== 'bot').sort((a, b) => a.slot - b.slot), bots = players.filter(p => p.kind === 'bot');
+  const side = [[], []]; hum.forEach((p, i) => side[i % 2].push(p)); bots.forEach(p => side[side[0].length <= side[1].length ? 0 : 1].push(p));
+  const baseX = t => t === 0 ? 90 : W - 90, midY = (TOP + BOT) / 2;
+  side.forEach((list, t) => list.forEach((p, i) => { const C = ROSTER[p.char], Rl = TEAM_ROLES[C.id] || TEAM_ROLES.moxie;
+    g.qs.push({ p, C, Rl, team: t, x: baseX(t), y: midY + (i - (list.length - 1) / 2) * 70, vx: 0, vy: 0, kx: 0, ky: 0, fx: t ? -1 : 1, fy: 0, hp: Rl.hp, max: Rl.hp, dead: 0,
+      atkCD: 0.4, abCD: 2, inv: 0, stun: 0, slow: 0, frozen: 0, invis: 0, buff: false, haste: 0, dashT: 0, dashV: [0, 0], dashHit: null, jumpT: 0, jumpFrom: null, jumpTo: null, atkT: 0, hitT: 0,
+      kills: 0, deaths: 0, obj: 0, dmg: 0 }); }));
+  const enemyOf = t => 1 - t, alive = q => q.dead <= 0;
+  // ---- arena ----
+  const rects = BALL ? [] : ZON ? [[560, 160, 160, 36], [560, 584, 160, 36], [200, 150, 90, 36], [990, 150, 90, 36], [200, 610, 90, 36], [990, 610, 90, 36], [450, 200, 60, 56], [770, 200, 60, 56], [450, 534, 60, 56], [770, 534, 60, 56]] : TRAIN ? [[300, 150, 120, 36], [860, 150, 120, 36], [300, 590, 120, 36], [860, 590, 120, 36], [600, 196, 80, 60], [600, 524, 80, 60]]
+    : [[560, 170, 160, 40], [560, 550, 160, 40], [330, 310, 40, 160], [910, 310, 40, 160], [220, 150, 90, 36], [970, 150, 90, 36], [220, 610, 90, 36], [970, 610, 90, 36]];
+  const solid = () => rects.concat(g.walls.map(w => w.r));
+  function collide(o, rad) {
+    o.x = clamp(o.x, LEFT + rad, RIGHT - rad); o.y = clamp(o.y, TOP + rad, BOT - rad);
+    for (const [rx, ry, rw, rh] of solid()) { const cx = clamp(o.x, rx, rx + rw), cy = clamp(o.y, ry, ry + rh), dx = o.x - cx, dy = o.y - cy, d = hyp(dx, dy);
+      if (d < rad) { if (d > 0.01) { o.x = cx + dx / d * rad; o.y = cy + dy / d * rad; } else { o.y = ry - rad; } return true; } }
+    return false;
+  }
+  const inRect = (x, y) => solid().some(([rx, ry, rw, rh]) => x > rx && x < rx + rw && y > ry && y < ry + rh);
+  // ---- objectives ----
+  const gems = GEM ? [0, 1].map(t => ({ team: t, hx: t ? W - 110 : 110, hy: midY, x: t ? W - 110 : 110, y: midY, carrier: null, home: true, dropT: 0 })) : null;
+  const zones = ZON ? [[330, midY - 4], [640, midY], [950, midY - 4]].map(([x, y]) => ({ x, y, r: 84, own: -1, prog: 0 })) : null;
+  const ball = BALL ? { x: W / 2, y: midY, vx: 0, vy: 0, r: 20, last: null, spin: 0 } : null;
+  const GOAL = [midY - 90, midY + 90];
+  const cart = TRAIN ? { x: W / 2, y: midY, push: 0 } : null;
+  const target = TRAIN ? 120 : BALL ? 5 : GEM ? 3 : 240;
+  function resetKickoff() { ball.x = W / 2; ball.y = midY; ball.vx = ball.vy = 0; g.freeze = 1.6;
+    for (const t of [0, 1]) side[t].forEach((p, i) => { const q = g.qs.find(o => o.p === p); q.x = t ? W - 260 : 260; q.y = midY + (i - (side[t].length - 1) / 2) * 80; q.vx = q.vy = q.kx = q.ky = 0; }); }
+  // ---- combat ----
+  function pop(x, y, txt, col, big) { g.pops.push({ x, y, txt: String(txt), col, t: 0, big }); }
+  function hurt(o, dmg, src, kx = 0, ky = 0, stun = 0) {
+    if (!alive(o) || o.inv > 0 || g.winner >= 0) return;
+    if (src && src.buff) { dmg *= 2; stun = Math.max(stun, 0.8); src.buff = false; pop(o.x, o.y - 70, 'CRIT!', TEAM_INFO[src.team].col, true); }
+    o.hp -= dmg; o.hitT = 0.15; o.kx += kx; o.ky += ky; o.stun = Math.max(o.stun, stun); if (src) src.dmg += dmg;
+    pop(o.x + rand(-10, 10), o.y - 64, Math.round(dmg), '#fff');
+    if (o.p.kind === 'phone') buzz(o.p, 40);
+    if (o.hp <= 0) {
+      o.hp = 0; o.dead = 4 + Math.min(4, g.t / 60); o.deaths++; o.invis = 0; SFX.out();
+      burst(o.x, o.y - 20, TEAM_INFO[o.team].col, 22, 260, 6, 0.6); burst(o.x, o.y - 20, '#fff', 10, 200, 4, 0.4);
+      if (src) { src.kills++; g.feed.unshift({ t: 0, txt: src.p.name + '  ⚔  ' + o.p.name, col: TEAM_INFO[src.team].col }); g.feed.length = Math.min(4, g.feed.length); }
+      if (GEM) for (const gm of gems) if (gm.carrier === o) { gm.carrier = null; gm.x = o.x; gm.y = o.y; gm.dropT = 12; toast(o.p.name + ' dropped the gem!'); }
+    } else SFX.hit();
+  }
+  function nearestEnemy(q, range) {
+    let best = null, bs = 1e9;
+    for (const o of g.qs) { if (o.team === q.team || !alive(o)) continue; const dx = o.x - q.x, dy = o.y - q.y, d = hyp(dx, dy);
+      if (d > range + R || (o.invis > 0 && d > 90)) continue; const s = d - ((dx * q.fx + dy * q.fy) / (d || 1)) * 70; if (s < bs) { bs = s; best = o; } }
+    return best;
+  }
+  function kickBall(q) {
+    const mx = q.p.input.x || 0, my = q.p.input.y || 0, ml = hyp(mx, my);
+    let dx, dy; if (ml > 0.3) { dx = mx / ml; dy = my / ml; } else { const gx = q.team ? LEFT : RIGHT; dx = gx - ball.x; dy = midY - ball.y; const d = hyp(dx, dy) || 1; dx /= d; dy /= d; }
+    const pow = 560 + (q.Rl.melee ? 120 : 0); ball.vx = dx * pow; ball.vy = dy * pow; ball.last = q; SFX.whack(); burst(ball.x, ball.y, '#fff', 10, 200, 4, 0.3); q.atkT = 0.2; q.obj += 1;
+  }
+  function attack(q) {
+    if (BALL && hyp(ball.x - q.x, ball.y - q.y) < 62) { kickBall(q); q.atkCD = 0.35; return; }
+    const Rl = q.Rl, tgt = nearestEnemy(q, Rl.range);
+    if (!tgt && Rl.melee) return;
+    q.atkCD = Rl.cd; q.atkT = 0.2;
+    if (q.invis > 0) q.invis = 0;
+    let ax = q.fx, ay = q.fy; if (tgt) { const d = hyp(tgt.x - q.x, tgt.y - q.y) || 1; ax = (tgt.x - q.x) / d; ay = (tgt.y - q.y) / d; q.fx = ax; q.fy = ay; }
+    if (Rl.melee) { g.fx.push({ k: 'slash', x: q.x + ax * 34, y: q.y - 20 + ay * 34, t: 0, col: TEAM_INFO[q.team].col });
+      if (hyp(tgt.x - q.x, tgt.y - q.y) < Rl.range + R) hurt(tgt, Rl.dmg, q, ax * 160, ay * 160, 0.12); else SFX.dash(); }
+    else { g.shots.push({ x: q.x + ax * 22, y: q.y - 18 + ay * 22, vx: ax * Rl.shot, vy: ay * Rl.shot, team: q.team, owner: q, dmg: Rl.dmg, r: 7, life: Rl.range / Rl.shot + 0.05, splash: Rl.splash || 0, slow: Rl.slowHit || 0, col: q.C.color, hit: new Set() });
+      tone(700, 420, 0.05, 'square', 0.025); }
+  }
+  function ability(q) {
+    const Rl = q.Rl; q.abCD = Rl.abCD; const mx = q.p.input.x || 0, my = q.p.input.y || 0, ml = hyp(mx, my);
+    let ax = ml > 0.3 ? mx / ml : q.fx, ay = ml > 0.3 ? my / ml : q.fy; const al = hyp(ax, ay) || 1; ax /= al; ay /= al; q.fx = ax; q.fy = ay;
+    pop(q.x, q.y - 92, q.C.ability.name + '!', TEAM_INFO[q.team].col, true); SFX.power();
+    switch (Rl.ab) {
+      case 'charge': q.dashT = 0.5; q.dashV = [ax * 520, ay * 520]; q.dashHit = new Set(); q.inv = 0.5; SFX.dash(); break;
+      case 'jet': q.dashT = 0.24; q.dashV = [ax * 720, ay * 720]; q.dashHit = null; q.haste = 2; SFX.dash(); break;
+      case 'stomp': { let tx = q.x + ax * 170, ty = q.y + ay * 170; tx = clamp(tx, LEFT + R, RIGHT - R); ty = clamp(ty, TOP + R, BOT - R); q.jumpT = 0.45; q.jumpFrom = [q.x, q.y]; q.jumpTo = [tx, ty]; q.inv = 0.45; break; }
+      case 'vanish': q.invis = 3.2; q.buff = true; burst(q.x, q.y - 20, '#dcc8ff', 16, 180, 5, 0.5); break;
+      case 'plasma': g.shots.push({ x: q.x + ax * 24, y: q.y - 18 + ay * 24, vx: ax * 940, vy: ay * 940, team: q.team, owner: q, dmg: 45, r: 15, life: 0.9, pierce: true, col: '#ffb067', hit: new Set() }); shake(0.15); SFX.boom(); break;
+      case 'warp': { let tx = q.x, ty = q.y; for (let s = 0; s < 21; s++) { const nx = tx + ax * 10, ny = ty + ay * 10; if (inRect(nx, ny) || nx < LEFT + R || nx > RIGHT - R || ny < TOP + R || ny > BOT - R) break; tx = nx; ty = ny; }
+        burst(q.x, q.y - 20, '#b5ecff', 14, 200, 5, 0.4); q.x = tx; q.y = ty; burst(q.x, q.y - 20, '#ffffff', 22, 260, 6, 0.5); g.fx.push({ k: 'ring', x: q.x, y: q.y, t: 0, r: 90, col: '#38c6ff' });
+        for (const o of g.qs) if (o.team !== q.team && alive(o) && hyp(o.x - q.x, o.y - q.y) < 90 + R) hurt(o, 24, q, (o.x - q.x) * 3, (o.y - q.y) * 3, 0.3); break; }
+      case 'goo': g.pools.push({ x: clamp(q.x + ax * 110, LEFT + 40, RIGHT - 40), y: clamp(q.y + ay * 110, TOP + 40, BOT - 40), r: 105, t: 4, team: q.team, owner: q }); SFX.splash(); break;
+      case 'wall': { const cx = q.x + ax * 74, cy = q.y + ay * 74, horiz = Math.abs(ay) > Math.abs(ax), L = 160, T = 26;
+        const r = horiz ? [cx - L / 2, cy - T / 2, L, T] : [cx - T / 2, cy - L / 2, T, L]; g.walls.push({ r, t: 4.5 }); SFX.freeze();
+        for (const o of g.qs) if (o.team !== q.team && alive(o) && o.x > r[0] - 40 && o.x < r[0] + r[2] + 40 && o.y > r[1] - 40 && o.y < r[1] + r[3] + 40) { o.frozen = 1.1; hurt(o, 10, q, 0, 0, 0); } break; }
+    }
+  }
+  function declare(t) { if (g.winner >= 0) return; g.winner = t; g.endT = 0; SFX.win(); SFX.cheer(); g.banner = t === 2 ? "IT'S A DRAW!" : TEAM_INFO[t].name.toUpperCase() + ' WINS!'; g.bannerT = 99; }
+  // ---- update ----
+  g.update = dt => {
+    g.t += dt; if (g.bannerT > 0) g.bannerT -= dt;
+    if (g.winner >= 0) { g.endT += dt; if (g.endT > 4) g.done = true; }
+    else if (g.t >= LIMIT + 3) declare(TRAIN ? (cart.x > W / 2 + 4 ? 0 : cart.x < W / 2 - 4 ? 1 : 2) : g.score[0] > g.score[1] ? 0 : g.score[1] > g.score[0] ? 1 : 2);
+    if (g.freeze > 0) { g.freeze -= dt; if (g.freeze <= 0 && g.t < 4) SFX.go(); }
+    const frozen = g.freeze > 0 || g.winner >= 0;
+    for (const w of g.walls) w.t -= dt; g.walls = g.walls.filter(w => w.t > 0);
+    for (const pl of g.pools) pl.t -= dt; g.pools = g.pools.filter(pl => pl.t > 0);
+    for (const q of g.qs) {
+      const p = q.p, inp = p.input;
+      for (const k of ['atkCD', 'abCD', 'inv', 'stun', 'slow', 'frozen', 'invis', 'haste', 'atkT', 'hitT']) q[k] = Math.max(0, q[k] - dt);
+      if (!alive(q)) { q.dead -= dt; if (q.dead <= 0) { q.hp = q.max; q.x = baseX(q.team) + rand(-10, 10); q.y = midY + rand(-120, 120); q.inv = 1.5; q.stun = 0; q.kx = q.ky = 0; } continue; }
+      for (const pl of g.pools) if (hyp(pl.x - q.x, pl.y - q.y) < pl.r) { if (pl.team === q.team) q.hp = Math.min(q.max, q.hp + 30 * dt); else q.slow = Math.max(q.slow, 0.2); }
+      const mx = inp.x || 0, my = inp.y || 0, ml = hyp(mx, my);
+      const can = !frozen && q.stun <= 0 && q.frozen <= 0 && q.dashT <= 0 && q.jumpT <= 0;
+      if (ml > 0.25 && can) { q.fx = mx / ml; q.fy = my / ml; }
+      if (can && (p.aDown || inp.a) && q.atkCD <= 0) attack(q);
+      if (can && p.bDown) { if (q.abCD <= 0) ability(q); else buzz(p, 20); }
+      let sp = q.Rl.spd * (q.slow > 0 ? 0.55 : 1) * (q.haste > 0 ? 1.4 : 1) * (q.invis > 0 ? 1.15 : 1) * (GEM && gems.some(gm => gm.carrier === q) ? 0.85 : 1) * (q.atkT > 0 && q.Rl.melee ? 0.6 : 1);
+      let tvx = can && ml > 0.15 ? mx * sp : 0, tvy = can && ml > 0.15 ? my * sp : 0;
+      if (q.dashT > 0) { q.dashT -= dt; tvx = q.dashV[0]; tvy = q.dashV[1]; if (Math.random() < 0.8) parts.push({ x: q.x + rand(-8, 8), y: q.y - rand(5, 30), vx: -tvx * 0.15, vy: -tvy * 0.15, life: 0.3, max: 0.3, color: q.C.color, size: 6 });
+        if (q.dashHit) for (const o of g.qs) if (o.team !== q.team && alive(o) && !q.dashHit.has(o) && hyp(o.x - q.x, o.y - q.y) < R * 2.4) { q.dashHit.add(o); hurt(o, 25, q, q.dashV[0] * 0.75, q.dashV[1] * 0.75, 0.45); shake(0.12); } }
+      if (q.jumpT > 0) { q.jumpT -= dt; const k = 1 - q.jumpT / 0.45; q.x = q.jumpFrom[0] + (q.jumpTo[0] - q.jumpFrom[0]) * k; q.y = q.jumpFrom[1] + (q.jumpTo[1] - q.jumpFrom[1]) * k; q.hop = Math.sin(k * Math.PI) * 70;
+        if (q.jumpT <= 0) { q.hop = 0; g.fx.push({ k: 'ring', x: q.x, y: q.y, t: 0, r: 115, col: '#ff6fcf' }); shake(0.3); SFX.boom(); collide(q, R);
+          for (const o of g.qs) if (o.team !== q.team && alive(o)) { const d = hyp(o.x - q.x, o.y - q.y); if (d < 115 + R) hurt(o, 28, q, (o.x - q.x) / (d || 1) * 330, (o.y - q.y) / (d || 1) * 330, 0.3); } }
+        continue; }
+      q.vx += (tvx - q.vx) * Math.min(1, dt * 12); q.vy += (tvy - q.vy) * Math.min(1, dt * 12);
+      q.x += (q.vx + q.kx) * dt; q.y += (q.vy + q.ky) * dt; const kd = Math.pow(0.02, dt); q.kx *= kd; q.ky *= kd;
+      collide(q, R);
+    }
+    // soft separation so crowds don't stack
+    for (let i = 0; i < g.qs.length; i++) for (let j = i + 1; j < g.qs.length; j++) { const a = g.qs[i], b = g.qs[j]; if (!alive(a) || !alive(b)) continue; const dx = b.x - a.x, dy = b.y - a.y, d = hyp(dx, dy); if (d < R * 1.8 && d > 0.01) { const push = (R * 1.8 - d) / 2; a.x -= dx / d * push; a.y -= dy / d * push; b.x += dx / d * push; b.y += dy / d * push; } }
+    // projectiles
+    for (const s2 of g.shots) { s2.life -= dt; s2.x += s2.vx * dt; s2.y += s2.vy * dt;
+      if (inRect(s2.x, s2.y + 18)) { s2.life = 0; burst(s2.x, s2.y, s2.col, 6, 120, 4, 0.25); }
+      if (BALL && hyp(ball.x - s2.x, ball.y - (s2.y + 18)) < ball.r + s2.r) { ball.vx += s2.vx * 0.35; ball.vy += s2.vy * 0.35; ball.last = s2.owner; if (!s2.pierce) s2.life = 0; }
+      for (const o of g.qs) if (s2.life > 0 && o.team !== s2.team && alive(o) && !s2.hit.has(o) && hyp(o.x - s2.x, o.y - 18 - s2.y) < R + s2.r) {
+        s2.hit.add(o); const d = hyp(s2.vx, s2.vy) || 1; hurt(o, s2.dmg, s2.owner, s2.vx / d * 90, s2.vy / d * 90, 0.05); if (s2.slow) o.slow = Math.max(o.slow, s2.slow);
+        if (s2.splash) { g.fx.push({ k: 'ring', x: s2.x, y: s2.y + 18, t: 0, r: s2.splash, col: s2.col }); for (const o2 of g.qs) if (o2 !== o && o2.team !== s2.team && alive(o2) && hyp(o2.x - s2.x, o2.y - 18 - s2.y) < s2.splash) hurt(o2, s2.dmg * 0.6, s2.owner); }
+        if (!s2.pierce) s2.life = 0; }
+    }
+    g.shots = g.shots.filter(s2 => s2.life > 0);
+    for (const f of g.fx) f.t += dt; g.fx = g.fx.filter(f => f.t < 0.45);
+    for (const pp of g.pops) pp.t += dt; g.pops = g.pops.filter(pp => pp.t < 0.9);
+    for (const f of g.feed) f.t += dt; g.feed = g.feed.filter(f => f.t < 5);
+    if (g.winner >= 0) return;
+    // ---- objectives ----
+    if (GEM) for (const gm of gems) {
+      if (gm.carrier) { gm.x = gm.carrier.x; gm.y = gm.carrier.y;
+        const home = gems[gm.carrier.team];
+        if (home.home && hyp(gm.x - home.hx, gm.y - home.hy) < 60) { const c = gm.carrier; g.score[c.team]++; c.obj += 5; gm.carrier = null; gm.home = true; gm.x = gm.hx; gm.y = gm.hy;
+          SFX.goal(); SFX.cheer(); shake(0.4); g.banner = 'GEM SCORED!'; g.bannerT = 1.8; burst(home.hx, home.hy - 20, TEAM_INFO[c.team].col, 40, 320, 7, 0.8); if (g.score[c.team] >= target) declare(c.team); }
+        continue; }
+      if (!gm.home) { gm.dropT -= dt; if (gm.dropT <= 0) { gm.home = true; gm.x = gm.hx; gm.y = gm.hy; toast(TEAM_INFO[gm.team].name + "'s gem went home"); } }
+      for (const q of g.qs) { if (!alive(q) || q.invis > 0 && false) continue; if (hyp(q.x - gm.x, q.y - gm.y) > R + 22) continue;
+        if (q.team !== gm.team && !gems.some(o => o.carrier === q)) { gm.carrier = q; gm.home = false; SFX.power(); toast(q.p.name + ' grabbed ' + TEAM_INFO[gm.team].name + "'s gem!"); q.obj += 1; break; }
+        if (q.team === gm.team && !gm.home) { gm.home = true; gm.x = gm.hx; gm.y = gm.hy; q.obj += 2; SFX.pop(); toast(q.p.name + ' returned the gem'); break; } }
+    }
+    if (ZON) { for (const z of zones) {
+        const c = [0, 0]; for (const q of g.qs) if (alive(q) && hyp(q.x - z.x, q.y - z.y) < z.r) c[q.team]++;
+        if (c[0] !== c[1] && (c[0] === 0 || c[1] === 0)) { const t = c[0] ? 0 : 1, dir = t === 0 ? -1 : 1, n = Math.min(3, c[t]);
+          const before = z.prog; z.prog = clamp(z.prog + dir * dt * 0.28 * (1 + (n - 1) * 0.5), -1, 1);
+          if (Math.abs(z.prog) >= 1 && z.own !== t) { z.own = t; SFX.cheer(); for (const q of g.qs) if (q.team === t && hyp(q.x - z.x, q.y - z.y) < z.r) q.obj += 3; }
+          if (Math.sign(before) !== Math.sign(z.prog) && z.own !== -1 && z.own !== t) { z.own = -1; SFX.pop(); } }
+        if (z.own >= 0) g.score[z.own] += dt;
+      }
+      for (const t of [0, 1]) if (g.score[t] >= target) declare(t); }
+    if (BALL) {
+      if (g.freeze <= 0) { ball.x += ball.vx * dt; ball.y += ball.vy * dt; } const fr = Math.pow(0.45, dt); ball.vx *= fr; ball.vy *= fr; ball.spin += hyp(ball.vx, ball.vy) * dt * 0.05;
+      for (const q of g.qs) if (alive(q)) { const dx = ball.x - q.x, dy = ball.y - q.y, d = hyp(dx, dy); if (d < ball.r + R && d > 0.01) { const push = ball.r + R - d; ball.x += dx / d * push; ball.y += dy / d * push; ball.vx += dx / d * 120; ball.vy += dy / d * 120; ball.last = q; } }
+      if (ball.y < TOP + ball.r) { ball.y = TOP + ball.r; ball.vy = Math.abs(ball.vy) * 0.8; } if (ball.y > BOT - ball.r) { ball.y = BOT - ball.r; ball.vy = -Math.abs(ball.vy) * 0.8; }
+      const inGoal = ball.y > GOAL[0] && ball.y < GOAL[1];
+      if (ball.x < LEFT + ball.r && !inGoal) { ball.x = LEFT + ball.r; ball.vx = Math.abs(ball.vx) * 0.8; } if (ball.x > RIGHT - ball.r && !inGoal) { ball.x = RIGHT - ball.r; ball.vx = -Math.abs(ball.vx) * 0.8; }
+      if (ball.x < LEFT - 4 || ball.x > RIGHT + 4) { const t = ball.x < W / 2 ? 1 : 0; g.score[t]++; if (ball.last && ball.last.team === t) ball.last.obj += 5;
+        SFX.goal(); SFX.cheer(); shake(0.5); burst(ball.x < W / 2 ? LEFT : RIGHT, ball.y, TEAM_INFO[t].col, 50, 380, 7, 0.9);
+        g.banner = 'GOAL! ' + TEAM_INFO[t].name.toUpperCase(); g.bannerT = 2; if (g.score[t] >= target) declare(t); else resetKickoff(); }
+    }
+    if (TRAIN) { const c = [0, 0]; for (const q of g.qs) if (alive(q) && hyp(q.x - cart.x, q.y - cart.y) < 125) c[q.team]++;
+      const diff = c[0] - c[1]; cart.push = diff;
+      if (diff) { cart.x += Math.sign(diff) * (24 + Math.min(3, Math.abs(diff)) * 9) * dt; for (const q of g.qs) if (alive(q) && q.team === (diff > 0 ? 0 : 1) && hyp(q.x - cart.x, q.y - cart.y) < 125) q.obj += dt; }
+      g.score = [Math.max(0, Math.round((cart.x - W / 2) / ((W / 2 - 150) / 100))), Math.max(0, Math.round((W / 2 - cart.x) / ((W / 2 - 150) / 100)))];
+      if (cart.x >= W - 150) declare(0); if (cart.x <= 150) declare(1); }
+  };
+  // ---- results ----
+  g.ranking = () => { const sc = q => q.kills * 2 + q.obj * 2 + q.dmg / 40 - q.deaths * 0.5;
+    const order = g.qs.slice().sort((a, b) => (g.winner === 2 ? 0 : (b.team === g.winner) - (a.team === g.winner)) || sc(b) - sc(a)); return order.map(q => q.p.slot); };
+  Object.defineProperty(g, 'pointTable', { get: () => { const nw = g.winner === 2 || g.winner < 0 ? 0 : g.qs.filter(q => q.team === g.winner).length; return g.qs.map((_, i) => g.winner === 2 ? 1 : i < nw ? 3 : 0); } });
+  g.resultLine = () => g.winner === 2 ? "🤝 It's a draw!" : `🏆 ${TEAM_INFO[g.winner].name} wins ` + (TRAIN ? 'the push!' : `${Math.floor(g.score[g.winner])} – ${Math.floor(g.score[1 - g.winner])}`);
+  g.teamColor = slot => { const q = g.qs.find(o => o.p.slot === slot); return q ? TEAM_INFO[q.team].col : null; };
+  // ---- bots ----
+  g.bot = (p, dt) => {
+    const q = g.qs.find(o => o.p === p); p.input = { x: 0, y: 0, a: false, b: false }; if (!q || !alive(q)) return;
+    const idx = side[q.team].indexOf(p), Rl = q.Rl, tank = Rl.role === 'Tank' || Rl.role === 'Support';
+    let tx = q.x, ty = q.y;
+    if (GEM) { const mine = gems[q.team], theirs = gems[1 - q.team];
+      if (theirs.carrier === q) { tx = mine.hx; ty = mine.hy; }
+      else if (mine.carrier) { tx = mine.carrier.x; ty = mine.carrier.y; }
+      else if (!mine.home) { tx = mine.x; ty = mine.y; }
+      else if (theirs.carrier) { tx = theirs.carrier.x + (q.team ? 40 : -40); ty = theirs.carrier.y; }
+      else if (tank && idx % 2 === 0) { tx = mine.hx + (q.team ? -90 : 90); ty = mine.hy + (idx - 1) * 50; }
+      else { tx = theirs.x; ty = theirs.y; } }
+    if (ZON) { const pick = zones.map((z, i) => ({ z, s: (z.own === q.team ? 260 : 0) + Math.abs(i - (idx % 3)) * 120 + hyp(z.x - q.x, z.y - q.y) * 0.4 })).sort((a, b) => a.s - b.s)[0].z; tx = pick.x + Math.cos(idx * 2.1) * 30; ty = pick.y + Math.sin(idx * 2.1) * 30; }
+    if (BALL) { const gx = q.team ? W - 60 : 60, eg = q.team ? LEFT : RIGHT;
+      if (tank && idx === 0) { tx = gx + (q.team ? -40 : 40); ty = clamp(ball.y, GOAL[0], GOAL[1]); }
+      else { const dx = eg - ball.x, dy = midY - ball.y, d = hyp(dx, dy) || 1; tx = ball.x - dx / d * 40; ty = ball.y - dy / d * 40; if (idx >= 3) { tx -= (q.team ? -1 : 1) * 160; } } }
+    if (TRAIN) { tx = cart.x + (q.team ? 70 : -70) + Math.cos(idx * 1.7) * 30; ty = cart.y + Math.sin(idx * 1.7) * 60; }
+    const enemy = nearestEnemy(q, Rl.range + 60);
+    if (enemy && !(GEM && gems[1 - q.team].carrier === q)) {
+      const d = hyp(enemy.x - q.x, enemy.y - q.y);
+      if (d < Rl.range + R) { p.input.a = true; if (!Rl.melee && d < Rl.range * 0.5) { tx = q.x - (enemy.x - q.x); ty = q.y - (enemy.y - q.y); } }
+      else if (Rl.melee && d < 220) { tx = enemy.x; ty = enemy.y; }
+      if (q.abCD <= 0 && d < 200 && Math.random() < dt * 0.8) { q.fx = (enemy.x - q.x) / (d || 1); q.fy = (enemy.y - q.y) / (d || 1); p.input.x = q.fx; p.input.y = q.fy; p.bLatch = true; }
+    }
+    if (BALL && hyp(ball.x - q.x, ball.y - q.y) < 60 && q.atkCD <= 0 && Math.random() < dt * 6) p.input.a = true;
+    if (Rl.ab === 'goo' && q.abCD <= 0 && g.qs.some(o => o.team === q.team && alive(o) && o.hp < o.max * 0.5 && hyp(o.x - q.x, o.y - q.y) < 140)) p.bLatch = true;
+    // steer round blocks: if the straight line is blocked, head for the nearest clear corner of the block first
+    const way = steer(q.x, q.y, tx, ty); tx = way[0]; ty = way[1];
+    const dx = tx - q.x, dy = ty - q.y, d = hyp(dx, dy); if (d > 14) { p.input.x = dx / d; p.input.y = dy / d; }
+  };
+  function blockedBy(x0, y0, x1, y1) { const pad = R + 4;
+    for (const r of solid()) { const [rx, ry, rw, rh] = r; for (let k = 1; k <= 16; k++) { const x = x0 + (x1 - x0) * k / 16, y = y0 + (y1 - y0) * k / 16; if (x > rx - pad && x < rx + rw + pad && y > ry - pad && y < ry + rh + pad) return r; } }
+    return null; }
+  function steer(x0, y0, x1, y1) {
+    const r = blockedBy(x0, y0, x1, y1); if (!r) return [x1, y1];
+    const [rx, ry, rw, rh] = r, m = R + 22, cs = [[rx - m, ry - m], [rx + rw + m, ry - m], [rx - m, ry + rh + m], [rx + rw + m, ry + rh + m]];
+    let best = null, bs = 1e9; for (const c of cs) { if (c[0] < LEFT + R || c[0] > RIGHT - R || c[1] < TOP + R || c[1] > BOT - R) continue; if (blockedBy(x0, y0, c[0], c[1]) === r) continue;
+      const sc = hyp(c[0] - x0, c[1] - y0) + hyp(x1 - c[0], y1 - c[1]); if (sc < bs) { bs = sc; best = c; } }
+    return best || [x1, y1]; }
+  // ---- drawing ----
+  const bg = makeLayer(() => { const c = ctx;
+    const gr = c.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, BALL ? '#7fe08a' : '#a7e98a'); gr.addColorStop(1, BALL ? '#56c466' : '#78d06e'); c.fillStyle = gr; c.fillRect(0, 0, W, H);
+    if (BALL) { for (let i = 0; i < 12; i++) { c.fillStyle = i % 2 ? 'rgba(255,255,255,.06)' : 'rgba(0,60,0,.05)'; c.fillRect(LEFT + i * (RIGHT - LEFT) / 12, TOP, (RIGHT - LEFT) / 12, BOT - TOP); }
+      c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 5; c.strokeRect(LEFT, TOP, RIGHT - LEFT, BOT - TOP); c.beginPath(); c.moveTo(W / 2, TOP); c.lineTo(W / 2, BOT); c.stroke(); c.beginPath(); c.arc(W / 2, midY, 80, 0, 7); c.stroke();
+      for (const t of [0, 1]) { const x = t ? RIGHT : LEFT; c.strokeRect(t ? x - 120 : x, midY - 160, 120, 320); c.fillStyle = TEAM_INFO[t].col; rr(t ? x - 4 : x - 18, GOAL[0], 22, GOAL[1] - GOAL[0], 8); c.fill(); c.lineWidth = 4; c.strokeStyle = TOY.navy; c.stroke(); c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 5; } }
+    else { const rnd = seeded(5); for (let i = 0; i < 600; i++) { c.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,255' : '40,120,40'},${rnd() * 0.16})`; c.fillRect(rnd() * W, rnd() * H, 2, 4); }
+      for (const t of [0, 1]) { const x = baseX(t); c.fillStyle = TEAM_INFO[t].light; c.globalAlpha = 0.75; rr(x - 70, midY - 150, 140, 300, 30); c.fill(); c.globalAlpha = 1; c.lineWidth = 4; c.strokeStyle = TEAM_INFO[t].col; c.setLineDash([12, 10]); rr(x - 70, midY - 150, 140, 300, 30); c.stroke(); c.setLineDash([]); }
+      if (TRAIN) { c.fillStyle = '#c9925a'; for (let x = 140; x < W - 140; x += 26) rr(x, midY - 22, 12, 44, 3), c.fill(); c.fillStyle = '#8a93b8'; c.fillRect(140, midY - 14, W - 280, 6); c.fillRect(140, midY + 8, W - 280, 6);
+        for (const t of [0, 1]) { const x = t ? 150 : W - 150; c.fillStyle = TEAM_INFO[1 - t].col; rr(x - 8, midY - 60, 16, 120, 6); c.fill(); c.lineWidth = 3; c.strokeStyle = TOY.navy; c.stroke(); } } }
+    for (const [rx, ry, rw, rh] of rects) { c.fillStyle = 'rgba(20,40,20,.22)'; rr(rx + 4, ry + 8, rw, rh, 10); c.fill();
+      const cols = ['#ff8fb5', '#ffd23f', '#7fd3ff', '#b49cff']; const col = cols[Math.floor(rx + ry) % 4];
+      rr(rx, ry, rw, rh, 10); c.fillStyle = col; c.fill(); c.lineWidth = 4; c.strokeStyle = TOY.navy; c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.35)'; rr(rx + 6, ry + 5, rw - 12, Math.min(10, rh / 3), 5); c.fill(); }
+  });
+  function drawGem(gm) { const bob = Math.sin(g.t * 4 + gm.team) * 4, y = (gm.carrier ? gm.y - 86 : gm.y - 26) + bob, col = TEAM_INFO[gm.team].col;
+    if (!gm.carrier) { ctx.fillStyle = 'rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(gm.x, gm.y, 20, 7, 0, 0, 7); ctx.fill(); }
+    ctx.save(); ctx.translate(gm.x, y); ctx.rotate(Math.sin(g.t * 2) * 0.1);
+    ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(16, -6); ctx.lineTo(0, 22); ctx.lineTo(-16, -6); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(8, -6); ctx.lineTo(0, -2); ctx.closePath(); ctx.fill(); ctx.restore();
+    if (!gm.home && !gm.carrier) toyText(Math.ceil(gm.dropT), gm.x, gm.y - 58, 16, '#fff', 'center', TOY.navy); }
+  g.draw = () => {
+    ctx.drawImage(bg, 0, 0, W, H);
+    if (GEM) for (const gm of gems) { ctx.fillStyle = TEAM_INFO[gm.team].col; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.ellipse(gm.hx, gm.hy, 60, 24, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.beginPath(); ctx.ellipse(gm.hx, gm.hy, 34, 12, 0, 0, 7); ctx.stroke(); }
+    if (ZON) zones.forEach((z, i) => { const col = z.own >= 0 ? TEAM_INFO[z.own].col : '#ffffff';
+      ctx.fillStyle = col; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.setLineDash([14, 10]); ctx.lineDashOffset = -g.t * 20; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      if (z.prog) { ctx.lineWidth = 10; ctx.strokeStyle = TEAM_INFO[z.prog < 0 ? 0 : 1].col; ctx.beginPath(); ctx.arc(z.x, z.y, z.r - 8, -Math.PI / 2, -Math.PI / 2 + Math.abs(z.prog) * Math.PI * 2); ctx.stroke(); }
+      toyText('ABC'[i], z.x, z.y, 40, col === '#ffffff' ? TOY.navy : '#fff', 'center', col === '#ffffff' ? null : TOY.navy); });
+    for (const pl of g.pools) { ctx.globalAlpha = Math.min(0.55, pl.t); ctx.fillStyle = TEAM_INFO[pl.team].col; ctx.beginPath(); ctx.arc(pl.x, pl.y, pl.r, 0, 7); ctx.fill(); ctx.fillStyle = '#56e07a'; for (let k = 0; k < 6; k++) { const a = g.t + k, rr2 = pl.r * (0.3 + (k % 3) * 0.2); ctx.beginPath(); ctx.arc(pl.x + Math.cos(a) * rr2, pl.y + Math.sin(a * 1.3) * rr2 * 0.6, 6 + (k % 3) * 3, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }
+    for (const f of g.fx) if (f.k === 'ring') { const a = 1 - f.t / 0.45; ctx.globalAlpha = a; ctx.strokeStyle = f.col; ctx.lineWidth = 8 * a + 2; ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * (0.4 + f.t * 1.4), f.r * (0.4 + f.t * 1.4) * 0.5, 0, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
+    const items = [];
+    for (const w of g.walls) items.push({ y: w.r[1] + w.r[3], d: () => { const [rx, ry, rw, rh] = w.r; ctx.globalAlpha = Math.min(1, w.t * 2); rr(rx, ry - 18, rw, rh + 18, 8); ctx.fillStyle = '#cff6ff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#1a9c90'; ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.7)'; rr(rx + 4, ry - 14, rw - 8, 6, 3); ctx.fill(); ctx.globalAlpha = 1; } });
+    if (GEM) for (const gm of gems) if (!gm.carrier) items.push({ y: gm.y, d: () => drawGem(gm) });
+    if (BALL) items.push({ y: ball.y, d: () => { ctx.fillStyle = 'rgba(20,40,20,.3)'; ctx.beginPath(); ctx.ellipse(ball.x, ball.y + ball.r * 0.8, ball.r, ball.r * 0.35, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(ball.x, ball.y - 4); ctx.rotate(ball.spin); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      for (let k = 0; k < 4; k++) { ctx.fillStyle = [TOY.coral, TOY.sun, TOY.aqua, TOY.mint][k]; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, ball.r - 2, k * Math.PI / 2, k * Math.PI / 2 + Math.PI / 4); ctx.closePath(); ctx.fill(); } ctx.restore(); } });
+    if (TRAIN) items.push({ y: cart.y + 10, d: () => { const x = cart.x, y = cart.y, push = cart.push, col = push > 0 ? TEAM_INFO[0].col : push < 0 ? TEAM_INFO[1].col : '#ffffff';
+      ctx.fillStyle = 'rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(x, y + 26, 70, 14, 0, 0, 7); ctx.fill();
+      rr(x - 60, y - 44, 120, 60, 14); ctx.fillStyle = TOY.coral; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      rr(x - 26, y - 82, 52, 42, 10); ctx.fillStyle = TOY.sun; ctx.fill(); ctx.stroke(); rr(x - 16, y - 74, 32, 20, 6); ctx.fillStyle = '#cfefff'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+      rr(x + 30, y - 72, 18, 30, 6); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.stroke();
+      for (const wx of [-36, 0, 36]) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + wx, y + 18, 13, 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.save(); ctx.translate(x + wx, y + 18); ctx.rotate(cart.x / 13); ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(9, 0); ctx.stroke(); ctx.restore(); }
+      ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.globalAlpha = 0.6; ctx.setLineDash([10, 8]); ctx.beginPath(); ctx.arc(x, y, 125, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+      if (push) toyText((push > 0 ? '▶ ' : '◀ ') + Math.abs(push), x, y - 104, 20, col, 'center', TOY.navy); } });
+    for (const q of g.qs) if (alive(q)) items.push({ y: q.y, d: () => {
+      const moving = hyp(q.vx, q.vy) > 30, tc = TEAM_INFO[q.team], hop = q.hop || 0, al = q.invis > 0 ? 0.3 : 1;
+      ctx.fillStyle = tc.col; ctx.globalAlpha = 0.5 * al; ctx.beginPath(); ctx.ellipse(q.x, q.y + 2, 22, 8, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+      if (!(q.inv > 0 && q.dashT <= 0 && q.jumpT <= 0 && Math.floor(g.t * 12) % 2)) drawCritter(q.x, q.y - 22 - hop, 24, q.p.char, { noShadow: true, alpha: al, fx: q.fx, fy: q.fy, walk: moving ? host.t * 16 : 0, ouch: q.hitT > 0, fierce: q.atkT > 0,
+        anim: q.frozen > 0 ? 'hit' : q.hitT > 0 ? 'hit' : q.atkT > 0 || q.dashT > 0 ? 'punch' : hop ? 'jump' : moving ? 'run' : 'idle' });
+      if (q.frozen > 0) { ctx.fillStyle = 'rgba(190,240,255,.5)'; rr(q.x - 24, q.y - 86, 48, 88, 10); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
+      const top = q.y - 22 - hop - 24 * 2.75 + 6, bw = 50; ctx.globalAlpha = al;
+      rr(q.x - bw / 2, top - 12, bw, 8, 4); ctx.fillStyle = 'rgba(27,31,94,.4)'; ctx.fill(); rr(q.x - bw / 2, top - 12, bw * q.hp / q.max, 8, 4); ctx.fillStyle = tc.col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; rr(q.x - bw / 2, top - 12, bw, 8, 4); ctx.stroke();
+      dfont(13); const nw = ctx.measureText(q.p.name).width + 14; rr(q.x - nw / 2, top - 32, nw, 18, 9); ctx.fillStyle = tc.col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(q.p.name, q.x, top - 23, 13, '#fff', 'center', null);
+      if (q.abCD <= 0) { ctx.fillStyle = TOY.sun; ctx.beginPath(); ctx.arc(q.x + bw / 2 + 7, top - 8, 5, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
+      ctx.globalAlpha = 1;
+      if (GEM) for (const gm of gems) if (gm.carrier === q) drawGem(gm);
+    } });
+    for (const s2 of g.shots) items.push({ y: s2.y + 18, d: () => { ctx.fillStyle = s2.col; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(s2.x, s2.y, s2.r, 0, 7); ctx.fill(); ctx.stroke(); } });
+    items.sort((a, b) => a.y - b.y); for (const it of items) it.d();
+    for (const f of g.fx) if (f.k === 'slash') { const a = 1 - f.t / 0.2; if (a <= 0) continue; ctx.globalAlpha = a; ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(f.x, f.y, 16 + f.t * 90, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
+    for (const pp of g.pops) { ctx.globalAlpha = 1 - pp.t / 0.9; toyText(pp.txt, pp.x, pp.y - pp.t * 40, pp.big ? 18 : 15, pp.col, 'center', TOY.navy); ctx.globalAlpha = 1; }
+    // respawn timers on each base
+    for (const t of [0, 1]) g.qs.filter(q => q.team === t && !alive(q)).forEach((q, i) => toyText('💤 ' + q.p.name + ' ' + Math.ceil(q.dead), baseX(t), midY + 175 + i * 18, 13, TEAM_INFO[t].col, 'center', TOY.navy));
+    // HUD: team scores + clock
+    for (const t of [0, 1]) { const x = t ? W - 330 : 30, tc = TEAM_INFO[t]; rr(x, 14, 300, 58, 29); ctx.fillStyle = tc.col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText(tc.name, x + (t ? 278 : 22), 43, 22, '#fff', t ? 'right' : 'left', TOY.navy);
+      const sv = TRAIN ? g.score[t] + '%' : ZON ? Math.floor(g.score[t]) + ' / ' + target : g.score[t] + ' / ' + target; toyText(sv, x + (t ? 22 : 278), 43, 26, '#fff', t ? 'left' : 'right', TOY.navy); }
+    const left = Math.max(0, LIMIT + 3 - g.t); rr(W / 2 - 64, 16, 128, 52, 26); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+    toyText(Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0'), W / 2, 43, 26, left < 30 ? TOY.coral : TOY.navy, 'center', null);
+    g.feed.forEach((f, i) => { ctx.globalAlpha = Math.min(1, 5 - f.t); toyText(f.txt, W / 2, 92 + i * 20, 14, f.col, 'center', TOY.navy); ctx.globalAlpha = 1; });
+    if (g.t < 3) { // team intro
+      ctx.fillStyle = 'rgba(27,31,94,.55)'; ctx.fillRect(0, 0, W, H);
+      for (const t of [0, 1]) { const x = t ? W * 0.75 : W * 0.25; headline(TEAM_INFO[t].name.toUpperCase(), x, 190, 48, '#fff', TEAM_INFO[t].dark);
+        g.qs.filter(q => q.team === t).forEach((q, i) => toyText(q.p.name + '  ·  ' + q.Rl.role, x, 250 + i * 34, 22, TEAM_INFO[t].light, 'center', TOY.navy)); }
+      headline('VS', W / 2, 300, 64, TOY.sun, TOY.orange);
+      toyText(Math.ceil(3 - g.t), W / 2, 420, 40, '#fff', 'center', TOY.navy);
+    } else if (g.bannerT > 0) { const sc = 1 + Math.max(0, g.bannerT - (g.winner >= 0 ? 98 : 1.4)) * 0.6; ctx.save(); ctx.translate(W / 2, H / 2 - 40); ctx.scale(sc, sc); headline(g.banner, 0, 0, g.winner >= 0 ? 72 : 56, g.winner >= 0 && g.winner < 2 ? TEAM_INFO[g.winner].light : TOY.sun, g.winner >= 0 && g.winner < 2 ? TEAM_INFO[g.winner].dark : TOY.orange); ctx.restore(); }
+    if (g.winner >= 0 && g.winner < 2) confetti(40, 1);
+  };
+  g.dispose = () => {};
+  return g;
+}
+const TeamGems = makeTeamMode('gems'), TeamZones = makeTeamMode('zones'), TeamBall = makeTeamMode('ball'), TeamTrain = makeTeamMode('train');
+
+const GAMES = { gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -9909,7 +10245,7 @@ function showMsg(html, interactive) {
   if (html) { m.innerHTML = html; m.classList.remove('hidden'); } else m.classList.add('hidden');
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -9946,8 +10282,9 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader · pick your character</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['cup', '🎉 Party'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
+        <div class="row">${[['cup', '🎉 Party'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
+        ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'fight' ? `<div class="row">${[['smash', 'Sky Brawl · FFA'], ['duel', 'Duel · 1v1'], ['tag', 'Tag · 2v2']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         <div class="row">${B('bots', '🤖 Bots ' + (d.bots ? 'ON' : 'OFF'), null, d.bots)}${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}</div>
