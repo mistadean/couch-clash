@@ -3671,7 +3671,14 @@ function setupPadInput() {
 $('#hostBtn').onclick = () => { unlockAudio(); startHost(); };
 $('#joinBtn').onclick = () => startController('');
 if (urlCode) startController(urlCode);
-if (params.has('host')) startHost();
+else if (params.has('host')) startHost();
+else if (!params.has('menu')) {
+  // Auto-pick: no touchscreen (TV, laptop) → host screen; small touchscreen (phone) → join screen; tablets keep the menu.
+  const touch = (navigator.maxTouchPoints || 0) > 0 || matchMedia('(pointer: coarse)').matches;
+  const small = Math.min(screen.width, screen.height) < 600;
+  if (!touch) startHost();
+  else if (small) startController('');
+}
 </script>
 </body>
 </html>
