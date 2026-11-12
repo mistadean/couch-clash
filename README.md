@@ -26,6 +26,12 @@ Every player has a seat colour (P1 red, P2 blue, P3 yellow, P4 green) shown as a
   Joystick moves and aims (↑ = up attacks, ↓ = low attacks). Tap = light, hold + release = heavy, swipe ↑ = jump (double jump),
   swipe ↓ + hold = crouch, swipe toward = dash, swipe away + hold = block, double-tap = special.
 
+- **Racing** (3D kart racing, Sunset Circuit, 3 laps): split-screen for every player on the couch (2 = top/bottom, 3 = quarters with a live track map, 4 = quarters).
+  Turn the phone sideways and tilt it like a steering wheel. Right thumb = gas, left thumb = brake / reverse, hold both = use your item.
+  Items from ? boxes: Turbo, Homing Missile, Goo Slick, Shield, Thunder. Arrow pads boost you; off-road slows you down.
+  Re-centre and Invert buttons on the phone; iPhones need one tap on "Enable tilt steering". No tilt sensor? Drag left/right on GAS.
+  Needs a browser with WebGL (most laptops and recent smart TVs).
+
 Roster (8): Rumble, Nova, Zip, Glorp, Shell (Plasma Shot), Vex (Vanish), Moxie (Pogo Stomp), Frost (Ice Wall).
 
 Keyboard players: WASD + Space (A) + E (B), Arrows + Right Shift (A) + / (B).
