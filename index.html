@@ -199,6 +199,22 @@ html,body{background:var(--sky1)}
 #netBanner{background:var(--coral);border-top:3px solid var(--navy);font-weight:700}
 @media (max-height:520px){#joinForm{gap:8px;padding:10px;overflow:auto;justify-content:flex-start}#joinForm .jlogo{width:auto;height:22vh;margin:0}#joinForm h2{font-size:22px}#joinForm input,#joinGo{padding:9px;font-size:20px}#a2hs{font-size:12px;padding:6px 10px}}
 @media (max-height:520px) and (orientation:landscape){#joinForm{display:grid;grid-template-columns:1fr 1fr;align-content:center;justify-items:center;column-gap:20px}#joinForm .jlogo{grid-row:1 / span 6;align-self:center;height:42vh}#joinForm h2{grid-column:2}#joinForm input,#joinGo,#joinErr,#a2hs{grid-column:2}}
+
+#pad.panelmode #stickZone,#pad.panelmode #btnZone{visibility:hidden}
+#pad.panelmode #rotate{display:none}
+#pad.panelmode #padMsg{top:56px;max-height:calc(100% - 70px);width:min(96%,560px)}
+#padMsg .peek{margin:10px auto;padding:22px 10px;border-radius:18px;background:linear-gradient(#fff,#e8f0ff);color:#1b1f5e;border:4px solid #1b1f5e;box-shadow:0 6px 0 #1b1f5e;user-select:none;-webkit-user-select:none;touch-action:none;max-width:340px}
+#padMsg .peek .word{display:none;font:40px "Lilita One",system-ui}
+#padMsg .peek.show .word{display:block}#padMsg .peek.show .hid{display:none}
+#padMsg .peek .hid{font-size:17px;font-weight:700}
+#padMsg .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#padMsg .vgrid .pbtn{border-width:4px;font-size:17px;padding:12px 8px}
+#padMsg .vgrid .pbtn.on{background:linear-gradient(#ffe27a,#ffc61a)}
+#padMsg .hand{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:10px 0}
+#padMsg .ccard{width:58px;height:84px;border-radius:12px;border:4px solid #fff;outline:3px solid #1b1f5e;box-shadow:0 5px 0 #1b1f5e;display:flex;align-items:center;justify-content:center}
+#padMsg .ccard span{background:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font:24px "Lilita One",system-ui;color:#1b1f5e}
+#padMsg .ccard.dim{opacity:.35;transform:scale(.92)}
+#padMsg .ccdot{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid #fff;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -6355,9 +6371,9 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
-const botTarget = m => MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
+const botTarget = m => m === 'odd' ? 0 : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6599,8 +6615,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'phone', cards: 'phone' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -6609,6 +6625,7 @@ function hostCmd(p, c, v) {
   if (c === 'resume') { setPaused(false, p); return; }
   if (c === 'tag') { if (host.phase === 'play' && host.game && host.game.requestTag) host.game.requestTag(p); return; }
   if (c === 'pick') { if (pickChar(p, +v)) broadcastPhase(); else sendPhase(p); return; }
+  if (c === 'pp') { if (host.phase === 'play' && !host.paused && host.game && host.game.onPick) host.game.onPick(p, v); return; }
   if (leader() !== p) return;
   switch (c) {
     case 'start': if (host.phase === 'lobby') startMatch(); return;
@@ -6657,6 +6674,7 @@ function phaseInfo(p) {
   const G = currentGameDef();
   const msg = { t: 'ph', phase: host.phase, slot: p.slot, color: p.color, name: p.name, leader: leader() === p };
   if (host.game && host.game.teamColor && host.phase !== 'lobby') { const tc = host.game.teamColor(p.slot); if (tc) msg.color = tc; }
+  if (host.game && host.game.panel && host.phase === 'play') { try { msg.panel = host.game.panel(p); } catch (e) { msg.panel = ''; } }
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; msg.buttonB = G.buttonB ? ROSTER[p.char].ability.name : ''; msg.ability = G.buttonB ? ROSTER[p.char].ability : null; }
   const l = leader();
   Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music,
@@ -6706,6 +6724,8 @@ function pollKeys() {
 /* ---------- match flow ---------- */
 function startMatch() {
   if (host.phase !== 'lobby') return;
+  const GM = GAMES[host.mode], phones = active().filter(p => p.kind === 'phone').length;
+  if (GM && GM.minPhones && phones < GM.minPhones) { toast(GM.title + ' needs ' + GM.minPhones + '+ phones (it uses secret screens)'); SFX.bonk && SFX.bonk(); return; }
   const n = humans().length;
   const want = botTarget(host.mode);
   for (let i = 0; i < MAXP && active().length < want; i++) {
@@ -6722,7 +6742,8 @@ function beginGame() {
   const G = GAMES[host.cup[host.cupIndex]];
   active().forEach(p => { p.input = p.kind === 'phone' ? p.input : { x: 0, y: 0, a: false, b: false }; p.prevA = true; p.prevB = true; });
   const max = MODE_MAX[host.cup[host.cupIndex]] || MODE_MAX[host.mode] || 4;
-  const ps = active().slice().sort((a, b) => (a.kind === 'bot') - (b.kind === 'bot') || a.slot - b.slot).slice(0, max).sort((a, b) => a.slot - b.slot);
+  const pool = G.phones ? active().filter(p => p.kind === 'phone' || (G.botsOk && p.kind === 'bot')) : active();
+  const ps = pool.slice().sort((a, b) => (a.kind === 'bot') - (b.kind === 'bot') || a.slot - b.slot).slice(0, max).sort((a, b) => a.slot - b.slot);
   active().forEach(p => p.gs = -1); ps.forEach((p, i) => p.gs = i);
   host.inGame = new Set(ps.map(p => p.slot));
   disposeGame(); host.game = G.create(ps);
@@ -7320,16 +7341,17 @@ function drawLobby() {
   // mode selection
   const cat = MODE_CAT[host.mode] || 'party';
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const cats = [['party', '🎉 Party', 112, host.lastParty || 'cup', TOY.sun], ['arena', '⚔ Arena', 108, 'arena', TOY.grape], ['fight', '🥊 Fight', 108, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Race', 104, 'race', TOY.mint], ['coop', '🤝 Co-op', 116, host.lastCoop || 'raid', TOY.aqua], ['team', '🏆 5v5', 102, host.lastTeam || 'gems', TOY.coral]];
+  const cats = [['party', '🎉 Party', 104, host.lastParty || 'cup', TOY.sun], ['phone', '📱 Phones', 118, host.lastPhone || 'odd', TOY.coral], ['arena', '⚔ Arena', 100, 'arena', TOY.grape], ['fight', '🥊 Fight', 98, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Race', 92, 'race', TOY.mint], ['coop', '🤝 Co-op', 104, host.lastCoop || 'raid', TOY.aqua], ['team', '🏆 5v5', 88, host.lastTeam || 'gems', '#ff8fb5']];
   let bx = 40;
-  for (const [c, label, w, def, col] of cats) { toyButton(bx, 222, w, 54, label, cat === c, () => setMode(def), col, { bounce: cat === c, id: 'cat-' + c, px: 21 }); bx += w + 10; }
+  for (const [c, label, w, def, col] of cats) { toyButton(bx, 222, w, 54, label, cat === c, () => setMode(def), col, { bounce: cat === c, id: 'cat-' + c, px: 18 }); bx += w + 7; }
   const subs = cat === 'party' ? [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]
     : cat === 'fight' ? [['smash', 'Sky Brawl · FFA', 200], ['duel', 'Duel · 1v1', 158], ['tag', 'Tag Team · 2v2', 196]]
     : cat === 'coop' ? [['raid', '👊 Gloom Raid', 190], ['fort', '🏰 Fort Frenzy', 196]]
+    : cat === 'phone' ? [['odd', '🕵 Odd One Out', 200], ['cards', '🃏 Colour Clash', 210]]
     : cat === 'team' ? [['gems', '💎 Gem Grab', 168], ['zones', '🚩 Zones', 140], ['ball', '⚽ Toy Ball', 156], ['train', '🚂 Train', 128]] : [];
   let sx = 40;
-  for (const [m, label, w] of subs) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { if (cat === 'party') host.lastParty = m; else if (cat === 'coop') host.lastCoop = m; else if (cat === 'team') host.lastTeam = m; else host.lastFight = m; setMode(m); }, cat === 'fight' ? TOY.coral : TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
-  const blurb = cat === 'arena' ? 'Top-down brawl · abilities · power-ups' : cat === 'race' ? 'Sunshine Circuit · 3 laps · items · split-screen' : cat === 'coop' ? '' : '';
+  for (const [m, label, w] of subs) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { if (cat === 'party') host.lastParty = m; else if (cat === 'coop') host.lastCoop = m; else if (cat === 'team') host.lastTeam = m; else if (cat === 'phone') host.lastPhone = m; else host.lastFight = m; setMode(m); }, cat === 'fight' ? TOY.coral : TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
+  const blurb = cat === 'phone' ? '' : cat === 'arena' ? 'Top-down brawl · abilities · power-ups' : cat === 'race' ? 'Sunshine Circuit · 3 laps · items · split-screen' : cat === 'coop' ? '' : '';
   if (blurb) { rr(40, 294, 600, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(blurb, 60, 317, 21, TOY.navy, 'left', null); }
   if (host.mode === 'fort') toyButton(452, 294, 150, 44, host.fortEndless ? '♾ Endless' : '8 Waves', !!host.fortEndless, () => { host.fortEndless = !host.fortEndless; lsSet('cc_fort_endless', host.fortEndless ? '1' : ''); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 19, id: 'endless' });
   if (cat === 'arena' || cat === 'fight') toyButton(660, 294, 120, 44, host.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons', host.controls === 'gestures', () => { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 18, id: 'ctl' });
@@ -10554,7 +10576,204 @@ function createTeam(key, players) {
 }
 const TeamGems = makeTeamMode('gems'), TeamZones = makeTeamMode('zones'), TeamBall = makeTeamMode('ball'), TeamTrain = makeTeamMode('train');
 
-const GAMES = { gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   PHONE PARTY: games that use each phone as a private screen.
+   Odd One Out (secret-word social deduction) · Colour Clash (card game with private hands)
+   A game provides panel(p) → HTML shown on that player's phone, and onPick(p, v) for taps.
+   ===================================================================== */
+const ODD_PAIRS = [['Cat', 'Dog'], ['Coffee', 'Tea'], ['Beach', 'Pool'], ['Pizza', 'Burger'], ['Guitar', 'Violin'], ['Football', 'Rugby'], ['Pyjamas', 'Dressing gown'], ['Sushi', 'Dumplings'],
+  ['Bicycle', 'Scooter'], ['Snow', 'Rain'], ['Pirate', 'Viking'], ['Doctor', 'Nurse'], ['Wedding', 'Birthday party'], ['Lion', 'Tiger'], ['Pancake', 'Waffle'], ['Train', 'Tram'],
+  ['Netflix', 'YouTube'], ['Spoon', 'Fork'], ['Toothbrush', 'Hairbrush'], ['Moon', 'Sun'], ['Ghost', 'Zombie'], ['Shark', 'Dolphin'], ['Library', 'Bookshop'], ['Camping', 'Hotel'],
+  ['Chocolate', 'Ice cream'], ['Teacher', 'Principal'], ['Plane', 'Helicopter'], ['Superman', 'Batman'], ['Dancing', 'Singing'], ['Rollercoaster', 'Ferris wheel'], ['Honey', 'Jam'],
+  ['Barbecue', 'Picnic'], ['Lemon', 'Lime'], ['Cinema', 'Theatre'], ['Pillow', 'Blanket'], ['Volcano', 'Earthquake'], ['Kangaroo', 'Koala'], ['Mirror', 'Window'], ['Gym', 'Yoga'],
+  ['Christmas', 'Easter'], ['Robot', 'Alien'], ['Cake', 'Pie'], ['Selfie', 'Group photo'], ['Socks', 'Gloves'], ['Bus', 'Taxi'], ['Wizard', 'Witch'], ['Chips', 'Popcorn'],
+  ['Hospital', 'Pharmacy'], ['Penguin', 'Seal'], ['Laptop', 'Tablet'], ['Castle', 'Palace'], ['Fireworks', 'Bonfire'], ['Bee', 'Wasp'], ['Lipstick', 'Nail polish'], ['Island', 'Desert']];
+const PHONE_CSS_HINT = 'Phones only';
+const OddOneOut = {
+  title: 'Odd One Out', accent: '#b48cff', phones: true, minPhones: 3, noBots: true, panelGame: true,
+  how: 'Everyone gets a secret word on their phone, but one player has a slightly different word, and they don\'t know it! Take turns saying ONE clue out loud, then vote on your phone for who you think is the odd one out.',
+  create(players) {
+    const g = { t: 0, done: false, panelGame: true, ps: [], state: 'deal', stateT: 4, turn: -1, order: [], round: 1, votes: {}, reveal: null, winner: null, endT: 0, log: '' };
+    const pair = ODD_PAIRS[Math.floor(Math.random() * ODD_PAIRS.length)], flip = Math.random() < 0.5, civW = flip ? pair[1] : pair[0], oddW = flip ? pair[0] : pair[1];
+    const n = players.length, nOdd = n >= 7 ? 2 : 1, idx = players.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, nOdd);
+    players.forEach((p, i) => g.ps.push({ p, odd: idx.includes(i), word: idx.includes(i) ? oddW : civW, out: false, spoke: false, votesGot: 0 }));
+    const alive = () => g.ps.filter(o => !o.out), find = p => g.ps.find(o => o.p === p);
+    function refresh() { broadcastPhase(); }
+    function startClues() { g.state = 'clue'; g.order = alive().map(o => o); const s = Math.floor(Math.random() * g.order.length); g.order = g.order.slice(s).concat(g.order.slice(0, s)); g.turn = 0; g.stateT = 25; g.ps.forEach(o => o.spoke = false); SFX.go(); refresh(); }
+    function nextSpeaker() { const cur = g.order[g.turn]; if (cur) cur.spoke = true; g.turn++; if (g.turn >= g.order.length) { g.state = 'vote'; g.votes = {}; g.stateT = 40; SFX.beep(); } else { g.stateT = 25; SFX.click(); } refresh(); }
+    function tally() {
+      const counts = new Map(); for (const k in g.votes) { const o = g.votes[k]; counts.set(o, (counts.get(o) || 0) + 1); }
+      g.ps.forEach(o => o.votesGot = counts.get(o) || 0);
+      const max = Math.max(0, ...counts.values()), top = [...counts].filter(([, c]) => c === max).map(([o]) => o);
+      if (!max || top.length > 1) { g.reveal = { tie: true }; } else { const o = top[0]; o.out = true; g.reveal = { o }; o.odd ? SFX.cheer() : SFX.out(); }
+      g.state = 'reveal'; g.stateT = 6; refresh();
+    }
+    function checkEnd() {
+      const a = alive(), odd = a.filter(o => o.odd).length, civ = a.length - odd;
+      if (odd === 0) return 'civ'; if (civ <= odd) return 'odd'; return null;
+    }
+    g.update = dt => {
+      g.t += dt; if (g.winner) { g.endT += dt; if (g.endT > 9) g.done = true; return; }
+      g.stateT -= dt;
+      if (g.state === 'deal' && g.stateT <= 0) startClues();
+      else if (g.state === 'clue' && g.stateT <= 0) nextSpeaker();
+      else if (g.state === 'vote' && (g.stateT <= 0 || alive().every(o => g.votes[o.p.slot]))) tally();
+      else if (g.state === 'reveal' && g.stateT <= 0) { const w = checkEnd(); if (w) { g.winner = w; g.state = 'end'; SFX.win(); SFX.cheer(); refresh(); } else { g.round++; startClues(); } }
+    };
+    g.onPick = (p, v) => { const me = find(p); if (!me || me.out) return;
+      if (g.state === 'clue' && v === 'done' && g.order[g.turn] === me) nextSpeaker();
+      else if (g.state === 'vote' && typeof v === 'number') { const tgt = g.ps.find(o => o.p.slot === v); if (tgt && !tgt.out && tgt !== me) { g.votes[p.slot] = tgt; SFX.pop(); refresh(); } } };
+    g.panel = p => { const me = find(p); if (!me) return '<b>👀 Watching</b>This game is played on phones.';
+      const card = `<div class="peek" onpointerdown="this.classList.add('show')" onpointerup="this.classList.remove('show')" onpointerleave="this.classList.remove('show')" onpointercancel="this.classList.remove('show')"><span class="hid">👆 Hold to see your secret word</span><span class="word">${esc(me.word)}</span></div>`;
+      if (g.state === 'end') { const civW2 = g.ps.find(o => !o.odd).word; return `<b>${g.winner === 'civ' ? '🎉 The group wins!' : '🕵 The odd one out wins!'}</b>You were ${me.odd ? '<b style="display:inline;color:#ff9aab">the odd one out</b>' : 'with the group'}.<div class="small">Group word: ${esc(civW2)} · Odd word: ${esc(oddW)}</div>`; }
+      if (me.out) return `<b>You're out</b>${me.odd ? 'You were the odd one out! 🕵' : 'You were with the group.'}<div class="small">Watch the TV and don't give anything away 🤐</div>`;
+      if (g.state === 'deal') return `<b>🤫 Your secret word</b>${card}<div class="small">Don't show anyone. One player has a different word, and it might be you!</div>`;
+      if (g.state === 'clue') { const cur = g.order[g.turn];
+        return cur === me ? `<b>🎤 Your turn!</b>Say <b style="display:inline">one word or a short clue</b> about your word out loud.${card}<button class="pbtn big go" data-c="pp" data-v="done">Done ✓</button>`
+          : `<b>Listen to ${esc(cur ? cur.p.name : '')}</b>${card}<div class="small">Think about whose clue doesn't quite fit…</div>`; }
+      if (g.state === 'vote') { const mine = g.votes[p.slot];
+        return `<b>🗳 Who's the odd one out?</b>${card}<div class="vgrid">${alive().filter(o => o !== me).map(o => `<button class="pbtn${mine === o ? ' on' : ''}" data-c="pp" data-v="${o.p.slot}" style="border-color:${o.p.color}">${esc(o.p.name)}${mine === o ? ' ✓' : ''}</button>`).join('')}</div><div class="small">${mine ? 'Vote locked in. Tap another name to change it.' : 'Tap a name.'}</div>`; }
+      if (g.state === 'reveal') return `<b>Look at the TV 📺</b>${card}`;
+      return card; };
+    g.ranking = () => { const win = o => g.winner === 'civ' ? !o.odd : o.odd; return g.ps.slice().sort((a, b) => win(b) - win(a) || a.out - b.out).map(o => o.p.slot); };
+    Object.defineProperty(g, 'pointTable', { get: () => { const nw = g.ps.filter(o => g.winner === 'civ' ? !o.odd : o.odd).length; return g.ps.map((_, i) => i < nw ? (g.winner === 'odd' ? 5 : 3) : 0); } });
+    g.resultLine = () => g.winner === 'civ' ? '🎉 The group found the odd one out!' : '🕵 The odd one out got away with it!';
+    g.bot = () => {};
+    // ---------- TV ----------
+    g.draw = () => {
+      skyScene({ hills: true });
+      const list = g.ps, cols = Math.min(list.length, 5), rows = Math.ceil(list.length / 5), cw = 200, chh = 150;
+      headline('ODD ONE OUT', W / 2, 62, 50, '#fff', '#8a5cff');
+      const sub = g.state === 'deal' ? 'Check your phone for your secret word 🤫' : g.state === 'clue' ? `Round ${g.round} · say ONE clue out loud` : g.state === 'vote' ? 'Vote on your phone! Who has the different word?' : g.state === 'reveal' ? 'The votes are in…' : '';
+      toyText(sub, W / 2, 110, 24, '#fff', 'center', TOY.navy);
+      list.forEach((o, i) => { const r = Math.floor(i / 5), inRow = Math.min(5, list.length - r * 5), x = W / 2 - (inRow * (cw + 16) - 16) / 2 + (i % 5) * (cw + 16), y = 150 + r * (chh + 16) + (rows === 1 ? 70 : 0);
+        const speaking = g.state === 'clue' && g.order[g.turn] === o, voted = g.state === 'vote' && g.votes[o.p.slot];
+        ctx.save(); if (o.out) ctx.globalAlpha = 0.45;
+        toyPanel(x, y, cw, chh, 22, speaking ? '#fff6d6' : '#ffffff', speaking ? 10 : 6, speaking ? TOY.sun : null);
+        drawCritter(x + cw / 2, y + 62, 34, o.p.char, { noShadow: true, happy: speaking, anim: speaking ? 'victory' : 'idle', squash: speaking ? Math.sin(host.t * 8) * 0.04 : 0 });
+        toyText(o.p.name, x + cw / 2, y + 120, 22, o.p.color, 'center', TOY.navy);
+        if (speaking) { toyText('🎤 ' + Math.ceil(g.stateT), x + cw - 30, y + 24, 20, TOY.coral, 'center', TOY.navy); }
+        if (o.spoke && g.state === 'clue') toyText('✓', x + 24, y + 24, 24, TOY.mint, 'center', TOY.navy);
+        if (voted) toyText('🗳', x + 24, y + 24, 22, '#fff', 'center', null);
+        if (g.state === 'reveal' && o.votesGot) { rr(x + cw - 50, y + 8, 42, 30, 15); ctx.fillStyle = TOY.coral; ctx.fill(); toyText(o.votesGot, x + cw - 29, y + 24, 20, '#fff', 'center', TOY.navy); }
+        if (o.out) toyText(o.odd ? '🕵 ODD!' : 'Group', x + cw / 2, y + 144, 16, o.odd ? TOY.coral : '#6a76b8', 'center', null);
+        ctx.restore(); });
+      if (g.state === 'vote') { toyText('⏱ ' + Math.ceil(g.stateT) + 's  ·  ' + Object.keys(g.votes).length + ' / ' + alive().length + ' voted', W / 2, H - 50, 26, '#fff', 'center', TOY.navy); }
+      if (g.state === 'reveal' && g.reveal) { const age = 6 - g.stateT; ctx.fillStyle = `rgba(27,31,94,${Math.min(0.6, age)})`; ctx.fillRect(0, 0, W, H);
+        if (age > 0.6) { if (g.reveal.tie) { headline("IT'S A TIE!", W / 2, H / 2 - 20, 70, TOY.sun, TOY.orange); toyText('Nobody is out. Another round of clues!', W / 2, H / 2 + 50, 28, '#fff', 'center', TOY.navy); }
+          else { const o = g.reveal.o; toyText(o.p.name + ' was…', W / 2, H / 2 - 90, 36, '#fff', 'center', TOY.navy);
+            if (age > 2) { headline(o.odd ? 'THE ODD ONE OUT!' : 'WITH THE GROUP', W / 2, H / 2, 66, o.odd ? TOY.sun : '#cfd6ff', o.odd ? TOY.coral : '#6a76b8'); if (o.odd) confetti(30, 1); } } } }
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(27,31,94,.6)'; ctx.fillRect(0, 0, W, H);
+        headline(g.winner === 'civ' ? 'THE GROUP WINS!' : 'THE ODD ONE OUT WINS!', W / 2, 470, 64, TOY.sun, TOY.orange);
+        toyText('Group word: ' + civW + '    ·    Odd word: ' + oddW, W / 2, 545, 32, '#fff', 'center', TOY.navy);
+        toyText('Odd one out: ' + g.ps.filter(o => o.odd).map(o => o.p.name).join(' & '), W / 2, 600, 30, TOY.sun, 'center', TOY.navy); confetti(40, 1); }
+    };
+    return g;
+  },
+};
+/* ---------- Colour Clash: shed your hand by matching colour or symbol ---------- */
+const CC_COLS = [['red', '#ff5a6e'], ['yellow', '#ffc61a'], ['green', '#3ccf6e'], ['blue', '#2fa8ff']];
+const CC_LABEL = { skip: '⊘', rev: '⇄', d2: '+2', wild: '★', w4: '+4' };
+function ccCardHTML(c, i, playable) {
+  const bg = c.c >= 0 ? CC_COLS[c.c][1] : 'conic-gradient(#ff5a6e 0 25%,#ffc61a 0 50%,#3ccf6e 0 75%,#2fa8ff 0)';
+  return `<button class="ccard${playable ? '' : ' dim'}" data-c="pp" data-v="c${i}" style="background:${bg}"${playable ? '' : ' disabled'}><span>${CC_LABEL[c.v] || c.v}</span></button>`;
+}
+const ColourClash = {
+  title: 'Colour Clash', accent: '#ff5a6e', phones: true, minPhones: 2, botsOk: true, panelGame: true,
+  how: 'Your hand is on your phone. Play a card that matches the colour or symbol on the pile. ⊘ skips, ⇄ reverses, +2 makes the next player draw. ★ cards change the colour. First to empty their hand wins!',
+  create(players) {
+    const deck = [], g = { t: 0, done: false, panelGame: true, hands: [], pile: [], col: 0, turn: 0, dir: 1, turnT: 30, wildFor: null, drew: null, winner: null, endT: 0, msg: 'Match the colour or symbol!', msgT: 3, flash: 0 };
+    for (let c = 0; c < 4; c++) { deck.push({ c, v: 0 }); for (let k = 0; k < 2; k++) { for (let v = 1; v <= 9; v++) deck.push({ c, v }); for (const v of ['skip', 'rev', 'd2']) deck.push({ c, v }); } }
+    for (let k = 0; k < 4; k++) { deck.push({ c: -1, v: 'wild' }); deck.push({ c: -1, v: 'w4' }); }
+    const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    shuffle(deck);
+    const draw = () => { if (!deck.length) { const top = g.pile.pop(); deck.push(...shuffle(g.pile.map(c => (c.v === 'wild' || c.v === 'w4' ? { c: -1, v: c.v } : c)))); g.pile = [top]; } return deck.pop(); };
+    players.forEach(p => g.hands.push({ p, cards: Array.from({ length: 7 }, draw), said: false }));
+    let first = draw(); while (first.c < 0) { deck.unshift(first); first = draw(); } g.pile.push(first); g.col = first.c;
+    const cur = () => g.hands[g.turn], top = () => g.pile[g.pile.length - 1];
+    const playable = c => c.c < 0 || c.c === g.col || c.v === top().v;
+    function refresh() { broadcastPhase(); }
+    function say(m) { g.msg = m; g.msgT = 3; }
+    function advance(steps = 1) { const n = g.hands.length; g.turn = ((g.turn + g.dir * steps) % n + n) % n; g.turnT = 30; g.drew = null; g.wildFor = null; refresh(); }
+    function play(h, i) {
+      const c = h.cards[i]; if (!c || !playable(c)) return false;
+      if (g.drew && g.drew !== c) return false;
+      h.cards.splice(i, 1); g.pile.push(c); SFX.pop(); g.flash = 0.4; burst(W / 2, H / 2 - 20, c.c >= 0 ? CC_COLS[c.c][1] : '#fff', 14, 260, 6, 0.5);
+      if (h.cards.length === 0) { g.winner = h; SFX.win(); SFX.cheer(); say(h.p.name + ' wins!'); refresh(); return true; }
+      if (h.cards.length === 1) { say(h.p.name + ': LAST CARD!'); SFX.beep(); }
+      if (c.c < 0) { if (h.p.kind === 'bot') { finishWild(h, botColour(h)); } else { g.wildFor = h; g.turnT = 20; refresh(); } return true; }
+      g.col = c.c; effect(h, c); return true;
+    }
+    function effect(h, c) {
+      const n = g.hands.length, nextI = ((g.turn + g.dir) % n + n) % n, next = g.hands[nextI];
+      if (c.v === 'skip') { say(next.p.name + ' is skipped!'); advance(2); }
+      else if (c.v === 'rev') { if (n === 2) { say(next.p.name + ' is skipped!'); advance(2); } else { g.dir *= -1; say('Reverse!'); advance(1); } }
+      else if (c.v === 'd2') { next.cards.push(draw(), draw()); say(next.p.name + ' draws 2 and is skipped!'); buzz(next.p, 120); advance(2); }
+      else if (c.v === 'w4') { next.cards.push(draw(), draw(), draw(), draw()); say(next.p.name + ' draws 4 and is skipped!'); buzz(next.p, 160); advance(2); }
+      else advance(1);
+    }
+    function finishWild(h, col) { g.col = col; g.wildFor = null; say(h.p.name + ' picked ' + CC_COLS[col][0].toUpperCase()); effect(h, top()); }
+    function botColour(h) { const n = [0, 0, 0, 0]; for (const c of h.cards) if (c.c >= 0) n[c.c]++; return n.indexOf(Math.max(...n)); }
+    function drawTurn(h) { if (g.drew) { say(h.p.name + ' passes'); advance(1); return; } const c = draw(); h.cards.push(c); SFX.click(); if (playable(c)) { g.drew = c; g.turnT = 15; say(h.p.name + ' drew a card…'); refresh(); } else { say(h.p.name + ' drew a card'); advance(1); } }
+    g.update = dt => {
+      g.t += dt; g.flash = Math.max(0, g.flash - dt); if (g.msgT > 0) g.msgT -= dt;
+      if (g.winner) { g.endT += dt; if (g.endT > 4) g.done = true; return; }
+      const h = cur(); g.turnT -= dt;
+      if (h.p.kind === 'bot' && g.turnT < 28.6) { // bots think for a moment
+        const i = h.cards.findIndex(c => playable(c) && (!g.drew || c === g.drew) && c.c >= 0) >= 0 ? h.cards.findIndex(c => playable(c) && (!g.drew || c === g.drew) && c.c >= 0) : h.cards.findIndex(c => playable(c) && (!g.drew || c === g.drew));
+        if (i >= 0) play(h, i); else drawTurn(h); return; }
+      if (g.turnT <= 0) { if (g.wildFor) finishWild(h, botColour(h)); else drawTurn(h); }
+    };
+    g.onPick = (p, v) => { const h = cur(); if (!h || h.p !== p || g.winner) return;
+      if (g.wildFor === h && typeof v === 'string' && v[0] === 'w') { finishWild(h, +v.slice(1)); return; }
+      if (g.wildFor) return;
+      if (v === 'draw') { drawTurn(h); return; }
+      if (typeof v === 'string' && v[0] === 'c') play(h, +v.slice(1)); };
+    g.panel = p => { const h = g.hands.find(o => o.p === p); if (!h) return '<b>👀 Watching</b>This game is played on phones.';
+      if (g.winner) return `<b>${g.winner === h ? '🏆 You win!' : esc(g.winner.p.name) + ' wins!'}</b>${h.cards.length ? 'You had ' + h.cards.length + ' card' + (h.cards.length === 1 ? '' : 's') + ' left.' : ''}`;
+      const mine = cur() === h, colDot = `<span class="ccdot" style="background:${CC_COLS[g.col][1]}"></span>`;
+      if (mine && g.wildFor === h) return `<b>Pick a colour</b><div class="vgrid">${CC_COLS.map(([n, c], i) => `<button class="pbtn ccol" data-c="pp" data-v="w${i}" style="background:${c};color:#fff">${n.toUpperCase()}</button>`).join('')}</div>`;
+      const cards = h.cards.map((c, i) => ccCardHTML(c, i, mine && playable(c) && (!g.drew || c === g.drew))).join('');
+      return `<b>${mine ? '⭐ Your turn!' : 'Waiting for ' + esc(cur().p.name)}</b><div class="small" style="opacity:1">Colour ${colDot} · ${h.cards.length} cards</div><div class="hand">${cards}</div>` +
+        (mine ? `<button class="pbtn big${g.drew ? '' : ' go'}" data-c="pp" data-v="draw">${g.drew ? 'Keep it & pass' : 'Draw a card'}</button>` : ''); };
+    g.ranking = () => g.hands.slice().sort((a, b) => (b === g.winner) - (a === g.winner) || a.cards.length - b.cards.length).map(h => h.p.slot);
+    g.resultLine = () => g.winner ? '🃏 ' + g.winner.p.name + ' emptied their hand first!' : '';
+    g.bot = () => {};
+    // ---------- TV ----------
+    function bigCard(x, y, c, s = 1, rot = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+      ctx.fillStyle = 'rgba(20,30,70,.3)'; rr(-56, -78, 120, 168, 16); ctx.fill();
+      rr(-60, -84, 120, 168, 16); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      if (c.c >= 0) { rr(-50, -74, 100, 148, 12); ctx.fillStyle = CC_COLS[c.c][1]; ctx.fill(); } else { CC_COLS.forEach(([, col], i) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 70, i * Math.PI / 2, (i + 1) * Math.PI / 2); ctx.closePath(); ctx.fill(); }); }
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, 0, 40, 56, 0.5, 0, 7); ctx.fill();
+      toyText(CC_LABEL[c.v] || String(c.v), 0, 4, 54, c.c >= 0 ? CC_COLS[c.c][1] : TOY.navy, 'center', TOY.navy); ctx.restore(); }
+    function cardBack(x, y, s, rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); rr(-60, -84, 120, 168, 16); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.stroke(); rr(-44, -68, 88, 136, 10); ctx.strokeStyle = TOY.sun; ctx.lineWidth = 4; ctx.stroke(); toyText('★', 0, 2, 50, TOY.sun, 'center', TOY.navy); ctx.restore(); }
+    g.draw = () => {
+      ctx.fillStyle = '#1f7a4c'; ctx.fillRect(0, 0, W, H); const gr = ctx.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, 700); gr.addColorStop(0, '#3fbf74'); gr.addColorStop(1, '#16603a'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(W / 2, H / 2 + 10, 520, 280, 0, 0, 7); ctx.stroke();
+      // pile and deck
+      const pc = g.pile.slice(-4); pc.forEach((c, i) => bigCard(W / 2 + 20 + (i - pc.length + 1) * 6, H / 2 + 6, c, 1 + (i === pc.length - 1 ? g.flash * 0.3 : 0), ((i * 37) % 9 - 4) * 0.04));
+      for (let k = 0; k < 4; k++) cardBack(W / 2 - 170 - k * 2, H / 2 + 6 - k * 2, 0.85, -0.05);
+      ctx.strokeStyle = CC_COLS[g.col][1]; ctx.lineWidth = 12; ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(W / 2 + 20, H / 2 + 6, 125, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+      // direction arrows
+      ctx.save(); ctx.translate(W / 2 + 20, H / 2 + 6); ctx.rotate(g.t * 0.6 * g.dir); for (let k = 0; k < 3; k++) { ctx.rotate(Math.PI * 2 / 3); toyText(g.dir > 0 ? '➜' : '⬅', 0, -148, 26, '#fff', 'center', TOY.navy); } ctx.restore();
+      // players round the table
+      const n = g.hands.length;
+      g.hands.forEach((h, i) => { const a = Math.PI / 2 + (i / n) * Math.PI * 2, x = W / 2 + Math.cos(a) * 520, y = H / 2 + 10 + Math.sin(a) * 270, me = cur() === h && !g.winner;
+        rr(x - 92, y - 46, 184, 92, 24); ctx.fillStyle = me ? '#fff6d6' : 'rgba(255,255,255,.9)'; ctx.fill(); ctx.lineWidth = me ? 7 : 4; ctx.strokeStyle = me ? TOY.sun : TOY.navy; ctx.stroke();
+        drawCritter(x - 52, y - 4, 28, h.p.char, { noShadow: true, happy: me, anim: me ? 'victory' : 'idle' });
+        toyText(h.p.name, x + 26, y - 18, 20, h.p.color, 'center', TOY.navy);
+        const k = Math.min(10, h.cards.length); for (let j = 0; j < k; j++) { rr(x - 8 + j * 7, y + 2, 16, 24, 4); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); }
+        toyText(h.cards.length, x + 72, y + 14, 20, h.cards.length === 1 ? TOY.coral : TOY.navy, 'center', null);
+        if (me) toyText('⏱ ' + Math.ceil(g.turnT), x, y - 62, 18, '#fff', 'center', TOY.navy); });
+      if (g.msgT > 0) { ctx.globalAlpha = Math.min(1, g.msgT * 2); toyText(g.msg, W / 2, H / 2 - 150, 30, '#fff', 'center', TOY.navy); ctx.globalAlpha = 1; }
+      headline('COLOUR CLASH', W / 2, 40, 34, '#fff', TOY.coral);
+      if (g.winner) { headline(g.winner.p.name.toUpperCase() + ' WINS!', W / 2, H / 2 - 150, 64, TOY.sun, TOY.orange); confetti(50, 1); }
+    };
+    return g;
+  },
+};
+
+const GAMES = { odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -10630,7 +10849,7 @@ function lostHost() {
 function banner(m) { const b = $('#netBanner'); if (m) { b.textContent = m; b.classList.remove('hidden'); } else b.classList.add('hidden'); }
 function onHostMsg(d) {
   if (!d || typeof d !== 'object') return;
-  if (d.t === 'full') { $('#joinErr').textContent = 'That room is full (4 players).'; $('#joinGo').disabled = false; return; }
+  if (d.t === 'full') { $('#joinErr').textContent = 'That room is full (10 players).'; $('#joinGo').disabled = false; return; }
   if (d.t === 'wait') { enterPad(); showMsg('<b>Game in progress</b>You will join when this round ends.'); return; }
   if (d.t === 'buzz') { try { navigator.vibrate && navigator.vibrate(d.ms); } catch (e) {} return; }
   if (d.t === 'cd') { ctl.cdStart = performance.now(); ctl.cdEnd = ctl.cdStart + (+d.ms || 0); return; }
@@ -10647,7 +10866,7 @@ function showMsg(html, interactive) {
   if (html) { m.innerHTML = html; m.classList.remove('hidden'); } else m.classList.add('hidden');
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -10673,6 +10892,7 @@ function renderPad() {
   if (racing && d.phase !== ctl.racePh) { raceCalibrate(); if (d.phase === 'intro') { raceItem(null); $('#rPos').textContent = 'Get ready…'; } } // re-centre at intro and again at the green light
   ctl.racePh = racing ? d.phase : (d.paused ? ctl.racePh : ''); if (!racing) raceRelease();
   $('#pauseBtn').classList.toggle('hidden', !inGame || d.paused);
+  const panelUI = !!d.panel && d.phase === 'play' && !d.paused; $('#pad').classList.toggle('panelmode', panelUI);
   const B = (c, label, v, on, cls = '') => `<button class="pbtn${on ? ' on' : ''} ${cls}" data-c="${c}"${v != null ? ` data-v="${v}"` : ''}>${label}</button>`;
   let hint = '', html = '', inter = true;
   if (d.paused) {
@@ -10684,8 +10904,9 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader · pick your character</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['cup', '🎉 Party'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
+        <div class="row">${[['cup', '🎉 Party'], ['odd', '📱 Phones'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
+        ${MODE_CAT[d.mode] === 'phone' ? `<div class="row">${[['odd', '🕵 Odd One Out'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'fight' ? `<div class="row">${[['smash', 'Sky Brawl · FFA'], ['duel', 'Duel · 1v1'], ['tag', 'Tag · 2v2']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
@@ -10706,6 +10927,7 @@ function renderPad() {
       (d.ability ? `<div class="small" style="opacity:1">★ Your special: <b style="display:inline;font-size:14px">${esc(d.ability.name)}</b>: ${esc(d.ability.desc)}</div>` : '');
   } else if (d.phase === 'intro' && d.race) { hint = d.title + ' · hold phone sideways'; inter = false; html = '';
   } else if (d.phase === 'intro') { hint = d.title; inter = false; html = `<b>${esc(d.title)}</b>${esc(d.how)}` + (d.ability ? `<div class="small" style="opacity:1;margin-top:8px">🅱 <b style="display:inline;font-size:15px">${esc(d.ability.name)}</b>: ${esc(d.ability.desc)}</div>` : ''); }
+  else if (d.phase === 'play' && d.panel) { hint = d.title; html = d.panel; }
   else if (d.phase === 'play') { hint = d.title + ' · Go!'; inter = false; }
   else if (d.phase === 'results') { hint = 'Results'; html = '<b>Look at the TV 📺</b>' + (d.leader ? B('skip', 'Next ▶', null, true, 'big') : ''); }
   else if (d.phase === 'podium') { hint = 'Cup over'; html = '<b>Cup over! 🏆</b>Check the podium on the TV.' + (d.leader ? B('skip', 'Back to lobby ▶', null, true, 'big') : ''); }
