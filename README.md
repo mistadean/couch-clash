@@ -13,6 +13,9 @@ Modes:
 - **Party Cup**: Goal Guard, Ice Sumo and Tile Takeover back to back (or play any one on its own).
 - **Battle Arena**: floating-platform brawl. A = punch, B = character ability. Stats matter: speed, power, weight.
   Rumble: Horn Charge · Nova: Warp Step · Zip: Jet Burst · Glorp: Goo Trap. 3 lives, last one standing.
+  Controls (switch in the lobby): **Gestures** (default): the right half of the phone is one gesture pad, no need to look:
+  tap = jab · hold + release = heavy · swipe ↑ = jump · swipe ↓ + hold = block · swipe ← → = dash attack · double-tap = special ·
+  jab, jab, heavy = combo. Or **Buttons**: A = punch, B = special.
 
 Keyboard players: WASD + Space (A) + E (B), Arrows + Right Shift (A) + / (B).
 
