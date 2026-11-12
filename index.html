@@ -2480,6 +2480,8 @@ const COLORS = ROSTER.map(c => c.color), DARKS = ROSTER.map(c => c.dark);
 const CRITTER_NAMES = ROSTER.map(c => c.name), CATCHPHRASES = ROSTER.map(c => c.catchphrase);
 const BOT_NAMES = CRITTER_NAMES;
 const ART_URL = i => 'assets/' + ROSTER[i].art;
+/* Player (seat) colours: identity for gameplay + rings, independent of character art. */
+const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f', '#b8900a'], ['#4ee07a', '#1f9a47']];
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -2755,12 +2757,12 @@ function cleanName(n) { return String(n || '').replace(/[^\p{L}\p{N} _\-!.']/gu,
 
 function makePlayer(slot, kind, name) {
   const ci = freeChars()[0] ?? 0;
-  return { slot, kind, name, char: ci, color: ROSTER[ci].color, dark: ROSTER[ci].dark, pid: '', conn: null, connected: true,
+  return { slot, kind, name, char: ci, color: PLAYER_COLORS[slot][0], dark: PLAYER_COLORS[slot][1], pid: '', conn: null, connected: true,
     input: { x: 0, y: 0, a: false, b: false }, prevA: false, prevB: false, aDown: false, aUp: false, bDown: false, cupPts: 0, keyset: null };
 }
 const humans = () => host.players.filter(p => p && p.kind !== 'bot');
 function freeChars() { const used = new Set(host.players.filter(Boolean).map(p => p.char)); return ROSTER.map((_, i) => i).filter(i => !used.has(i)); }
-function setChar(p, ci) { p.char = ci; p.color = ROSTER[ci].color; p.dark = ROSTER[ci].dark; }
+function setChar(p, ci) { p.char = ci; } // colour stays tied to the seat (P1 red, P2 blue, P3 yellow, P4 green)
 function pickChar(p, ci) {
   if (host.phase !== 'lobby' || !(ci >= 0 && ci < ROSTER.length) || p.char === ci) return false;
   if (host.players.some(q => q && q !== p && q.char === ci)) return false;
@@ -2969,12 +2971,21 @@ function loadCritterArt() {
 
 /* A critter: outlined cartoon blob with feet, shading, blinking eyes, expressions and a slot accessory.
    o: fx, fy (facing), squash, alpha, noShadow, walk (phase), dizzy, ouch, happy, fierce */
+function drawRing(x, fy, r, col) {
+  const rx = r * 1.1, ry = r * 0.36, pulse = 0.85 + Math.sin(host.t * 4) * 0.15;
+  ctx.save();
+  ctx.fillStyle = col; ctx.globalAlpha *= 0.22; ctx.beginPath(); ctx.ellipse(x, fy, rx, ry, 0, 0, 7); ctx.fill();
+  ctx.globalAlpha /= 0.22; ctx.lineWidth = Math.max(3, r * 0.11); ctx.strokeStyle = '#14112b'; ctx.beginPath(); ctx.ellipse(x, fy, rx, ry, 0, 0, 7); ctx.stroke();
+  ctx.lineWidth = Math.max(2, r * 0.07) * pulse; ctx.strokeStyle = col; ctx.stroke();
+  ctx.restore();
+}
 function drawCritter(x, y, r, ci, o = {}) {
   const C = ROSTER[ci] || ROSTER[0], slot = C.fallback, col = C.color, dark = C.dark, light = C.light;
   const fx = clamp(o.fx || 0, -1, 1), fy = clamp(o.fy || 0, -1, 1);
   ctx.save();
   ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
   if (!o.noShadow) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y + r * 0.98, r * 0.92, r * 0.3, 0, 0, 7); ctx.fill(); }
+  if (o.ring) drawRing(x, y + r * 0.95, r, o.ring);
   ctx.translate(x, y);
   const sq = o.squash || 0; ctx.scale(1 + sq, 1 - sq);
   const img = CRIT_IMG[ci];
@@ -3069,9 +3080,12 @@ function drawCritter(x, y, r, ci, o = {}) {
   ctx.restore();
 }
 function nameTag(p, x, y) {
-  font(16); const w = ctx.measureText(p.name).width + 16;
-  rr(x - w / 2, y - 11, w, 22, 11); ctx.fillStyle = 'rgba(10,6,30,.7)'; ctx.fill();
-  text(p.name, x, y + 1, 16, p.color);
+  const lab = 'P' + (p.slot + 1);
+  font(16); const nw = ctx.measureText(p.name).width, w = nw + 46;
+  rr(x - w / 2, y - 12, w, 24, 12); ctx.fillStyle = 'rgba(10,6,30,.78)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = p.color; ctx.stroke();
+  rr(x - w / 2 + 3, y - 9, 26, 18, 9); ctx.fillStyle = p.color; ctx.fill();
+  text(lab, x - w / 2 + 16, y + 1, 12, '#14112b');
+  text(p.name, x + 13, y + 1, 16, '#fff');
 }
 function hearts(x, y, n, max, col, align = 'center', size = 14) {
   const gap = size * 1.5, total = (max - 1) * gap;
@@ -3194,11 +3208,12 @@ function drawLobby() {
   for (let i = 0; i < 4; i++) {
     const p = host.players[i], x = cx0 + i * (cw + gap), ci = p ? p.char : spare[sp++] ?? 0, col = ROSTER[ci].color;
     rr(x, cy0, cw, chh, 22); ctx.fillStyle = p ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = p ? col : 'rgba(255,255,255,.12)'; ctx.setLineDash(p ? [] : [10, 8]); rr(x, cy0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineWidth = 4; ctx.strokeStyle = p ? p.color : 'rgba(255,255,255,.12)'; ctx.setLineDash(p ? [] : [10, 8]); rr(x, cy0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
     const bob = p ? Math.sin(host.t * 4 + i) * 4 : 0;
-    drawCritter(x + 64, cy0 + 88 + bob, 40, ci, { alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
+    drawCritter(x + 64, cy0 + 88 + bob, 40, ci, { ring: p ? p.color : null, alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
     if (p) {
-      text(p.name, x + 120, cy0 + 58, 28, col, 'left');
+      rr(x + 12, cy0 + 12, 38, 26, 13); ctx.fillStyle = p.color; ctx.fill(); text('P' + (i + 1), x + 31, cy0 + 26, 15, '#14112b');
+      text(p.name, x + 120, cy0 + 58, 28, p.color, 'left');
       text('as ' + ROSTER[ci].name + ' · ' + ROSTER[ci].role, x + 120, cy0 + 86, 15, 'rgba(255,255,255,.55)', 'left', 600);
       const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Reconnecting') : '⌨ ' + p.keyset.label;
       text(dev, x + 120, cy0 + 114, 17, 'rgba(255,255,255,.7)', 'left', 500);
@@ -3293,7 +3308,7 @@ function drawPodium() {
     rr(s.x - 110, top, 220, s.h + 100, 16); ctx.fillStyle = i === 0 ? '#ffcc33' : 'rgba(255,255,255,.18)'; ctx.fill();
     text(String(i + 1), s.x, top + 46, 48, i === 0 ? '#14112b' : '#fff');
     const r = i === 0 ? 62 : 46;
-    drawCritter(s.x, top - r - 10 + (i === 0 ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0 });
+    drawCritter(s.x, top - r - 10 + (i === 0 ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0, ring: p.color });
     if (i === 0) { // crown
       const art = CRIT_IMG[p.char] && CRIT_IMG[p.char].naturalWidth && !CRIT_IMG[p.char].bad;
       const cy = (art ? top - r - 10 + r * 0.95 - r * 2.75 - 6 : top - r * 2 - 30) + Math.abs(Math.sin(host.t * (art ? 7 : 4))) * (art ? -r * 0.35 : -18);
@@ -3538,7 +3553,7 @@ const GoalGuard = {
         if (q.out) continue;
         const [px, py] = padPos(q), [ix, iy] = inward(q.side), [ax, ay] = axis(q.side);
         const mv = q.side < 2 ? q.p.input.x : q.p.input.y;
-        drawCritter(px - ix * 36, py - iy * 36, 27, q.p.char, { fx: ix, fy: iy, squash: q.hitT > 0 ? 0.1 : 0, ouch: q.flash > 0.3, fierce: q.lunge > 0, walk: Math.abs(mv) > 0.15 ? host.t * 16 : 0, noShadow: true });
+        drawCritter(px - ix * 36, py - iy * 36, 27, q.p.char, { ring: q.p.color, fx: ix, fy: iy, squash: q.hitT > 0 ? 0.1 : 0, ouch: q.flash > 0.3, fierce: q.lunge > 0, walk: Math.abs(mv) > 0.15 ? host.t * 16 : 0, noShadow: true });
         const x1 = px - ax * PAD, y1 = py - ay * PAD, x2 = px + ax * PAD, y2 = py + ay * PAD;
         const seg = (w, c, ox = 0, oy = 0) => { ctx.lineCap = 'round'; ctx.lineWidth = w; ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x1 + ox, y1 + oy); ctx.lineTo(x2 + ox, y2 + oy); ctx.stroke(); };
         seg(31, INK); seg(24, q.p.dark); seg(17, q.lunge > 0 ? '#ffffff' : q.p.color, 0, 0);
@@ -3736,7 +3751,7 @@ const IceSumo = {
         if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.vx * 0.025 * k, q.y - q.vy * 0.025 * k, q.r, q.p.char, { noShadow: true, alpha: 0.18 });
         const sq = q.charging ? q.charge * 0.15 : q.hitT > 0 ? -0.12 : 0, moving = hyp(q.vx, q.vy) > 50;
         drawCritter(q.x + (q.charging ? (Math.random() - 0.5) * q.charge * 4 : 0), q.y, q.r, q.p.char,
-          { fx: q.fx, fy: q.fy, squash: sq, ouch: q.hitT > 0, fierce: q.charging || q.dashT > 0, walk: moving ? host.t * 14 : 0 });
+          { ring: q.p.color, fx: q.fx, fy: q.fy, squash: sq, ouch: q.hitT > 0, fierce: q.charging || q.dashT > 0, walk: moving ? host.t * 14 : 0 });
       }
       ctx.fillStyle = 'rgba(255,255,255,.75)';
       for (const f of snow) { const y = (f.y + host.t * f.v) % H, x = f.x + Math.sin(host.t * 0.8 + f.y) * 12; ctx.beginPath(); ctx.arc(x, y, f.s, 0, 7); ctx.fill(); }
@@ -3906,7 +3921,7 @@ const TileTakeover = {
       for (const q of order) {
         if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.vx * 0.022 * k, q.y - q.vy * 0.022 * k, q.r, q.p.char, { alpha: 0.18, noShadow: true });
         const moving = hyp(q.vx, q.vy) > 30;
-        drawCritter(q.x, q.y, q.r, q.p.char, { fx: q.fx, fy: q.fy, walk: moving ? host.t * 18 : 0, dizzy: q.stun > 0, ouch: q.stun > 0, fierce: q.dashT > 0 });
+        drawCritter(q.x, q.y, q.r, q.p.char, { ring: q.p.color, fx: q.fx, fy: q.fy, walk: moving ? host.t * 18 : 0, dizzy: q.stun > 0, ouch: q.stun > 0, fierce: q.dashT > 0 });
         if (q.frozen > 0) { rr(q.x - 30, q.y - 34, 60, 64, 10); ctx.fillStyle = 'rgba(180,235,255,.55)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(q.x - 22, q.y - 26, 8, 30); }
         if (q.rush > 0) { ctx.strokeStyle = '#ffcc33'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(q.x, q.y, q.r + 10 + Math.sin(g.t * 20) * 2, 0, 7); ctx.stroke(); }
       }
@@ -4267,7 +4282,8 @@ const BattleArena = {
         if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.ddx * 18 * k, q.y - q.ddy * 18 * k, q.r, q.p.char, { fx: q.fx, fy: q.fy, alpha: 0.18, noShadow: true });
         if (q.heavyT > 0) { const ch = clamp((q.heavyT - 0.18) / 1.0, 0, 1); ctx.strokeStyle = INK; ctx.lineWidth = 9; ctx.beginPath(); ctx.arc(q.x, q.y - 26, q.r + 16, -Math.PI / 2, -Math.PI / 2 + ch * Math.PI * 2); ctx.stroke(); ctx.strokeStyle = ch >= 1 ? '#fff' : '#ff9a3c'; ctx.lineWidth = 5; ctx.stroke(); }
         const moving = hyp(q.vx, q.vy) > 40;
-        drawCritter(q.x + (q.heavyT > 0 ? (Math.random() - 0.5) * 3 : 0), q.y - lift, q.r, q.p.char, { alpha: q.invis > 0 ? 0.13 : 1, fx: q.fx, fy: q.fy, walk: moving ? host.t * 16 : 0, ouch: q.flash > 0 && !q.guard, dizzy: q.stun > 0.25, fierce: q.charge > 0 || q.atkT > 0 || q.heavyT > 0 || q.dashT > 0, noShadow: !!lift, squash: q.heavyT > 0 ? Math.min(0.12, q.heavyT * 0.08) : 0 });
+        if (lift) drawRing(q.x, q.y + q.r * 0.95, q.r, q.p.color);
+        drawCritter(q.x + (q.heavyT > 0 ? (Math.random() - 0.5) * 3 : 0), q.y - lift, q.r, q.p.char, { ring: !lift && q.invis <= 0 ? q.p.color : null, alpha: q.invis > 0 ? 0.13 : 1, fx: q.fx, fy: q.fy, walk: moving ? host.t * 16 : 0, ouch: q.flash > 0 && !q.guard, dizzy: q.stun > 0.25, fierce: q.charge > 0 || q.atkT > 0 || q.heavyT > 0 || q.dashT > 0, noShadow: !!lift, squash: q.heavyT > 0 ? Math.min(0.12, q.heavyT * 0.08) : 0 });
         if (q.blocking) { const a = q.guard > 0 ? 0.75 : 0.4; ctx.fillStyle = `rgba(150,220,255,${a * 0.35})`; ctx.strokeStyle = `rgba(200,240,255,${a + 0.2})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(q.x, q.y - 28, q.r + 20, q.r + 34, 0, 0, 7); ctx.fill(); ctx.stroke(); }
         if (q.frozenT > 0) { rr(q.x - 32, q.y - 70, 64, 84, 10); ctx.fillStyle = 'rgba(180,235,255,.55)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
         if (q.invis > 0) continue;
@@ -4664,6 +4680,7 @@ function createFight(rules, players) {
     else { const gy = groundBelow(f.x, f.y); if (gy > f.y) { const s = Math.max(0.3, 1 - (gy - f.y) / 400); ctx.fillStyle = `rgba(0,0,0,${0.25 * s})`; ctx.beginPath(); ctx.ellipse(f.x, gy + 2, 28 * s, 7 * s, 0, 0, 7); ctx.fill(); } }
     if (f.heavyT > 0) { const ch = clamp((f.heavyT - 0.18) / 1, 0, 1); ctx.strokeStyle = INK; ctx.lineWidth = 9; ctx.beginPath(); ctx.arc(f.x, f.y - 56, 60, -Math.PI / 2, -Math.PI / 2 + ch * Math.PI * 2); ctx.stroke(); ctx.strokeStyle = ch >= 1 ? '#fff' : '#ff9a3c'; ctx.lineWidth = 5; ctx.stroke(); }
     if (f.armor > 0) { ctx.fillStyle = 'rgba(255,150,60,.35)'; ctx.beginPath(); ctx.ellipse(f.x - f.facing * 14, f.y - 52, 60, 52, 0, 0, 7); ctx.fill(); }
+    if (alpha > 0.5) { const gy = f.onGround ? f.y : groundBelow(f.x, f.y); if (gy - f.y < 260) drawRing(f.x, gy, R * 0.85, f.p.color); }
     drawCritter(f.x + lx + (f.heavyT > 0 ? (Math.random() - 0.5) * 3 : 0), f.y - R * 0.95, R, f.p.char,
       { fx: f.facing, fy: 0, alpha, rot, sy, noShadow: true, walk: f.onGround && Math.abs(f.vx) > 40 && !f.atk ? host.t * 16 : 0,
         ouch: f.hitstun > 0 || f.flash > 0, fierce: !!f.atk || f.heavyT > 0 || f.armor > 0 || f.dashT > 0, dizzy: f.tumble && f.onGround });
@@ -4853,7 +4870,7 @@ function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ 
 const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
-  $('#chip').style.background = d.color; $('#pname').textContent = d.name; $('#pname').style.color = d.color;
+  $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
   const ch = d.char ?? 0, ci = $('#chipImg'), artSrc = location.protocol.startsWith('http') ? ART_URL(ch) : '';
   if (artSrc && ci.dataset.char !== String(ch)) { ci.dataset.char = ch; ci.onload = () => { ci.style.display = 'block'; }; ci.onerror = () => { ci.style.display = 'none'; }; ci.src = artSrc; }
   const portrait = artSrc ? `<img class="portrait" src="${artSrc}" alt="" onerror="this.remove()">` : '';

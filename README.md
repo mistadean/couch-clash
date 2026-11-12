@@ -17,6 +17,8 @@ Modes:
   tap = jab · hold + release = heavy · swipe ↑ = jump · swipe ↓ + hold = block · swipe ← → = dash attack · double-tap = special ·
   jab, jab, heavy = combo. Or **Buttons**: A = punch, B = special.
 
+Every player has a seat colour (P1 red, P2 blue, P3 yellow, P4 green) shown as a ring under their character, on name tags and in gameplay (goals, tiles, HUD).
+
 - **Fighters** (side-view, one engine, three rule sets):
   - **Sky Brawl** (Smash-style, 2–4): damage % builds up, launch rivals off the screen, 3 stocks.
   - **Duel** (Tekken-style, 1v1): health bars, best of 3 rounds. Hold back to block, crouch to duck highs, crouch-block lows.
