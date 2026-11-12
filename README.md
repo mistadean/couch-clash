@@ -32,6 +32,8 @@ Every player has a seat colour (P1 red, P2 blue, P3 yellow, P4 green) shown as a
   Re-centre and Invert buttons on the phone; iPhones need one tap on "Enable tilt steering". No tilt sensor? Drag left/right on GAS.
   Needs a browser with WebGL (most laptops and recent smart TVs).
 
+3D characters (pilot: Zip): made with free tools only. Reference art from ChatGPT (T-pose), 3D model from Tencent Hunyuan 3D (free daily generations, GLB download), rigged in Blender with Mixamo-named bones, animated with Mixamo motion capture retargeted in Blender. Rigged models live in `models/` (`models/src/` keeps the raw Hunyuan output). Zip appears in Racing as a 3D animated driver; the rest of the crew follows.
+
 Roster (8): Rumble, Nova, Zip, Glorp, Shell (Plasma Shot), Vex (Vanish), Moxie (Pogo Stomp), Frost (Ice Wall).
 
 Keyboard players: WASD + Space (A) + E (B), Arrows + Right Shift (A) + / (B).
