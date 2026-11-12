@@ -6735,7 +6735,7 @@ function startMatch() {
   const want = botTarget(host.mode);
   for (let i = 0; i < MAXP && active().length < want; i++) {
     if (!host.players[i] && (host.botsFill || n < 2 || host.mode === 'tag')) {
-      const b = makePlayer(i, 'bot', ''); b.name = ROSTER[b.char].name; b.prevA = false; host.players[i] = b;
+      const b = makePlayer(i, 'bot', ''); b.name = charsOn() ? ROSTER[b.char].name : ['Bot Gus', 'Bot Mack', 'Bot Benny', 'Bot Stavros', 'Bot Kev', 'Bot Dazza', 'Bot Nico', 'Bot Sully', 'Bot Jimmy', 'Bot Lou'][i]; b.prevA = false; host.players[i] = b;
     }
   }
   active().forEach(p => p.cupPts = 0);
@@ -7095,6 +7095,19 @@ function drawChar3D(x, y, r, ci, o) {
   ctx.restore();
   return true;
 }
+// Card and phone games use plain name badges; characters only matter in the action games.
+function charsOn() { const G = host.game && host.phase !== 'lobby' ? currentGameDef() : GAMES[host.mode]; return !(G && G.phones); }
+function drawAvatar(x, y, r, p, o = {}) {
+  const name = (p && p.name) || '?', col = (p && p.color) || '#8a93b8', bob = o.happy ? Math.sin(host.t * 8) * r * 0.06 : 0;
+  ctx.save(); ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+  ctx.fillStyle = 'rgba(20,30,70,.18)'; ctx.beginPath(); ctx.arc(x + r * 0.08, y + r * 0.12 + bob, r, 0, 7); ctx.fill();
+  const gr = ctx.createLinearGradient(x, y - r, x, y + r); gr.addColorStop(0, shade(col, 0.35)); gr.addColorStop(1, col);
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y + bob, r, 0, 7); ctx.fill(); ctx.lineWidth = Math.max(2.5, r * 0.11); ctx.strokeStyle = TOY.navy; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(x - r * 0.3, y - r * 0.45 + bob, r * 0.4, r * 0.2, -0.5, 0, 7); ctx.fill();
+  const ini = p && p.kind === 'bot' ? '🤖' : name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  toyText(ini, x, y + bob + r * 0.05, r * (ini.length > 1 ? 0.8 : 1), '#fff', 'center', TOY.navy);
+  ctx.restore();
+}
 function drawCritter(x, y, r, ci, o = {}) {
   const C = ROSTER[ci] || ROSTER[0], slot = C.fallback, col = C.color, dark = C.dark, light = C.light;
   const fx = clamp(o.fx || 0, -1, 1), fy = clamp(o.fy || 0, -1, 1);
@@ -7372,11 +7385,11 @@ function drawLobby() {
     if (p) {
       toyPanel(x, y0, cw, chh, 22, shade(col, 0.72), 7, shade(col, -0.2));
       const g = ctx.createRadialGradient(x + 52, y0 + 60, 4, x + 52, y0 + 60, 56); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.fillRect(x + 4, y0 + 4, 100, chh - 8);
-      drawCritter(x + 52, y0 + 56, 30, ci, { noShadow: true, fx: Math.sin(host.t * 0.6 + i) * 0.5, happy: (host.t + i) % 5 < 0.6, anim: 'idle' });
+      if (charsOn()) drawCritter(x + 52, y0 + 56, 30, ci, { noShadow: true, fx: Math.sin(host.t * 0.6 + i) * 0.5, happy: (host.t + i) % 5 < 0.6, anim: 'idle' }); else drawAvatar(x + 52, y0 + 56, 34, p, { happy: (host.t + i) % 5 < 0.6 });
       rr(x + 8, y0 + 8, 36, 22, 11); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('P' + (i + 1), x + 26, y0 + 20, 13, '#fff', 'center', TOY.navy);
       let nm = p.name; dfont(22); while (ctx.measureText(nm).width > 116 && nm.length > 3) nm = nm.slice(0, -1);
       toyText(nm, x + 102, y0 + 30, 22, col, 'left', TOY.navy);
-      toyText(ROSTER[ci].name + ' · ' + ROSTER[ci].role, x + 102, y0 + 56, 13, '#4a568f', 'left', null);
+      toyText(charsOn() ? ROSTER[ci].name + ' · ' + ROSTER[ci].role : 'Ready to play', x + 102, y0 + 56, 13, '#4a568f', 'left', null);
       const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Lost') : p.kind === 'bot' ? '🤖 Bot' : '⌨ Keyboard';
       const watching = p.kind !== 'bot' && humans().sort((a, b) => a.slot - b.slot).indexOf(p) >= (MODE_MAX[host.mode] || 4);
       if (watching) { rr(x + 98, y0 + 70, 120, 24, 12); ctx.fillStyle = 'rgba(27,31,94,.75)'; ctx.fill(); toyText('👀 Watching', x + 158, y0 + 82, 14, '#fff', 'center', null); }
@@ -7385,9 +7398,9 @@ function drawLobby() {
       const bot = host.botsFill && bots < botSeats; if (bot) { bots++; sp++; }
       rr(x, y0, cw, chh, 22); ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fill();
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(27,31,94,.3)'; ctx.setLineDash([10, 9]); ctx.lineDashOffset = -host.t * 20; rr(x, y0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
-      if (bot) drawCritter(x + 52, y0 + 56, 28, ci, { noShadow: true, alpha: 0.35 });
+      if (bot) { if (charsOn()) drawCritter(x + 52, y0 + 56, 28, ci, { noShadow: true, alpha: 0.35 }); else drawAvatar(x + 52, y0 + 56, 30, { name: 'Bot', kind: 'bot', color: '#8a93b8' }, { alpha: 0.45 }); }
       else toyText('P' + (i + 1), x + 52, y0 + 56, 26, 'rgba(27,31,94,.25)', 'center', null);
-      toyText(bot ? ROSTER[ci].name : 'Open seat', x + 102, y0 + 44, 19, 'rgba(27,31,94,.55)', 'left', null);
+      toyText(bot ? (charsOn() ? ROSTER[ci].name : 'Bot') : 'Open seat', x + 102, y0 + 44, 19, 'rgba(27,31,94,.55)', 'left', null);
       toyText(bot ? '🤖 Bot' : 'Scan to join!', x + 102, y0 + 70, 14, 'rgba(27,31,94,.45)', 'left', null);
     }
   }
@@ -7404,7 +7417,8 @@ function drawLobby() {
   const audioHint = !audioOn();
   const hx = (cat === 'arena' || cat === 'fight') ? 398 : 232, hw = 976 - hx;
   rr(hx, 624, hw, 40, 20); ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fill();
-  toyText(audioHint ? '🔈 Click or press OK once for sound  ·  Pick your character on your phone' : hw < 700 ? 'Pick your character on your phone  ·  👑 Leader runs the menu' : 'Pick your character on your phone  ·  👑 Leader runs the menu  ·  Keys: SPACE / R-SHIFT join',
+  const pickTxt = charsOn() ? 'Pick your character on your phone' : 'Scan the code to join';
+  toyText(audioHint ? '🔈 Click or press OK once for sound  ·  ' + pickTxt : hw < 700 ? pickTxt + '  ·  👑 Leader runs the menu' : pickTxt + '  ·  👑 Leader runs the menu  ·  Keys: SPACE / R-SHIFT join',
     hx + hw / 2, 645, hw < 700 ? 15 : 17, audioHint ? TOY.coral : TOY.navy, 'center', null);
 }
 function drawIntro() {
@@ -7448,7 +7462,7 @@ function drawResults() {
     const p = host.players[r.slot], rowH = Math.min(112, 452 / host.results.length), yy = 168 + i * rowH, x = W / 2 - 360;
     if (host.results.length > 4) { const appear = clamp(age * 4 - i * 0.3, 0, 1); if (appear <= 0) return; ctx.save(); ctx.globalAlpha = appear;
       toyPanel(x, yy, 720, rowH - 6, 18, i === 0 ? '#fff6d6' : '#ffffff', 4); const cy = yy + (rowH - 6) / 2;
-      toyText(String(i + 1), x + 34, cy, 22, TOY.navy, 'center', null); drawCritter(x + 92, cy - 4, 18, p.char, { noShadow: true, happy: i === 0, anim: i === 0 ? 'victory' : 'idle' });
+      toyText(String(i + 1), x + 34, cy, 22, TOY.navy, 'center', null); (charsOn() ? drawCritter(x + 92, cy - 4, 18, p.char, { noShadow: true, happy: i === 0, anim: i === 0 ? 'victory' : 'idle' }) : drawAvatar(x + 92, cy, 18, p, { happy: i === 0 }));
       toyText(p.name, x + 130, cy, 22, p.color, 'left', TOY.navy); toyText('+' + r.add, x + 546, cy, 22, TOY.mint, 'center', TOY.navy); toyText(p.cupPts + ' pts', x + 662, cy, 18, TOY.navy, 'center', null);
       ctx.restore(); return; }
     const appear = clamp(age * 3 - i * 0.6, 0, 1), slide = (1 - Math.pow(1 - appear, 3)) ;
@@ -7457,7 +7471,7 @@ function drawResults() {
     toyPanel(x, yy, 720, 92, 30, i === 0 ? '#fff6d6' : '#ffffff', 8);
     ctx.fillStyle = medal[i]; ctx.beginPath(); ctx.arc(x + 54, yy + 46, 30, 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
     toyText(String(i + 1), x + 54, yy + 48, 34, i === 0 ? '#fff' : TOY.navy, 'center', i === 0 ? TOY.navy : null);
-    drawCritter(x + 150, yy + 44, 30, p.char, { noShadow: true, happy: i === 0, ouch: i === host.results.length - 1 && i > 0, squash: i === 0 ? Math.sin(host.t * 8) * 0.04 : 0, anim: i === 0 ? 'victory' : 'idle' });
+    if (charsOn()) drawCritter(x + 150, yy + 44, 30, p.char, { noShadow: true, happy: i === 0, ouch: i === host.results.length - 1 && i > 0, squash: i === 0 ? Math.sin(host.t * 8) * 0.04 : 0, anim: i === 0 ? 'victory' : 'idle' }); else drawAvatar(x + 150, yy + 46, 32, p, { happy: i === 0 });
     toyText(p.name, x + 206, yy + 46, 34, p.color, 'left', TOY.navy);
     rr(x + 500, yy + 24, 92, 46, 23); ctx.fillStyle = TOY.mint; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
     toyText('+' + r.add, x + 546, yy + 48, 28, '#fff', 'center', TOY.navy);
@@ -7488,7 +7502,7 @@ function drawPodium() {
     toyText(p.name, s.x, top + 108, 18, p.color, 'center', TOY.navy);
     if (s.h > 90) toyText(p.cupPts + ' pts', s.x, top + 146, 20, TOY.navy, 'center', null);
     const r = i === 0 ? 62 : 46;
-    drawCritter(s.x, top - r - 6 + (i === 0 && !(ROSTER[p.char] && ROSTER[p.char].model) ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0, ring: p.color, anim: i === 0 ? 'dance' : 'idle' });
+    if (charsOn()) drawCritter(s.x, top - r - 6 + (i === 0 && !(ROSTER[p.char] && ROSTER[p.char].model) ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0, ring: p.color, anim: i === 0 ? 'dance' : 'idle' }); else drawAvatar(s.x, top - r - 6, r, p, { happy: i === 0 });
     if (i === 0) { // crown
       const cy = top - r * 2.75 - 18 + Math.abs(Math.sin(host.t * 4)) * -8;
       ctx.save(); ctx.translate(s.x, cy); ctx.rotate(Math.sin(host.t * 3) * 0.08);
@@ -10662,7 +10676,7 @@ const OddOneOut = {
         const speaking = g.state === 'clue' && g.order[g.turn] === o, voted = g.state === 'vote' && g.votes[o.p.slot];
         ctx.save(); if (o.out) ctx.globalAlpha = 0.45;
         toyPanel(x, y, cw, chh, 22, speaking ? '#fff6d6' : '#ffffff', speaking ? 10 : 6, speaking ? TOY.sun : null);
-        drawCritter(x + cw / 2, y + 62, 34, o.p.char, { noShadow: true, happy: speaking, anim: speaking ? 'victory' : 'idle', squash: speaking ? Math.sin(host.t * 8) * 0.04 : 0 });
+        drawAvatar(x + cw / 2, y + 60, 38, o.p, { happy: speaking });
         toyText(o.p.name, x + cw / 2, y + 120, 22, o.p.color, 'center', TOY.navy);
         if (speaking) { toyText('🎤 ' + Math.ceil(g.stateT), x + cw - 30, y + 24, 20, TOY.coral, 'center', TOY.navy); }
         if (o.spoke && g.state === 'clue') toyText('✓', x + 24, y + 24, 24, TOY.mint, 'center', TOY.navy);
@@ -10773,7 +10787,7 @@ const ColourClash = {
       const n = g.hands.length;
       g.hands.forEach((h, i) => { const a = Math.PI / 2 + (i / n) * Math.PI * 2, x = W / 2 + Math.cos(a) * 520, y = H / 2 + 10 + Math.sin(a) * 270, me = cur() === h && !g.winner;
         rr(x - 92, y - 46, 184, 92, 24); ctx.fillStyle = me ? '#fff6d6' : 'rgba(255,255,255,.9)'; ctx.fill(); ctx.lineWidth = me ? 7 : 4; ctx.strokeStyle = me ? TOY.sun : TOY.navy; ctx.stroke();
-        drawCritter(x - 52, y - 4, 28, h.p.char, { noShadow: true, happy: me, anim: me ? 'victory' : 'idle' });
+        drawAvatar(x - 54, y - 2, 30, h.p, { happy: me });
         toyText(h.p.name, x + 26, y - 18, 20, h.p.color, 'center', TOY.navy);
         const k = Math.min(10, h.cards.length); for (let j = 0; j < k; j++) { rr(x - 8 + j * 7, y + 2, 16, 24, 4); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); }
         toyText(h.cards.length, x + 72, y + 14, 20, h.cards.length === 1 ? TOY.coral : TOY.navy, 'center', null);
@@ -10806,7 +10820,7 @@ function feltTable(title, accent) {
 function seatXY(i, n) { const a = Math.PI / 2 + (i / n) * Math.PI * 2; return [W / 2 + Math.cos(a) * 520, H / 2 + 10 + Math.sin(a) * 270]; }
 function seatCard(x, y, p, active, line2, badge) {
   rr(x - 96, y - 48, 192, 96, 24); ctx.fillStyle = active ? '#fff6d6' : 'rgba(255,255,255,.92)'; ctx.fill(); ctx.lineWidth = active ? 7 : 4; ctx.strokeStyle = active ? TOY.sun : TOY.navy; ctx.stroke();
-  drawCritter(x - 56, y - 4, 28, p.char, { noShadow: true, happy: active, anim: active ? 'victory' : 'idle' });
+  drawAvatar(x - 58, y - 2, 30, p, { happy: active });
   toyText(p.name, x + 24, y - 20, 20, p.color, 'center', TOY.navy); if (line2) toyText(line2, x + 24, y + 12, 16, TOY.navy, 'center', null);
   if (badge) { rr(x + 30, y - 66, 72, 26, 13); ctx.fillStyle = badge[1]; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(badge[0], x + 66, y - 53, 14, '#fff', 'center', TOY.navy); } }
 
@@ -11073,7 +11087,7 @@ function renderPad() {
   const portrait = artSrc ? `<img class="portrait" src="${artSrc}" alt="" onerror="this.remove()">` : '';
   const who = CRITTER_NAMES[ch] || '';
   const http = location.protocol.startsWith('http');
-  const picker = !d.roster ? '' : `<div class="picker">${d.roster.map((c, i) => `<button class="pick${i === ch ? ' mine' : ''}${c.taken ? ' taken' : ''}" data-c="pick" data-v="${i}" style="--c:${c.color}"${c.taken ? ' disabled' : ''}>` +
+  const picker = !d.roster || (GAMES[d.mode] && GAMES[d.mode].phones) ? '' : `<div class="picker">${d.roster.map((c, i) => `<button class="pick${i === ch ? ' mine' : ''}${c.taken ? ' taken' : ''}" data-c="pick" data-v="${i}" style="--c:${c.color}"${c.taken ? ' disabled' : ''}>` +
       (http ? `<img src="assets/${esc(c.art)}" alt="" onerror="this.remove()">` : '') + `<span>${esc(c.name)}</span><small>${c.taken ? esc(c.taken) : esc(c.role)}</small></button>`).join('')}</div>` +
       `<div class="small">${esc(d.roster[ch] ? d.roster[ch].bio : '')}</div>`;
   $('#pad').style.background = `radial-gradient(ellipse 60% 30% at 15% 22%,rgba(255,255,255,.5),transparent 70%), linear-gradient(170deg, ${d.color}66, #7fd6ff 42%, #c9f1ff)`;
@@ -11101,7 +11115,7 @@ function renderPad() {
   } else if (d.phase === 'lobby') {
     hint = 'Lobby';
     if (d.leader) {
-      html = `<b>👑 You're the leader · pick your character</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
+      html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
         <div class="row">${[['cup', '🎉 Party', 'party'], ['shit', '🃏 Cards', 'cards'], ['odd', '🕵 Interactive', 'social'], ['arena', '➕ More games', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
         ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${!['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
@@ -11114,7 +11128,7 @@ function renderPad() {
         <div class="row fit"><span class="small">TV screen size</span>${B('fit', '−', -1)}<span class="val">${Math.round(d.fit * 100)}%</span>${B('fit', '+', 1)}</div>
         ${B('start', 'START ▶', null, true, 'big go')}`;
     } else {
-      html = `<b>Pick your character</b>${picker}Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
+      html = `<b>${picker ? 'Pick your character' : "✅ You're in, " + esc(d.name) + '!'}</b>${picker}Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
     }
   } else if ((d.phase === 'play' || d.phase === 'intro') && d.role === 'bench' && !d.paused) {
     hint = 'On the bench'; html = `<b>🪑 You're on the bench</b>Your partner is fighting. Tap to swap in when they need help!<button class="pbtn big go" data-c="tag">TAG IN ⇄</button><div class="small">Benched fighters heal a little.</div>`;
