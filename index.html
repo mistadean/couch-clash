@@ -6595,6 +6595,89 @@ function drawRing(x, fy, r, col) {
   ctx.lineWidth = Math.max(2, r * 0.07) * pulse; ctx.strokeStyle = col; ctx.stroke();
   ctx.restore();
 }
+
+/* ---------- live 3D characters in the 2D modes ----------
+   Characters with a rigged model (ROSTER[ci].model) are rendered in 3D into a small offscreen WebGL canvas and drawn
+   into the 2D scene where their picture would go. The animation is picked from what the game says they are doing. */
+const C3 = { r: null, cv: null, inst: {}, failed: false, size: 256 };
+function c3Init() {
+  if (C3.r || C3.failed) return C3.r;
+  if (!window.THREE || !THREE.GLTFLoader || !location.protocol.startsWith('http')) { C3.failed = true; return null; }
+  try {
+    const T = THREE; C3.cv = document.createElement('canvas'); C3.cv.width = C3.cv.height = C3.size;
+    C3.r = new T.WebGLRenderer({ canvas: C3.cv, alpha: true, antialias: true, premultipliedAlpha: true });
+    C3.r.setPixelRatio(1); C3.r.setClearColor(0x000000, 0); C3.r.outputColorSpace = T.SRGBColorSpace;
+    C3.scene = new T.Scene();
+    C3.scene.add(new T.HemisphereLight(0xfff4e6, 0x55507a, 1.35));
+    const key = new T.DirectionalLight(0xffffff, 1.6); key.position.set(1.5, 3, 4); C3.scene.add(key);
+    const rim = new T.DirectionalLight(0x9fd0ff, 0.9); rim.position.set(-3, 2, -3); C3.scene.add(rim);
+    C3.cam = new T.OrthographicCamera(-1, 1, 1, -1, 0.1, 50);
+  } catch (e) { C3.failed = true; C3.r = null; }
+  return C3.r;
+}
+function c3Instance(ci) {
+  const I = C3.inst[ci]; if (I) return I.ready ? I : null;
+  const lp = loadCharModel(ci); if (!lp) return null;
+  const rec = C3.inst[ci] = { ready: false };
+  lp.then(g => {
+    if (!g) { rec.bad = true; return; }
+    const T = THREE, m = T.SkeletonUtils.clone(g.scene);
+    const box = modelBounds(g.scene); rec.h = box.max.y - box.min.y || 1; rec.foot = box.min.y;
+    m.traverse(o => { if (o.isMesh) { o.frustumCulled = false; if (o.material) o.material.metalness = 0; } });
+    rec.root = new T.Group(); rec.root.add(m); rec.model = m;
+    rec.mixer = new T.AnimationMixer(m); rec.actions = {}; for (const c of g.animations) rec.actions[c.name] = rec.mixer.clipAction(c);
+    rec.cur = ''; rec.yaw = 0; rec.last = performance.now(); rec.ready = true; c3Play(rec, 'idle');
+  });
+  return null;
+}
+function c3Play(rec, name) {
+  const once = name === 'hit' || name === 'punch' || name === 'jump' || name === 'fall';
+  if (!rec.actions[name]) name = 'idle';
+  if (rec.cur === name) { if (once && rec.actions[name].time >= rec.actions[name].getClip().duration - 0.02 && name === 'punch') { rec.actions[name].reset().play(); } return; }
+  const next = rec.actions[name], prev = rec.cur && rec.actions[rec.cur];
+  next.reset(); next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat); next.clampWhenFinished = once; next.enabled = true; next.setEffectiveWeight(1); next.play();
+  if (name === 'punch') next.timeScale = 1.6; else if (name === 'run') next.timeScale = 1.15; else next.timeScale = 1;
+  if (prev && prev !== next) prev.crossFadeTo(next, name === 'punch' || name === 'hit' ? 0.08 : 0.2, false);
+  rec.cur = name;
+}
+function c3Anim(o) {
+  if (o.anim) return o.anim;
+  if (o.dizzy) return 'fall';
+  if (o.ouch) return 'hit';
+  if (o.happy) return 'victory';
+  if (o.walk) return 'run';
+  if (o.fierce) return 'punch';
+  return 'idle';
+}
+function drawChar3D(x, y, r, ci, o) {
+  if (!ROSTER[ci] || !ROSTER[ci].model || r < 24 || (o.alpha != null && o.alpha < 0.3)) return false;
+  if (!c3Init()) return false;
+  const rec = c3Instance(ci); if (!rec) return false;
+  const T = THREE, now = performance.now(), dt = Math.min(0.1, (now - rec.last) / 1000); rec.last = now;
+  c3Play(rec, c3Anim(o));
+  // facing: screen right = +X, toward the viewer = +Z (models face +Z)
+  const fx = clamp(o.fx || 0, -1, 1), fy = clamp(o.fy || 0, -1, 1);
+  const want = (Math.abs(fx) < 0.6 && Math.abs(fy) < 0.3) ? fx * 0.9 : Math.atan2(fx, fy);
+  let dy = want - rec.yaw; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
+  rec.yaw += dy * Math.min(1, dt * 14); rec.root.rotation.y = rec.yaw;
+  rec.mixer.update(dt);
+  // camera: low for side-on modes (fighters, lobby, podium), higher for the top-down arenas
+  const G = host.game && host.phase !== 'lobby' ? currentGameDef() : null;
+  const topDown = G && !G.fighter && host.phase !== 'podium' && host.phase !== 'results' && !o.side;
+  const elev = topDown ? 0.55 : 0.12, h = rec.h, span = h * 1.45;
+  const cam = C3.cam; cam.left = -span / 2; cam.right = span / 2; cam.top = span * 0.86; cam.bottom = -span * 0.14; cam.updateProjectionMatrix();
+  cam.position.set(0, rec.foot + Math.sin(elev) * 10, Math.cos(elev) * 10); cam.lookAt(0, rec.foot, 0);
+  C3.scene.add(rec.root); rec.root.position.set(0, 0, 0);
+  C3.r.render(C3.scene, cam); C3.scene.remove(rec.root);
+  // the model's feet sit 14% up the tile; picture height s = r * 2.75 (same scale as the 2D art)
+  const s = r * 2.75 * (o.sy || 1), D = s * 1.45 / 1.0, sq = o.squash || 0;
+  const feetY = y + r * 0.95;
+  ctx.save(); ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+  ctx.translate(x, feetY); ctx.scale(1 + sq, 1 - sq);
+  ctx.drawImage(C3.cv, -D / 2, -D * 0.86, D, D);
+  ctx.restore();
+  return true;
+}
 function drawCritter(x, y, r, ci, o = {}) {
   const C = ROSTER[ci] || ROSTER[0], slot = C.fallback, col = C.color, dark = C.dark, light = C.light;
   const fx = clamp(o.fx || 0, -1, 1), fy = clamp(o.fy || 0, -1, 1);
@@ -6602,6 +6685,10 @@ function drawCritter(x, y, r, ci, o = {}) {
   ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
   if (!o.noShadow) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y + r * 0.98, r * 0.92, r * 0.3, 0, 0, 7); ctx.fill(); }
   if (o.ring) drawRing(x, y + r * 0.95, r, o.ring);
+  if (drawChar3D(x, y, r, ci, o)) {
+    if (o.dizzy) { const t = host.t, s = r * 2.75; for (let k = 0; k < 3; k++) { const a = t * 6 + k * 2.1, sx = x + Math.cos(a) * r * 0.6, sy = y + r * 0.95 - s * 0.95 + Math.sin(a) * r * 0.15; ctx.fillStyle = '#ffcc33'; ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.beginPath(); for (let j = 0; j < 10; j++) { const rr2 = j % 2 ? r * 0.08 : r * 0.18, aa = j * Math.PI / 5 - Math.PI / 2; ctx.lineTo(sx + Math.cos(aa) * rr2, sy + Math.sin(aa) * rr2); } ctx.closePath(); ctx.fill(); ctx.stroke(); } }
+    ctx.restore(); return;
+  }
   ctx.translate(x, y);
   const sq = o.squash || 0; ctx.scale(1 + sq, 1 - sq);
   const img = CRIT_IMG[ci];
@@ -6829,7 +6916,7 @@ function drawLobby() {
     rr(x, cy0, cw, chh, 22); ctx.fillStyle = p ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = p ? p.color : 'rgba(255,255,255,.12)'; ctx.setLineDash(p ? [] : [10, 8]); rr(x, cy0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
     const bob = p ? Math.sin(host.t * 4 + i) * 4 : 0;
-    drawCritter(x + 64, cy0 + 88 + bob, 40, ci, { ring: p ? p.color : null, alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
+    drawCritter(x + 64, cy0 + 88 + bob, 40, ci, { ring: p ? p.color : null, alpha: p ? 1 : 0.25, fx: Math.sin(host.t * 0.6 + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6, anim: p ? 'idle' : undefined });
     if (p) {
       rr(x + 12, cy0 + 12, 38, 26, 13); ctx.fillStyle = p.color; ctx.fill(); text('P' + (i + 1), x + 31, cy0 + 26, 15, '#14112b');
       text(p.name, x + 120, cy0 + 58, 28, p.color, 'left');
@@ -6928,7 +7015,7 @@ function drawPodium() {
     rr(s.x - 110, top, 220, s.h + 100, 16); ctx.fillStyle = i === 0 ? '#ffcc33' : 'rgba(255,255,255,.18)'; ctx.fill();
     text(String(i + 1), s.x, top + 46, 48, i === 0 ? '#14112b' : '#fff');
     const r = i === 0 ? 62 : 46;
-    drawCritter(s.x, top - r - 10 + (i === 0 ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0, ring: p.color });
+    drawCritter(s.x, top - r - 10 + (i === 0 && !(ROSTER[p.char] && ROSTER[p.char].model) ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0, ring: p.color, anim: i === 0 ? 'dance' : 'idle' });
     if (i === 0) { // crown
       const art = CRIT_IMG[p.char] && CRIT_IMG[p.char].naturalWidth && !CRIT_IMG[p.char].bad;
       const cy = (art ? top - r - 10 + r * 0.95 - r * 2.75 - 6 : top - r * 2 - 30) + Math.abs(Math.sin(host.t * (art ? 7 : 4))) * (art ? -r * 0.35 : -18);
@@ -8302,7 +8389,8 @@ function createFight(rules, players) {
     if (f.armor > 0) { ctx.fillStyle = 'rgba(255,150,60,.35)'; ctx.beginPath(); ctx.ellipse(f.x - f.facing * 14, f.y - 52, 60, 52, 0, 0, 7); ctx.fill(); }
     if (alpha > 0.5) { const gy = f.onGround ? f.y : groundBelow(f.x, f.y); if (gy - f.y < 260) drawRing(f.x, gy, R * 0.85, f.p.color); }
     drawCritter(f.x + lx + (f.heavyT > 0 ? (Math.random() - 0.5) * 3 : 0), f.y - R * 0.95, R, f.p.char,
-      { fx: f.facing, fy: 0, alpha, rot, sy, noShadow: true, walk: f.onGround && Math.abs(f.vx) > 40 && !f.atk ? host.t * 16 : 0,
+      { fx: f.facing, fy: 0, alpha, rot, sy, noShadow: true, walk: f.onGround && Math.abs(f.vx) > 40 && !f.atk ? host.t * 16 : 0, side: true,
+        anim: f.tumble ? 'fall' : (f.hitstun > 0 ? 'hit' : f.atk ? 'punch' : !f.onGround ? 'jump' : (f.onGround && Math.abs(f.vx) > 40) ? 'run' : 'fightidle'),
         ouch: f.hitstun > 0 || f.flash > 0, fierce: !!f.atk || f.heavyT > 0 || f.armor > 0 || f.dashT > 0, dizzy: f.tumble && f.onGround });
     if (f.blocking) { ctx.strokeStyle = 'rgba(200,240,255,.9)'; ctx.fillStyle = 'rgba(150,220,255,.18)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(f.x + f.facing * 30, f.y - (f.crouch ? 34 : 56), 18, f.crouch ? 40 : 62, 0, 0, 7); ctx.fill(); ctx.stroke(); }
     if (f.frozen > 0) { rr(f.x - 36, f.y - 110, 72, 112, 10); ctx.fillStyle = 'rgba(180,235,255,.55)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
@@ -8442,6 +8530,11 @@ function race3D() {
   return R3;
 }
 const MODEL_CACHE = {};
+function modelBounds(root) { // bind-pose bounds of a skinned model (Box3 on an un-posed skeleton is unreliable)
+  const T = THREE, b = new T.Box3(); root.updateMatrixWorld(true);
+  root.traverse(o => { if (o.isMesh && o.geometry) { o.geometry.computeBoundingBox(); b.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld)); } });
+  return b;
+}
 function loadCharModel(ci) { // rigged 3D character (glTF with animations); null if this character has none yet
   const url = ROSTER[ci] && ROSTER[ci].model;
   if (!url || !window.THREE || !THREE.GLTFLoader || !location.protocol.startsWith('http')) return null;
@@ -8608,8 +8701,8 @@ function createRace(players) {
     const lp = loadCharModel(p.char);
     if (lp) lp.then(gltf => { // swap the flat sprite for the animated 3D character, sitting in the kart
       if (!gltf || g.disposed) return;
-      const m = T.SkeletonUtils.clone(gltf.scene); const box = new T.Box3().setFromObject(gltf.scene); const hgt = box.max.y - box.min.y || 1;
-      const s = 1.95 / hgt; m.scale.setScalar(s); m.position.set(0, 0.62, -0.45);
+      const m = T.SkeletonUtils.clone(gltf.scene); const box = modelBounds(gltf.scene); const hgt = box.max.y - box.min.y || 1;
+      const s = 5.2 / hgt; m.scale.setScalar(s); m.position.set(0, 0.62, -0.45);
       m.traverse(o => { if (o.isMesh) { o.frustumCulled = false; if (o.material) { o.material.metalness = 0; } } });
       grp.add(m); spr.visible = false; kart.model = m;
       kart.mixer = new T.AnimationMixer(m); kart.actions = {};
