@@ -5,10 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#14112b">
 <title>Couch Clash</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Couch Clash">
+<meta name="theme-color" content="#14112b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{touch-action:manipulation}
 html,body{height:100%;background:#14112b;color:#fff;font-family:Fredoka,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;overscroll-behavior:none}
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer;border:0}
@@ -107,6 +115,8 @@ button{font-family:inherit;cursor:pointer;border:0}
 
 #joinForm{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:radial-gradient(circle at 50% 10%,#2b4a8a 0,#14112b 70%);z-index:5}
 #joinForm h2{font-size:34px}
+#a2hs{max-width:min(420px,90vw);font-size:14px;line-height:1.4;text-align:center;background:rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;opacity:.9}
+#a2hs .shr{display:inline-block;background:#38c6ff;color:#14112b;border-radius:8px;padding:0 6px;font-weight:700}
 #joinForm input{width:min(320px,86vw);padding:16px;border-radius:14px;border:0;font-size:24px;font-family:inherit;text-align:center;background:#fff;color:#14112b}
 #codeIn{letter-spacing:10px;text-transform:uppercase;font-weight:700}
 #joinGo{width:min(320px,86vw);padding:16px;border-radius:14px;font-size:24px;font-weight:700;background:#56e07a;color:#14112b;box-shadow:0 6px 0 rgba(0,0,0,.35)}
@@ -148,6 +158,7 @@ button{font-family:inherit;cursor:pointer;border:0}
     <input id="nameIn" maxlength="10" placeholder="Your name" autocomplete="off">
     <button id="joinGo">Join</button>
     <div id="joinErr"></div>
+    <div id="a2hs" class="hidden"><b>No browser bars:</b> tap <span class="shr">Share ⬆</span> then <b>Add to Home Screen</b>. Next time, open <b>Couch Clash</b> from your home screen and type the code on the TV. It runs fullscreen with no tabs, and it won't zoom.</div>
   </div>
 </div>
 <div id="netBanner" class="hidden"></div>
@@ -8884,11 +8895,11 @@ function createRace(players) {
       if (!v.r) continue;
       const [lx, ly, lw, lh] = v.rect, px = Math.round((view.ox + lx * view.s) * k), pw = Math.round(lw * view.s * k), ph = Math.round(lh * view.s * k), py = Math.round(ch - (view.oy + (ly + lh) * view.s) * k);
       rd.setViewport(px, py, pw, ph); rd.setScissor(px, py, pw, ph);
-      const r = v.r, c = r.cam || (r.cam = { x: r.x - Math.sin(r.h) * 7.5, y: 3.8, z: r.z - Math.cos(r.h) * 7.5 });
-      const back = r.speed < -2 ? -1 : 1, tx = r.x - Math.sin(r.h) * 7.5 * back, tz = r.z - Math.cos(r.h) * 7.5 * back, f = 1 - Math.pow(0.0015, fdt);
-      c.x += (tx - c.x) * f; c.z += (tz - c.z) * f; c.y += (3.8 - c.y) * f;
-      cam.aspect = pw / Math.max(1, ph); cam.fov = 66 + (r.boost > 0 ? 10 : 0) + Math.min(6, Math.max(0, r.speed - 30) * 0.3); cam.updateProjectionMatrix();
-      cam.position.set(c.x, c.y, c.z); cam.lookAt(r.x + Math.sin(r.h) * 6, 1.3, r.z + Math.cos(r.h) * 6);
+      const r = v.r, c = r.cam || (r.cam = { x: r.x - Math.sin(r.h) * 10.5, y: 6.2, z: r.z - Math.cos(r.h) * 10.5 });
+      const back = r.speed < -2 ? -1 : 1, tx = r.x - Math.sin(r.h) * 10.5 * back, tz = r.z - Math.cos(r.h) * 10.5 * back, f = 1 - Math.pow(0.0015, fdt);
+      c.x += (tx - c.x) * f; c.z += (tz - c.z) * f; c.y += (6.2 - c.y) * f;
+      cam.aspect = pw / Math.max(1, ph); cam.fov = 62 + (r.boost > 0 ? 10 : 0) + Math.min(6, Math.max(0, r.speed - 30) * 0.3); cam.updateProjectionMatrix();
+      cam.position.set(c.x, c.y, c.z); cam.lookAt(r.x + Math.sin(r.h) * 16, 1.0, r.z + Math.cos(r.h) * 16);
       for (const o of g.racers) o.mesh.lab.visible = o !== r && hyp(o.x - c.x, o.z - c.z) > 16;
       rd.render(scene, cam);
     }
@@ -8957,7 +8968,25 @@ window.CC = { host, ctl: null }; // handle for debugging in the browser console
    PHONE CONTROLLER
    ===================================================================== */
 const ctl = window.__ctl = { peer: null, conn: null, code: '', name: '', pid: '', joined: false, input: { x: 0, y: 0, a: false, b: false }, cdStart: 0, cdEnd: 0, lastSent: '', lastT: 0, info: null, retry: null };
+/* Phones: never let the browser zoom (double-tap / pinch), and offer fullscreen. */
+function phoneGuards() {
+  if (phoneGuards.done) return; phoneGuards.done = true;
+  let lastTap = 0;
+  document.addEventListener('touchend', e => { const n = Date.now(); if (n - lastTap < 380 && !(e.target.closest && e.target.closest('input,textarea'))) e.preventDefault(); lastTap = n; }, { passive: false });
+  document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+  document.addEventListener('touchmove', e => { if (e.scale && e.scale !== 1) e.preventDefault(); }, { passive: false });
+  for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
+  // if the page somehow ended up zoomed, snap it back
+  const vm = document.querySelector('meta[name=viewport]'), base = vm && vm.content;
+  const unzoom = () => { if (vm && window.visualViewport && visualViewport.scale > 1.01) { vm.content = base + ',x=1'; setTimeout(() => { vm.content = base; }, 30); } };
+  if (window.visualViewport) visualViewport.addEventListener('resize', unzoom);
+  // Android Chrome: real fullscreen + landscape on the first touch (iPhone: use Add to Home Screen instead)
+  const fs = () => { const el = document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen({ navigationUI: 'hide' }).then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} }).catch(() => {}); };
+  document.addEventListener('pointerdown', fs, { once: true, capture: true });
+}
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches) || navigator.standalone === true;
 function startController(code) {
+  phoneGuards();
   $('#menu').classList.add('hidden'); $('#pad').classList.remove('hidden');
   ctl.pid = lsGet('cc_pid') || ('p' + Math.random().toString(36).slice(2, 10)); lsSet('cc_pid', ctl.pid);
   $('#codeIn').value = code || lsGet('cc_code') || '';
@@ -8971,6 +9000,8 @@ function startController(code) {
     ctl.code = c; ctl.name = n; ctlConnect();
   };
   if (code) setTimeout(() => $('#nameIn').focus(), 200);
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios && !isStandalone()) $('#a2hs').classList.remove('hidden');
   setupPadInput();
   setInterval(ctlSendInput, 33);
 }
