@@ -6163,7 +6163,7 @@ const ROSTER = [
     ability: { name: 'Warp Step', desc: 'Short-range teleport through trouble.' } },
   { id: 'zip', name: 'Zip', art: 'critter-2.webp', model: 'models/zip.glb', color: '#ffcc33', dark: '#c99200', light: '#fff0b3', fallback: 2, role: 'Speedster',
     bio: 'Tiny jetpack space monkey', catchphrase: '"Wheee!"', stats: { speed: 5, power: 2, weight: 1 },
-    ability: { name: 'Jet Burst', desc: 'Rocket boost with a short hover.' } },
+    ability: { name: 'Jet Burst', desc: 'Jetpack dash that bowls over anyone in the way.' } },
   { id: 'glorp', name: 'Glorp', art: 'critter-3.webp', color: '#56e07a', dark: '#249a47', light: '#c4f7d0', fallback: 3, role: 'Wildcard',
     bio: 'One-eyed swamp alien', catchphrase: '"Glorp?"', stats: { speed: 3, power: 3, weight: 4 },
     ability: { name: 'Goo Trap', desc: 'Drops sticky goo that slows rivals.' } },
@@ -6425,8 +6425,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -6790,14 +6790,7 @@ function loadCritterArt() {
 
 /* A critter: outlined cartoon blob with feet, shading, blinking eyes, expressions and a slot accessory.
    o: fx, fy (facing), squash, alpha, noShadow, walk (phase), dizzy, ouch, happy, fierce */
-function drawRing(x, fy, r, col) {
-  const rx = r * 1.1, ry = r * 0.36, pulse = 0.85 + Math.sin(host.t * 4) * 0.15;
-  ctx.save();
-  ctx.fillStyle = col; ctx.globalAlpha *= 0.22; ctx.beginPath(); ctx.ellipse(x, fy, rx, ry, 0, 0, 7); ctx.fill();
-  ctx.globalAlpha /= 0.22; ctx.lineWidth = Math.max(3, r * 0.11); ctx.strokeStyle = '#14112b'; ctx.beginPath(); ctx.ellipse(x, fy, rx, ry, 0, 0, 7); ctx.stroke();
-  ctx.lineWidth = Math.max(2, r * 0.07) * pulse; ctx.strokeStyle = col; ctx.stroke();
-  ctx.restore();
-}
+function drawRing() { /* removed: players are identified by their name tags */ }
 
 /* ---------- live 3D characters in the 2D modes ----------
    Characters with a rigged model (ROSTER[ci].model) are rendered in 3D into a small offscreen WebGL canvas and drawn
@@ -7060,6 +7053,21 @@ function hostDraw() {
   }
   ctx.restore();
 }
+function drawShield(x, y, r, color, strength = 1) { // glossy bubble shield in the player's colour
+  const t = host.t, p = 1 + Math.sin(t * 9) * 0.03;
+  ctx.save(); ctx.translate(x, y); ctx.scale(p, p);
+  const g = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
+  g.addColorStop(0, 'rgba(255,255,255,.55)'); g.addColorStop(0.55, shade(color, 0.55).replace('rgb', 'rgba').replace(')', ',.28)')); g.addColorStop(1, shade(color, 0.1).replace('rgb', 'rgba').replace(')', ',.55)'));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.clip(); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; // hex sheen
+  const hs = r * 0.28; for (let row = -4; row <= 4; row++) for (let col = -4; col <= 4; col++) { const hx = col * hs * 1.5, hy = row * hs * 1.73 + (col % 2) * hs * 0.87; ctx.beginPath(); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; ctx.lineTo(hx + Math.cos(a) * hs * 0.9, hy + Math.sin(a) * hs * 0.9); } ctx.closePath(); ctx.stroke(); }
+  ctx.restore();
+  ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r - 5, Math.PI * 1.1, Math.PI * 1.65); ctx.stroke();
+  // strength arc (drains while held)
+  ctx.lineWidth = 5; ctx.strokeStyle = strength > 0.35 ? color : TOY.coral; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(0, 0, r + 7, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(strength, 0, 1)); ctx.stroke();
+  ctx.restore();
+}
 function drawPaused() {
   ctx.fillStyle = 'rgba(30,60,140,.55)'; ctx.fillRect(0, 0, W, H);
   const b = 1 + Math.sin(performance.now() / 300) * 0.03;
@@ -7117,14 +7125,14 @@ function drawLobby() {
   // mode selection
   const cat = MODE_CAT[host.mode] || 'party';
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const cats = [['party', '🎉 Party', 150, host.lastParty || 'cup', TOY.sun], ['arena', '⚔ Arena', 140, 'arena', TOY.grape], ['fight', '🥊 Fighters', 168, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Racing', 150, 'race', TOY.mint]];
+  const cats = [['party', '🎉 Party', 132, host.lastParty || 'cup', TOY.sun], ['arena', '⚔ Arena', 126, 'arena', TOY.grape], ['fight', '🥊 Fighters', 150, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Racing', 138, 'race', TOY.mint], ['coop', '🤝 Co-op', 130, 'fort', TOY.aqua]];
   let bx = 40;
   for (const [c, label, w, def, col] of cats) { toyButton(bx, 222, w, 54, label, cat === c, () => setMode(def), col, { bounce: cat === c, id: 'cat-' + c }); bx += w + 12; }
   const subs = cat === 'party' ? [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]
     : cat === 'fight' ? [['smash', 'Sky Brawl · FFA', 200], ['duel', 'Duel · 1v1', 158], ['tag', 'Tag Team · 2v2', 196]] : [];
   let sx = 40;
   for (const [m, label, w] of subs) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { if (cat === 'party') host.lastParty = m; else host.lastFight = m; setMode(m); }, cat === 'fight' ? TOY.coral : TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
-  const blurb = cat === 'arena' ? 'Top-down brawl · abilities · power-ups' : cat === 'race' ? 'Sunshine Circuit · 3 laps · items · split-screen' : '';
+  const blurb = cat === 'arena' ? 'Top-down brawl · abilities · power-ups' : cat === 'race' ? 'Sunshine Circuit · 3 laps · items · split-screen' : cat === 'coop' ? 'Fort Frenzy · defend the fort together · build turrets · 8 waves' : '';
   if (blurb) { rr(40, 294, 600, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(blurb, 60, 317, 21, TOY.navy, 'left', null); }
   if (cat === 'arena' || cat === 'fight') toyButton(660, 294, 120, 44, host.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons', host.controls === 'gestures', () => { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 18, id: 'ctl' });
 
@@ -7202,7 +7210,8 @@ function drawResults() {
   ctx.fillStyle = 'rgba(30,70,160,.5)'; ctx.fillRect(0, 0, W, H);
   const G = currentGameDef(), age = 7 - host.timer;
   headline(G.title.toUpperCase(), W / 2, 74 + Math.sin(host.t * 2) * 3, 58, '#fff', shade(G.accent, 0.5));
-  toyText('RESULTS', W / 2, 128, 26, TOY.sun, 'center', TOY.navy);
+  if (G.coop && host.game) toyText(host.game.won ? '🤝 TEAM WIN! Everyone scores big' : 'The fort fell… everyone gets a point', W / 2, 128, 26, host.game.won ? TOY.sun : '#ffd0d8', 'center', TOY.navy);
+  else toyText('RESULTS', W / 2, 128, 26, TOY.sun, 'center', TOY.navy);
   const medal = [TOY.sun, '#d9e2f2', '#f0a35a', '#b9c3dc'];
   host.results.forEach((r, i) => {
     const p = host.players[r.slot], yy = 168 + i * 112, x = W / 2 - 360;
@@ -8225,7 +8234,7 @@ const BattleArena = {
         const moving = hyp(q.vx, q.vy) > 40;
         if (lift) drawRing(q.x, q.y + q.r * 0.95, q.r, q.p.color);
         drawCritter(q.x + (q.heavyT > 0 ? (Math.random() - 0.5) * 3 : 0), q.y - lift, q.r, q.p.char, { ring: !lift && q.invis <= 0 ? q.p.color : null, alpha: q.invis > 0 ? 0.13 : 1, fx: q.fx, fy: q.fy, walk: moving ? host.t * 16 : 0, ouch: q.flash > 0 && !q.guard, dizzy: q.stun > 0.25, fierce: q.charge > 0 || q.atkT > 0 || q.heavyT > 0 || q.dashT > 0, noShadow: !!lift, squash: q.heavyT > 0 ? Math.min(0.12, q.heavyT * 0.08) : 0 });
-        if (q.blocking) { const a = q.guard > 0 ? 0.75 : 0.4; ctx.fillStyle = `rgba(150,220,255,${a * 0.35})`; ctx.strokeStyle = `rgba(200,240,255,${a + 0.2})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(q.x, q.y - 28, q.r + 20, q.r + 34, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+        if (q.blocking) drawShield(q.x, q.y - q.r * 1.2, q.r * 1.9, q.p.color, 1 - (q.blockT || 0) / 3);
         if (q.frozenT > 0) { rr(q.x - 32, q.y - 70, 64, 84, 10); ctx.fillStyle = 'rgba(180,235,255,.55)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
         if (q.invis > 0) continue;
         // overhead HP bar
@@ -8267,8 +8276,8 @@ const BattleArena = {
    Controls: joystick moves (↑/↓ aims attacks), gestures or A/B for actions,
    holding back blocks.
    ===================================================================== */
-const FIGHT_HELP = [['Tap', 'Light attack'], ['Hold, release', 'Heavy attack'], ['Swipe ↑', 'Jump (again in air)'], ['Swipe ↓ + hold', 'Crouch'],
-  ['Swipe toward foe', 'Dash'], ['Swipe away + hold', 'Block'], ['Double-tap', 'Special'], ['Joystick ↑ / ↓', 'Up / low attacks']];
+const FIGHT_HELP = [['Tap', 'Light attack'], ['Hold, release', 'Heavy attack'], ['Swipe ↑', 'Jump (again in air)'], ['Swipe ↓ + hold', 'Shield'],
+  ['Swipe ← / →', 'Dash'], ['Joystick ↓', 'Shield too'], ['Double-tap', 'Special'], ['Joystick ↑ / ↓', 'Up / low attacks']];
 const FIGHT_CD = { rumble: 5, nova: 4, zip: 5, glorp: 5, shell: 2.2, vex: 6, moxie: 5, frost: 6 };
 const MOVES = {
   jab:   { st: 0.05, ac: 0.08, rec: 0.12, dmg: 5,  kb: 160, ang: -0.3,  w: 64, h: 36, ox: 46, oy: -62,  lvl: 'high' },
@@ -8285,7 +8294,7 @@ function makeFighterMode(rules, title, accent, how) {
   return { title, accent, button: 'ATTACK', buttonB: 'SPECIAL', gestures: true, fighter: true, help: FIGHT_HELP, how, create(players) { return createFight(rules, players); } };
 }
 const FightSmash = makeFighterMode('smash', 'Sky Brawl', '#ff9a3c', 'Free-for-all! Damage % builds up and launches fighters further. Knock rivals off the screen. 3 stocks each.');
-const FightDuel = makeFighterMode('duel', 'Duel', '#ff5a6e', 'One on one, best of 3 rounds. Hold back to block, crouch to duck high attacks, block low by crouching while holding back.');
+const FightDuel = makeFighterMode('duel', 'Duel', '#ff5a6e', 'One on one, best of 3 rounds. Hold the joystick DOWN (or swipe down and hold) to raise your shield. Shields drain, so time them!');
 const FightTag = makeFighterMode('tag', 'Tag Team', '#38c6ff', 'Two teams of two. One fighter each on screen; the benched partner taps TAG IN on their phone to swap in. Benched fighters heal a little.');
 
 function createFight(rules, players) {
@@ -8298,7 +8307,7 @@ function createFight(rules, players) {
     hitstop: 0, banner: '', bannerT: 0, freeze: 0, ending: 0, round: 1, wins: [0, 0], roundT: 0, roundEnd: 0, teams: null, tagQ: [], winTeam: null, bg: null };
   const mk = (p, x, team) => ({ p, C: ROSTER[p.char], x, y: SM ? 560 : FLOOR, vx: 0, vy: 0, facing: x < W / 2 ? 1 : -1, onGround: true, plat: null, jumps: 1, airDash: 1,
     team, hp: 100, pct: 0, stocks: 3, out: false, respawn: 0, inv: 0, hitstun: 0, blockstun: 0, tumble: false, atk: null, heavyT: 0, aHold: -1,
-    crouch: false, swDuck: false, swBlock: false, blocking: false, dashT: 0, dashV: 0, dashCD: 0, dashHits: null, dashDmg: 0, dashKb: 0, dropT: 0,
+    crouch: false, swDuck: false, swBlock: false, blocking: false, blockT: 0, blockCD: 0, dashT: 0, dashV: 0, dashCD: 0, dashHits: null, dashDmg: 0, dashKb: 0, dropT: 0,
     abCD: 0, abMax: 1, armor: 0, hover: 0, zipLand: false, invis: 0, ambush: 0, stomp: false, stompDive: false, frozen: 0, slow: 0, tick: 0, flash: 0,
     kos: 0, lastBy: null, lastByT: 0, bench: false, regenCap: 100, prevJoyY: 0, bt: { think: 0, blockT: 0 } });
   const order = players.slice().sort((a, b) => (a.kind === 'bot') - (b.kind === 'bot') || a.slot - b.slot);
@@ -8327,7 +8336,7 @@ function createFight(rules, players) {
   function dealHit(att, o, dmg, kb, dx, dy, lvl, heavy) {
     if (!onField(o) || o.inv > 0) return false;
     const front = !att || Math.abs(att.x - o.x) < 4 || Math.sign(att.x - o.x) === o.facing;
-    const blocked = o.blocking && front && (lvl !== 'low' || o.crouch);
+    const blocked = o.blocking; // the bubble covers every side and height
     if (blocked) {
       if (!SM) o.hp = Math.max(1, o.hp - dmg * 0.12);
       o.vx = -o.facing * (heavy ? 340 : 220); o.blockstun = heavy ? 0.22 : 0.13; if (att) att.vx = -att.facing * 140;
@@ -8402,7 +8411,7 @@ function createFight(rules, players) {
       const hb = hurt(o);
       if (hx0 > hb.x1 || hx0 + m.w < hb.x0 || hy0 > hb.y1 || hy0 + m.h < hb.y0) continue;
       a.hit.add(o);
-      if (m.lvl === 'high' && o.crouch && o.onGround) { callF(o, 'DUCKED!', '#b5ecff'); continue; }
+      
       const amb = f.ambush > 0, mult = (0.7 + f.C.stats.power * 0.12) * (m.heavy ? 0.6 + 0.8 * a.ch : 1) * (amb ? 1.8 : 1);
       if (dealHit(f, o, m.dmg * mult, m.kb * (m.heavy ? 0.6 + 0.9 * a.ch : 1) * (amb ? 1.3 : 1), Math.cos(m.ang) * f.facing, Math.sin(m.ang), m.lvl, !!m.heavy) && amb) { f.ambush = 0; o.hitstun += 0.3; }
     }
@@ -8431,7 +8440,7 @@ function createFight(rules, players) {
           for (let k = 1; k <= 6; k++) burst(ox + (nx - ox) * k / 6, oy - 50 + (opp.y - oy) * k / 6, '#9fe8ff', 4, 80, 4, 0.4);
           f.x = nx; f.y = opp.y; f.vx = f.vy = 0; f.onGround = opp.onGround; f.facing = opp.x >= f.x ? 1 : -1; }
         f.ambush = 1.8; f.inv = 0.3; SFX.freeze(); break;
-      case 'zip': f.vy = -1150; f.onGround = false; f.hover = 1.0; f.jumps = 1; f.zipLand = true; SFX.power(); break;
+      case 'zip': f.armor = 0.35; f.dashT = 0.32; f.dashV = f.facing * 1080; f.dashHits = new Set(); f.dashDmg = 13; f.dashKb = 640; f.vy = Math.min(f.vy, -220); f.onGround = false; f.hover = 0.7; f.jumps = 1; SFX.dash(); break;
       case 'glorp': g.shots.push({ kind: 'goo', x: f.x + f.facing * 30, y: f.y - 70, vx: f.facing * 520, vy: -650, owner: f, t: 3 }); SFX.splash(); break;
       case 'shell': g.shots.push({ kind: 'plasma', x: f.x + f.facing * 44, y: f.y - 58, vx: f.facing * 800, vy: 0, owner: f, t: 1.6 }); tone(900, 300, 0.2, 'sawtooth', 0.08); break;
       case 'vex': f.invis = 1.6; f.ambush = 1.6; tone(600, 1200, 0.3, 'sine', 0.08); break;
@@ -8456,7 +8465,7 @@ function createFight(rules, players) {
       case 'heavy': startAttack(f, true, (ev.p || f.heavyT) - 0.18); break;
       case 'jump': jump(f); break;
       case 'block': f.swDuck = true; break;
-      case 'dash': { const dir = ev.d === 'l' ? -1 : ev.d === 'r' ? 1 : f.facing; if (dir === f.facing) dash(f, dir); else f.swBlock = true; break; }
+      case 'dash': { const dir = ev.d === 'l' ? -1 : ev.d === 'r' ? 1 : f.facing; dash(f, dir); break; }
       case 'special': special(f); break;
     }
   }
@@ -8482,7 +8491,7 @@ function createFight(rules, players) {
       const evs = f.p.gq || []; f.p.gq = [];
       if (f.out || f.bench) continue;
       if (f.respawn > 0) { f.respawn -= dt; if (f.respawn <= 0) Object.assign(f, { x: 640, y: 150, vx: 0, vy: 0, onGround: false, inv: 2, pct: 0, hitstun: 0, tumble: false, jumps: 1, airDash: 1 }); continue; }
-      for (const k of ['inv', 'hitstun', 'blockstun', 'frozen', 'dashT', 'dashCD', 'abCD', 'armor', 'invis', 'ambush', 'dropT', 'slow']) f[k] = Math.max(0, f[k] - dt);
+      for (const k of ['inv', 'hitstun', 'blockstun', 'frozen', 'dashT', 'dashCD', 'abCD', 'armor', 'invis', 'ambush', 'dropT', 'slow', 'blockCD']) f[k] = Math.max(0, f[k] - dt);
       if (f.hover > 0) { f.hover -= dt; if (Math.random() < 0.8) parts.push({ x: f.x + rand(-6, 6), y: f.y - 30, vx: rand(-30, 30), vy: 200, life: 0.3, max: 0.3, color: Math.random() < 0.5 ? '#ffcc33' : '#ff7a3c', size: 5 }); }
       if (f.hitstun <= 0) f.tumble = false;
       const st = f.C.stats, inp = f.p.input, canAct = f.hitstun <= 0 && f.frozen <= 0 && f.blockstun <= 0 && g.freeze <= 0 && g.roundEnd <= 0 && g.ending <= 0;
@@ -8500,9 +8509,12 @@ function createFight(rules, players) {
       }
       f.prevJoyY = inp.y;
       if (f.heavyT > 0) { f.heavyT += dt; if (f.heavyT > 2.2) startAttack(f, true, 1); }
-      f.crouch = f.onGround && canAct && !f.atk && (inp.y > 0.55 || f.swDuck);
-      f.blocking = f.onGround && canAct && !f.atk && f.heavyT <= 0 && (inp.x * f.facing < -0.45 || f.swBlock);
-      if (f.crouch && f.plat && f.plat.soft && (inp.y > 0.8 || f.swDuck) && f.dropT <= 0) { f.dropT = 0.3; f.onGround = false; f.y += 3; f.crouch = false; }
+      f.crouch = false;
+      const wantBlock = f.onGround && canAct && !f.atk && f.heavyT <= 0 && f.blockCD <= 0 && (inp.y > 0.55 || f.swDuck);
+      if (wantBlock && !f.blocking) { f.blockT = 0; SFX.freeze(); }
+      f.blocking = wantBlock;
+      if (f.blocking) { f.blockT += dt; if (f.blockT > 3) { f.blocking = false; f.swDuck = false; f.blockCD = 0.8; } }
+      if (f.plat && f.plat.soft && f.onGround && inp.y > 0.92 && !f.swDuck && f.dropT <= 0) { f.dropT = 0.3; f.onGround = false; f.y += 3; f.blocking = false; } // hard down drops through cloud platforms
       if (f.atk) { f.atk.t += dt; attackHits(f); if (f.atk && f.atk.t > f.atk.m.st + f.atk.m.ac + f.atk.m.rec) f.atk = null; }
       let tvx = 0;
       if (canAct && !f.crouch) tvx = inp.x * (220 + st.speed * 32) * (f.blocking ? 0.45 : 1) * (f.heavyT > 0 ? 0.4 : 1) * (f.slow > 0 ? 0.5 : 1) * (f.hover > 0 ? 1.3 : 1);
@@ -8626,7 +8638,7 @@ function createFight(rules, players) {
       { fx: f.facing, fy: 0, alpha, rot, sy, noShadow: true, walk: f.onGround && Math.abs(f.vx) > 40 && !f.atk ? host.t * 16 : 0, side: true,
         anim: f.tumble ? 'fall' : (f.hitstun > 0 ? 'hit' : f.atk ? 'punch' : !f.onGround ? 'jump' : (f.onGround && Math.abs(f.vx) > 40) ? 'run' : 'fightidle'),
         ouch: f.hitstun > 0 || f.flash > 0, fierce: !!f.atk || f.heavyT > 0 || f.armor > 0 || f.dashT > 0, dizzy: f.tumble && f.onGround });
-    if (f.blocking) { ctx.strokeStyle = 'rgba(200,240,255,.9)'; ctx.fillStyle = 'rgba(150,220,255,.18)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(f.x + f.facing * 30, f.y - (f.crouch ? 34 : 56), 18, f.crouch ? 40 : 62, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+    if (f.blocking) drawShield(f.x, f.y - R * 1.25, R * 1.75, f.p.color, 1 - (f.blockT || 0) / 3);
     if (f.frozen > 0) { rr(f.x - 36, f.y - 110, 72, 112, 10); ctx.fillStyle = 'rgba(180,235,255,.55)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
     if (f.ambush > 0 && f.invis <= 0) { ctx.strokeStyle = 'rgba(200,170,255,.8)'; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -host.t * 40; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(f.x, f.y, 40, 10, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     if (f.atk && f.atk.t >= f.atk.m.st && f.atk.t <= f.atk.m.st + f.atk.m.ac + 0.04) {
@@ -9199,7 +9211,260 @@ function createRace(players) {
   return g;
 }
 
-const GAMES = { goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   CO-OP: FORT FRENZY. Defend the toy fort from waves of Gloomies together.
+   A = bonk · B = build a turret where you stand (or upgrade the one you're on) with the team's coins.
+   ===================================================================== */
+const FortFrenzy = {
+  title: 'Fort Frenzy', accent: '#22d39b', button: 'BONK', buttonB: 'BUILD', coop: true,
+  how: 'Team up! Gloomies are marching on the toy fort. A bonks them, B builds a turret right where you stand (or upgrades it). Grab coins together and survive 8 waves!',
+  create(players) {
+    const FX = W / 2, FY = H / 2 + 20, FORT_R = 62, WAVES = 8, TURRET_COST = 30, UPGRADE_COST = [0, 40, 60];
+    const n = players.length;
+    const g = { t: 0, coop: true, done: false, qs: [], foes: [], coins: [], turrets: [], bolts: [], pops: [], swings: [],
+      bank: 40, fortHP: 100, wave: 0, waveT: 3.5, spawnLeft: 0, spawnT: 0, state: 'break', won: false, lost: false, endT: 0, banner: 'GET READY!', bannerT: 3, flash: 0 };
+    const spawns = [[FX - 120, FY + 90], [FX + 120, FY + 90], [FX - 120, FY - 90], [FX + 120, FY - 90]];
+    players.forEach(p => { const [x, y] = spawns[p.slot]; g.qs.push({ p, C: ROSTER[p.char], x, y, vx: 0, vy: 0, fx: 0, fy: 1, r: 26, hp: 100, down: 0, inv: 0, atkCD: 0, atkT: 0, kills: 0, builds: 0, coinsGot: 0, hitT: 0 }); });
+    const FOE = {
+      gloom: { r: 20, hp: 3, sp: 62, dmg: 4, coin: 6, col: '#8fd16b', dark: '#4e9a3a' },
+      windup: { r: 16, hp: 2, sp: 118, dmg: 3, coin: 5, col: '#ff9ab0', dark: '#d9506f' },
+      brute: { r: 30, hp: 9, sp: 40, dmg: 9, coin: 14, col: '#b49cff', dark: '#6d4fd8' },
+      boss: { r: 58, hp: 50, sp: 30, dmg: 22, coin: 80, col: '#ff7a5c', dark: '#c4402a' },
+    };
+    function startWave() {
+      g.wave++; g.state = 'fight';
+      g.spawnLeft = Math.round((7 + g.wave * 4) * (0.7 + n * 0.25)); g.spawnT = 0.5;
+      g.banner = g.wave === WAVES ? 'BOSS WAVE!' : 'WAVE ' + g.wave; g.bannerT = 2; SFX.started && SFX.go(); shake(0.3);
+      if (g.wave === WAVES) spawnFoe('boss');
+    }
+    function spawnFoe(kind) {
+      const side = Math.floor(Math.random() * 4), m = 40;
+      const x = side === 0 ? -m : side === 1 ? W + m : rand(60, W - 60), y = side === 2 ? -m : side === 3 ? H + m : rand(80, H - 40);
+      const d = FOE[kind], scale = 1 + (g.wave - 1) * 0.12;
+      g.foes.push({ kind, x, y, r: d.r, hp: Math.ceil(d.hp * scale), max: Math.ceil(d.hp * scale), sp: d.sp * (1 + g.wave * 0.03), d, kx: 0, ky: 0, hitT: 0, wob: Math.random() * 6, atkT: 0, stun: 0 });
+    }
+    const near = (a, b, d) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < d * d;
+    function hurtFoe(f, dmg, from, kx, ky) {
+      f.hp -= dmg; f.hitT = 0.15; f.kx += kx; f.ky += ky; burst(f.x, f.y - f.r * 0.6, f.d.col, 6, 160, 4, 0.35);
+      if (f.hp <= 0) {
+        f.dead = true; SFX.pop(); burst(f.x, f.y - f.r * 0.5, f.d.col, f.kind === 'boss' ? 40 : 12, 260, 6, 0.6);
+        const nc = Math.max(1, Math.round(f.d.coin / 5));
+        for (let k = 0; k < nc; k++) g.coins.push({ x: f.x + rand(-14, 14), y: f.y + rand(-10, 10), vx: rand(-90, 90), vy: rand(-90, 90), v: 5, t: 0 });
+        if (from) { from.kills++; }
+        if (f.kind === 'boss') { shake(0.8); toast('The Big Gloom is down!'); }
+      }
+    }
+    function build(q) {
+      const tur = g.turrets.find(t => near(t, q, 34));
+      if (tur) {
+        if (tur.lv >= 3) { g.pops.push({ x: q.x, y: q.y - 70, t: 0, txt: 'MAX!', col: '#fff' }); return; }
+        const cost = UPGRADE_COST[tur.lv]; if (g.bank < cost) { g.pops.push({ x: q.x, y: q.y - 70, t: 0, txt: cost + '🪙 needed', col: TOY.coral }); buzz(q.p, 60); return; }
+        g.bank -= cost; tur.lv++; tur.pop = 0.3; q.builds++; SFX.power(); burst(tur.x, tur.y - 30, TOY.sun, 16, 220, 5, 0.5); g.pops.push({ x: tur.x, y: tur.y - 80, t: 0, txt: 'LEVEL ' + tur.lv + '!', col: TOY.sun }); return;
+      }
+      if (g.bank < TURRET_COST) { g.pops.push({ x: q.x, y: q.y - 70, t: 0, txt: TURRET_COST + '🪙 needed', col: TOY.coral }); buzz(q.p, 60); return; }
+      if (near(q, { x: FX, y: FY }, FORT_R + 40) || g.turrets.some(t => near(t, q, 60))) { g.pops.push({ x: q.x, y: q.y - 70, t: 0, txt: 'Too close!', col: TOY.coral }); return; }
+      g.bank -= TURRET_COST; q.builds++; g.turrets.push({ x: q.x, y: q.y, lv: 1, cd: 0.4, aim: 0, pop: 0.4, owner: q, col: q.p.color });
+      SFX.click(); SFX.power(); burst(q.x, q.y - 20, '#fff', 14, 200, 5, 0.5); buzz(q.p, 40);
+    }
+    function attack(q) {
+      if (q.atkCD > 0 || q.down > 0) return;
+      q.atkCD = 0.32; q.atkT = 0.18; SFX.hit();
+      const ax = q.x + q.fx * 30, ay = q.y + q.fy * 30;
+      g.swings.push({ x: ax, y: ay, t: 0, col: q.p.color });
+      let hit = false;
+      for (const f of g.foes) if (!f.dead && near(f, { x: ax, y: ay }, f.r + 44)) { const d = hyp(f.x - q.x, f.y - q.y) || 1; hurtFoe(f, f.kind === 'boss' ? 1 : 1, q, (f.x - q.x) / d * (f.kind === 'boss' ? 40 : 260), (f.y - q.y) / d * (f.kind === 'boss' ? 40 : 260)); f.stun = 0.25; hit = true; }
+      if (hit) buzz(q.p, 30);
+    }
+    g.update = dt => {
+      g.t += dt; g.flash = Math.max(0, g.flash - dt); if (g.bannerT > 0) g.bannerT -= dt;
+      if (g.won || g.lost) { g.endT += dt; if (g.endT > 3.5) g.done = true; }
+      // waves
+      if (!g.won && !g.lost) {
+        if (g.state === 'break') { g.waveT -= dt; if (g.waveT <= 0) startWave(); }
+        else {
+          g.spawnT -= dt;
+          if (g.spawnLeft > 0 && g.spawnT <= 0) {
+            g.spawnLeft--; g.spawnT = Math.max(0.28, 1.3 - g.wave * 0.11) / (0.7 + n * 0.2);
+            const r = Math.random(); spawnFoe(g.wave >= 3 && r < 0.12 + g.wave * 0.02 ? 'brute' : g.wave >= 2 && r < 0.45 ? 'windup' : 'gloom');
+          }
+          if (g.spawnLeft <= 0 && g.foes.every(f => f.dead)) {
+            if (g.wave >= WAVES) { g.won = true; g.banner = 'FORT SAVED!'; g.bannerT = 99; SFX.win(); SFX.cheer(); }
+            else { g.state = 'break'; g.waveT = 7; g.banner = 'WAVE ' + g.wave + ' CLEARED!'; g.bannerT = 2.5; g.bank += 10 + g.wave * 4; SFX.cheer(); for (const q of g.qs) { q.hp = Math.min(100, q.hp + 40); } }
+          }
+        }
+      }
+      // players
+      for (const q of g.qs) {
+        const inp = q.p.input;
+        q.inv = Math.max(0, q.inv - dt); q.atkCD = Math.max(0, q.atkCD - dt); q.atkT = Math.max(0, q.atkT - dt); q.hitT = Math.max(0, q.hitT - dt);
+        if (q.down > 0) { q.down -= dt; if (q.down <= 0) { q.hp = 100; q.inv = 2; q.x = FX + rand(-40, 40); q.y = FY + 110; buzz(q.p, 120); } continue; }
+        const mx = inp.x || 0, my = inp.y || 0, ml = hyp(mx, my);
+        if (ml > 0.15) { q.fx = mx / ml; q.fy = my / ml; }
+        const sp = 300 + q.C.stats.speed * 22;
+        q.vx += ((ml > 0.15 ? mx : 0) * sp - q.vx) * Math.min(1, dt * 12); q.vy += ((ml > 0.15 ? my : 0) * sp - q.vy) * Math.min(1, dt * 12);
+        q.x = clamp(q.x + q.vx * dt, 30, W - 30); q.y = clamp(q.y + q.vy * dt, 70, H - 24);
+        const dd = hyp(q.x - FX, q.y - FY); if (dd < FORT_R + q.r * 0.6) { const k = (FORT_R + q.r * 0.6) / (dd || 1); q.x = FX + (q.x - FX) * k; q.y = FY + (q.y - FY) * k; }
+        if (q.p.aDown) attack(q);
+        if (q.p.bDown && !g.won && !g.lost) build(q);
+      }
+      // coins: drift, then magnet to the nearest player
+      for (const c of g.coins) {
+        c.t += dt; c.vx *= Math.pow(0.05, dt); c.vy *= Math.pow(0.05, dt);
+        let best = null, bd = 160; for (const q of g.qs) if (q.down <= 0) { const d = hyp(q.x - c.x, q.y - c.y); if (d < bd) { bd = d; best = q; } }
+        if (best && c.t > 0.3) { const d = bd || 1; c.vx += (best.x - c.x) / d * 1400 * dt; c.vy += (best.y - c.y) / d * 1400 * dt; if (d < 24) { c.got = true; g.bank += c.v; best.coinsGot += c.v; SFX.click(); } }
+        c.x += c.vx * dt; c.y += c.vy * dt;
+      }
+      g.coins = g.coins.filter(c => !c.got && c.t < 14);
+      // turrets
+      for (const t of g.turrets) {
+        t.cd -= dt; t.pop = Math.max(0, t.pop - dt);
+        const range = 190 + t.lv * 40; let tgt = null, bd = range;
+        for (const f of g.foes) if (!f.dead) { const d = hyp(f.x - t.x, f.y - t.y); if (d < bd) { bd = d; tgt = f; } }
+        if (tgt) { t.aim = Math.atan2(tgt.y - t.y, tgt.x - t.x); if (t.cd <= 0) { t.cd = [0, 0.75, 0.5, 0.32][t.lv]; g.bolts.push({ x: t.x + Math.cos(t.aim) * 26, y: t.y - 34 + Math.sin(t.aim) * 26, vx: Math.cos(t.aim) * 620, vy: Math.sin(t.aim) * 620, dmg: t.lv >= 3 ? 2 : 1, owner: t.owner, col: t.col, t: 0 }); tone(900, 500, 0.05, 'square', 0.03); } }
+      }
+      for (const b of g.bolts) {
+        b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt;
+        for (const f of g.foes) if (!f.dead && near(f, { x: b.x, y: b.y + 20 }, f.r + 8)) { hurtFoe(f, b.dmg, b.owner, b.vx * 0.12, b.vy * 0.12); b.dead = true; break; }
+      }
+      g.bolts = g.bolts.filter(b => !b.dead && b.t < 1.2);
+      // foes march on the fort, swat players they bump into
+      for (const f of g.foes) {
+        if (f.dead) continue;
+        f.hitT = Math.max(0, f.hitT - dt); f.stun = Math.max(0, f.stun - dt); f.atkT = Math.max(0, f.atkT - dt);
+        f.kx *= Math.pow(0.02, dt); f.ky *= Math.pow(0.02, dt);
+        let tx = FX, ty = FY;
+        const prey = g.qs.find(q => q.down <= 0 && near(q, f, 110)); if (prey && f.kind !== 'boss') { tx = prey.x; ty = prey.y; }
+        const d = hyp(tx - f.x, ty - f.y) || 1, sp = f.stun > 0 ? 0 : f.sp;
+        f.x += ((tx - f.x) / d * sp + f.kx) * dt; f.y += ((ty - f.y) / d * sp + f.ky) * dt;
+        if (hyp(f.x - FX, f.y - FY) < FORT_R + f.r * 0.7) { // chomp the fort
+          const k = (FORT_R + f.r * 0.7) / (hyp(f.x - FX, f.y - FY) || 1); f.x = FX + (f.x - FX) * k; f.y = FY + (f.y - FY) * k;
+          if (f.atkT <= 0) { f.atkT = 1; g.fortHP -= f.d.dmg * (f.kind === 'boss' ? 1 : 0.6); g.flash = 0.25; SFX.bonk(); shake(0.15); if (g.fortHP <= 0 && !g.lost && !g.won) { g.fortHP = 0; g.lost = true; g.banner = 'THE FORT FELL!'; g.bannerT = 99; SFX.out(); shake(0.8); } }
+        }
+        for (const q of g.qs) if (q.down <= 0 && q.inv <= 0 && near(q, f, q.r + f.r)) {
+          q.hp -= f.d.dmg; q.inv = 0.8; q.hitT = 0.3; const dd = hyp(q.x - f.x, q.y - f.y) || 1; q.vx += (q.x - f.x) / dd * 420; q.vy += (q.y - f.y) / dd * 420; SFX.bonk(); buzz(q.p, 90);
+          if (q.hp <= 0) { q.down = 4; burst(q.x, q.y - 30, q.p.color, 18, 240, 6, 0.6); toast(q.p.name + ' is down! Back in 4s'); }
+        }
+      }
+      g.foes = g.foes.filter(f => !f.dead);
+      for (const s2 of g.swings) s2.t += dt; g.swings = g.swings.filter(s2 => s2.t < 0.2);
+      for (const pp of g.pops) pp.t += dt; g.pops = g.pops.filter(pp => pp.t < 1.1);
+      for (const q of g.qs) if (q.p.kind === 'phone' && Math.floor(g.t * 2) !== Math.floor((g.t - dt) * 2)) send(q.p.conn, { t: 'cd', ms: 0 });
+    };
+    g.ranking = () => g.qs.slice().sort((a, b) => (b.kills * 2 + b.builds * 5 + b.coinsGot * 0.2) - (a.kills * 2 + a.builds * 5 + a.coinsGot * 0.2)).map(q => q.p.slot);
+    Object.defineProperty(g, 'pointTable', { get: () => g.won ? [4, 3, 3, 3] : [1, 1, 1, 1] });
+    g.bot = (p, dt) => {
+      const q = g.qs.find(x => x.p === p); if (!q || q.down > 0) { p.input = { x: 0, y: 0, a: false, b: false }; return; }
+      // guard a spot on a ring around the fort, chase anything close
+      const ang = (p.slot / Math.max(1, n)) * Math.PI * 2 + 0.6, gx = FX + Math.cos(ang) * 170, gy = FY + Math.sin(ang) * 130;
+      let tgt = null, bd = 260; for (const f of g.foes) { const d = hyp(f.x - q.x, f.y - q.y); if (d < bd) { bd = d; tgt = f; } }
+      let tx = gx, ty = gy;
+      const coin = g.coins.find(c => hyp(c.x - q.x, c.y - q.y) < 200);
+      if (tgt) { tx = tgt.x; ty = tgt.y; } else if (coin) { tx = coin.x; ty = coin.y; }
+      const dx = tx - q.x, dy = ty - q.y, d = hyp(dx, dy) || 1;
+      const close = tgt && d < tgt.r + 40;
+      p.input = { x: close ? dx / d * 0.2 : d > 14 ? dx / d : 0, y: close ? dy / d * 0.2 : d > 14 ? dy / d : 0, a: false, b: false };
+      if (close && q.atkCD <= 0) { q.fx = dx / d; q.fy = dy / d; p.aLatch = true; }
+      const want = g.bank >= TURRET_COST + 10 && !tgt && hyp(q.x - gx, q.y - gy) < 30 && !g.turrets.some(t => near(t, q, 70));
+      const up = g.turrets.find(t => near(t, q, 34) && t.lv < 3 && g.bank >= UPGRADE_COST[t.lv] + 20);
+      if ((want || up) && Math.random() < dt * 2) p.bLatch = true;
+    };
+    // ---------- drawing ----------
+    const bg = makeLayer(() => {
+      const c = ctx; const gg = c.createLinearGradient(0, 0, 0, H); gg.addColorStop(0, '#8ee07a'); gg.addColorStop(1, '#5fc761'); c.fillStyle = gg; c.fillRect(0, 0, W, H);
+      const rnd = seeded(77);
+      for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,255' : '30,110,40'},${rnd() * 0.18})`; c.fillRect(rnd() * W, rnd() * H, 2, 4); }
+      for (let i = 0; i < 70; i++) { const x = rnd() * W, y = rnd() * H; if (hyp(x - FX, y - FY) < 150) continue; c.fillStyle = ['#fff', '#ffd23f', '#ff8fb5', '#9fd8ff'][i % 4]; for (let k = 0; k < 5; k++) { const a = k / 5 * 6.28; c.beginPath(); c.arc(x + Math.cos(a) * 4, y + Math.sin(a) * 4, 3, 0, 7); c.fill(); } c.fillStyle = '#ffcf3a'; c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); }
+      // dirt path ring around the fort
+      c.strokeStyle = 'rgba(214,170,110,.65)'; c.lineWidth = 46; c.beginPath(); c.ellipse(FX, FY, 210, 165, 0, 0, 7); c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = 2; c.setLineDash([10, 12]); c.beginPath(); c.ellipse(FX, FY, 210, 165, 0, 0, 7); c.stroke(); c.setLineDash([]);
+      // bushes at the edges
+      for (let i = 0; i < 26; i++) { const t = i / 26, x = t < 0.5 ? t * 2 * W : (t - 0.5) * 2 * W, y = t < 0.5 ? 44 : H - 10; c.fillStyle = '#3aa356'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(x + k * 18 - 18, y + (k % 2) * -8, 22, 0, 7); c.fill(); } }
+    });
+    function drawFoe(f) {
+      const d = f.d, wob = Math.sin(g.t * 8 + f.wob) * (f.kind === 'windup' ? 0.2 : 0.1), s = f.r;
+      ctx.fillStyle = 'rgba(0,40,0,.22)'; ctx.beginPath(); ctx.ellipse(f.x, f.y + s * 0.15, s * 0.95, s * 0.35, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(f.x, f.y - s * 0.6); ctx.rotate(wob);
+      const flash = f.hitT > 0;
+      ctx.fillStyle = flash ? '#fff' : d.col; ctx.strokeStyle = TOY.navy; ctx.lineWidth = Math.max(3, s * 0.12);
+      ctx.beginPath(); ctx.ellipse(0, 0, s, s * 1.05, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = flash ? '#fff' : d.dark; ctx.beginPath(); ctx.ellipse(0, s * 0.45, s * 0.75, s * 0.4, 0, 0, Math.PI); ctx.fill();
+      // grumpy eyes + brows
+      for (const ex of [-0.38, 0.38]) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex * s, -s * 0.15, s * 0.24, 0, 7); ctx.fill(); ctx.lineWidth = Math.max(2, s * 0.06); ctx.stroke(); ctx.fillStyle = TOY.navy; ctx.beginPath(); ctx.arc(ex * s + (f.x < FX ? 1 : -1) * s * 0.05, -s * 0.1, s * 0.11, 0, 7); ctx.fill();
+        ctx.lineWidth = Math.max(3, s * 0.1); ctx.beginPath(); ctx.moveTo(ex * s - s * 0.22, -s * 0.48 + (ex < 0 ? -s * 0.08 : s * 0.06)); ctx.lineTo(ex * s + s * 0.22, -s * 0.48 + (ex < 0 ? s * 0.06 : -s * 0.08)); ctx.stroke(); }
+      ctx.lineWidth = Math.max(2.5, s * 0.08); ctx.beginPath(); ctx.arc(0, s * 0.42, s * 0.22, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+      if (f.kind === 'windup') { ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 4; ctx.save(); ctx.translate(0, -s * 1.1); ctx.rotate(g.t * 10); ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.moveTo(0, -8); ctx.lineTo(0, 8); ctx.stroke(); ctx.restore(); }
+      if (f.kind === 'brute' || f.kind === 'boss') { ctx.fillStyle = TOY.sun; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 3; for (const hx of [-0.55, 0.55]) { ctx.beginPath(); ctx.moveTo(hx * s - s * 0.12, -s * 0.85); ctx.lineTo(hx * s + hx * s * 0.3, -s * 1.3); ctx.lineTo(hx * s + s * 0.12, -s * 0.8); ctx.closePath(); ctx.fill(); ctx.stroke(); } }
+      ctx.restore();
+      if (f.max > 2 && f.hp < f.max) { const w2 = s * 1.6; rr(f.x - w2 / 2, f.y - s * 2.05, w2, 7, 3.5); ctx.fillStyle = 'rgba(27,31,94,.35)'; ctx.fill(); rr(f.x - w2 / 2, f.y - s * 2.05, w2 * f.hp / f.max, 7, 3.5); ctx.fillStyle = TOY.coral; ctx.fill(); }
+    }
+    function drawTurret(t) {
+      const sc = 1 + t.pop * 0.8 + (t.lv - 1) * 0.12;
+      ctx.save(); ctx.translate(t.x, t.y); ctx.scale(sc, sc);
+      ctx.fillStyle = 'rgba(0,40,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 30, 11, 0, 0, 7); ctx.fill();
+      rr(-24, -30, 48, 34, 10); ctx.fillStyle = shade(t.col, -0.25); ctx.fill();
+      rr(-24, -36, 48, 34, 10); ctx.fillStyle = t.col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; rr(-24, -36, 48, 40, 10); ctx.stroke();
+      ctx.save(); ctx.translate(0, -40); ctx.rotate(t.aim);
+      rr(0, -7, 34, 14, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3.5; ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -40, 15, 0, 7); ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      for (let k = 0; k < t.lv; k++) { ctx.fillStyle = TOY.sun; sparkleStar(-14 + k * 14, -18, 6); }
+      ctx.restore();
+    }
+    function sparkleStar(x, y, r) { ctx.beginPath(); for (let j = 0; j < 10; j++) { const rr2 = j % 2 ? r * 0.45 : r, a = j * Math.PI / 5 - Math.PI / 2; ctx.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); } ctx.closePath(); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
+    function drawFort() {
+      const hit = g.flash > 0 ? (Math.random() - 0.5) * 6 : 0;
+      ctx.save(); ctx.translate(FX + hit, FY);
+      ctx.fillStyle = 'rgba(0,40,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 18, FORT_R + 16, 22, 0, 0, 7); ctx.fill();
+      // base wall
+      rr(-FORT_R, -60, FORT_R * 2, 78, 14); ctx.fillStyle = '#e9edff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      for (let k = -2; k <= 2; k++) { rr(k * 24 - 9, -74, 18, 18, 4); ctx.fillStyle = '#e9edff'; ctx.fill(); ctx.stroke(); }
+      rr(-16, -20, 32, 38, 16); ctx.fillStyle = '#c9814a'; ctx.fill(); ctx.stroke();
+      // towers
+      for (const tx of [-FORT_R + 6, FORT_R - 6]) { rr(tx - 18, -100, 36, 118, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke(); ctx.fillStyle = TOY.coral; ctx.beginPath(); ctx.moveTo(tx - 24, -98); ctx.lineTo(tx, -136); ctx.lineTo(tx + 24, -98); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      ctx.strokeStyle = TOY.navy; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(FORT_R - 6, -136); ctx.lineTo(FORT_R - 6, -162); ctx.stroke();
+      ctx.fillStyle = TOY.sun; ctx.beginPath(); ctx.moveTo(FORT_R - 6, -162); ctx.lineTo(FORT_R + 22 + Math.sin(g.t * 6) * 3, -154); ctx.lineTo(FORT_R - 6, -146); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      // fort health
+      const w = 180, x = FX - w / 2, y = FY + 34;
+      rr(x, y, w, 18, 9); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      rr(x + 3, y + 3, (w - 6) * g.fortHP / 100, 12, 6); ctx.fillStyle = g.fortHP > 50 ? TOY.mint : g.fortHP > 25 ? TOY.orange : TOY.coral; ctx.fill();
+      toyText('FORT ' + Math.ceil(g.fortHP), FX, y + 30, 15, TOY.navy, 'center', null);
+    }
+    g.draw = () => {
+      ctx.drawImage(bg, 0, 0, W, H);
+      for (const c of g.coins) { const b = Math.abs(Math.sin(c.t * 6)) * 4; ctx.fillStyle = 'rgba(0,40,0,.2)'; ctx.beginPath(); ctx.ellipse(c.x, c.y + 6, 7, 3, 0, 0, 7); ctx.fill(); ctx.fillStyle = TOY.sun; ctx.beginPath(); ctx.ellipse(c.x, c.y - b, 8 * Math.abs(Math.cos(c.t * 4)) + 2, 8, 0, 0, 7); ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
+      // depth-sorted world: fort, turrets, foes, players
+      const items = [{ y: FY, d: drawFort }];
+      for (const t of g.turrets) items.push({ y: t.y, d: () => drawTurret(t) });
+      for (const f of g.foes) items.push({ y: f.y, d: () => drawFoe(f) });
+      for (const q of g.qs) if (q.down <= 0) items.push({ y: q.y, d: () => {
+        const moving = hyp(q.vx, q.vy) > 40;
+        if (!(q.inv > 0 && Math.floor(g.t * 12) % 2)) drawCritter(q.x, q.y - 26, 26, q.p.char, { fx: q.fx, fy: q.fy, walk: moving ? host.t * 16 : 0, ouch: q.hitT > 0, fierce: q.atkT > 0, anim: q.hitT > 0 ? 'hit' : q.atkT > 0 ? 'punch' : moving ? 'run' : 'idle' });
+        nameTag(q.p, q.x, q.y - 26 - 26 * 2.75 - 6);
+        if (q.hp < 100) { rr(q.x - 26, q.y + 8, 52, 7, 3.5); ctx.fillStyle = 'rgba(27,31,94,.3)'; ctx.fill(); rr(q.x - 26, q.y + 8, 52 * q.hp / 100, 7, 3.5); ctx.fillStyle = TOY.mint; ctx.fill(); }
+      } });
+      items.sort((a, b) => a.y - b.y); for (const it of items) it.d();
+      for (const b of g.bolts) { ctx.fillStyle = '#fff'; ctx.strokeStyle = b.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, 7); ctx.fill(); ctx.stroke(); }
+      for (const s2 of g.swings) { ctx.globalAlpha = 1 - s2.t / 0.2; ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(s2.x, s2.y - 20, 26 + s2.t * 120, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
+      for (const pp of g.pops) { ctx.globalAlpha = 1 - pp.t / 1.1; toyText(pp.txt, pp.x, pp.y - pp.t * 40, 20, pp.col, 'center', TOY.navy); ctx.globalAlpha = 1; }
+      // downed players: ghost bubble at the fort
+      g.qs.filter(q => q.down > 0).forEach((q, i) => { toyText('💤 ' + q.p.name + ' ' + Math.ceil(q.down), FX - 60 + i * 120, FY - 190, 17, q.p.color, 'center', TOY.navy); });
+      // HUD: wave + bank + foes left
+      rr(20, 14, 250, 50, 25); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText((g.state === 'break' && !g.won ? 'NEXT: WAVE ' + (g.wave + 1) + ' in ' + Math.ceil(g.waveT) : 'WAVE ' + g.wave + ' / ' + WAVES), 145, 40, 20, TOY.navy, 'center', null);
+      rr(W - 220, 14, 200, 50, 25); ctx.fillStyle = '#fff6d6'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText('🪙 ' + g.bank, W - 120, 40, 26, TOY.navy, 'center', null);
+      toyText('B = turret ' + TURRET_COST + '🪙', W - 120, 80, 15, TOY.navy, 'center', '#fff');
+      const left = g.foes.length + g.spawnLeft; if (g.state === 'fight') toyText(left + ' Gloomies left', W / 2, 30, 20, '#fff', 'center', TOY.navy);
+      if (g.bannerT > 0) { const sc = 1 + Math.max(0, g.bannerT - (g.won || g.lost ? 98 : 1.6)) * 0.6; ctx.save(); ctx.translate(W / 2, H / 2 - 150); ctx.scale(sc, sc); headline(g.banner, 0, 0, g.won || g.lost ? 76 : 58, g.lost ? '#ff9aab' : TOY.sun, g.lost ? TOY.coral : TOY.orange); ctx.restore(); }
+      if (g.won) confetti(50, 1);
+    };
+    g.dispose = () => {};
+    return g;
+  },
+};
+
+const GAMES = { fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -9292,7 +9557,7 @@ function showMsg(html, interactive) {
   if (html) { m.innerHTML = html; m.classList.remove('hidden'); } else m.classList.add('hidden');
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🤝 Fort Frenzy (Co-op)' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -9329,7 +9594,7 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader · pick your character</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['cup', '🎉 Party'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
+        <div class="row">${[['cup', '🎉 Party'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['fort', '🤝 Co-op']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'fight' ? `<div class="row">${[['smash', 'Sky Brawl · FFA'], ['duel', 'Duel · 1v1'], ['tag', 'Tag · 2v2']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         <div class="row">${B('bots', '🤖 Bots ' + (d.bots ? 'ON' : 'OFF'), null, d.bots)}${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}</div>
