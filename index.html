@@ -30,7 +30,9 @@ button{font-family:inherit;cursor:pointer;border:0}
 /* ---------- phone controller ---------- */
 #pad{position:fixed;inset:0;display:flex;flex-direction:column;background:#1b1838;user-select:none;-webkit-user-select:none;touch-action:none}
 #padTop{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));background:rgba(0,0,0,.3);min-height:54px}
-#chip{width:30px;height:30px;border-radius:50%;background:#888;flex:none;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}
+#chip{width:40px;height:40px;border-radius:50%;background:#888;flex:none;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25);overflow:hidden;position:relative}
+#chipImg{position:absolute;inset:-2px;width:44px;height:44px;object-fit:contain;object-position:50% 20%;display:none}
+#padMsg .portrait{width:52px;height:52px;object-fit:contain;display:inline-block;vertical-align:middle;margin:-8px 6px -6px 0}
 #pname{font-weight:700;font-size:18px;flex:none}
 #phint{flex:1;font-size:14px;opacity:.85;text-align:right;line-height:1.2}
 #padBody{flex:1;position:relative;display:flex}
@@ -84,7 +86,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 <canvas id="tv" class="hidden"></canvas>
 
 <div id="pad" class="hidden">
-  <div id="padTop"><div id="chip"></div><div id="pname">Player</div><div id="phint">Connecting…</div><button id="pauseBtn" class="hidden" aria-label="Pause">⏸</button></div>
+  <div id="padTop"><div id="chip"><img id="chipImg" alt=""></div><div id="pname">Player</div><div id="phint">Connecting…</div><button id="pauseBtn" class="hidden" aria-label="Pause">⏸</button></div>
   <div id="padBody">
     <div id="stickZone"><div id="stickHelp">Drag anywhere here<br>to move</div><div id="stickBase" class="hidden"></div><div id="stickKnob" class="hidden"></div></div>
     <div id="btnZone"><button id="aBtn">A<small>ACTION</small></button></div>
@@ -2419,8 +2421,10 @@ const $ = s => document.querySelector(s);
 const W = 1280, H = 720;
 const COLORS = ['#ff5a6e', '#38c6ff', '#ffcc33', '#56e07a'];
 const DARKS  = ['#b8283c', '#1386b8', '#c99200', '#249a47'];
-const CRITTER_NAMES = ['Blaze', 'Splash', 'Zing', 'Sprout'];
-const BOT_NAMES = ['Bonk', 'Beep', 'Zap', 'Fizz'];
+const CRITTER_NAMES = ['Rumble', 'Nova', 'Zip', 'Glorp'];
+const BOT_NAMES = ['Rumble', 'Nova', 'Zip', 'Glorp'];
+const CATCHPHRASES = ['"Out of my way."', '"Already won."', '"Wheee!"', '"Glorp?"'];
+const ART_URL = i => 'assets/critter-' + i + '.webp';
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -2874,7 +2878,7 @@ function makeLayer(draw) {
 const CRIT_IMG = [];
 function loadCritterArt() {
   if (!location.protocol.startsWith('http')) return;
-  for (let i = 0; i < 4; i++) { const im = new Image(); im.onerror = () => { im.bad = true; }; im.src = 'assets/critter-' + i + '.png'; CRIT_IMG[i] = im; }
+  for (let i = 0; i < 4; i++) { const im = new Image(); im.onerror = () => { im.bad = true; }; im.src = ART_URL(i); CRIT_IMG[i] = im; }
 }
 
 /* A critter: outlined cartoon blob with feet, shading, blinking eyes, expressions and a slot accessory.
@@ -2889,8 +2893,28 @@ function drawCritter(x, y, r, slot, o = {}) {
   const sq = o.squash || 0; ctx.scale(1 + sq, 1 - sq);
   const img = CRIT_IMG[slot];
   if (img && img.complete && img.naturalWidth && !img.bad) {
-    if (fx < -0.2) ctx.scale(-1, 1);
-    const s = r * 2.7; ctx.drawImage(img, -s / 2, -s * 0.56, s, s); ctx.restore(); return;
+    // Character art: feet anchored at the bottom of the hit circle, animated with bob / lean / wobble / hop.
+    const t = host.t, s = r * 2.75;
+    let bob = 0, rot = 0, sc = 1;
+    if (o.walk) { bob = -Math.abs(Math.sin(o.walk * 0.5)) * r * 0.16; rot = Math.sin(o.walk * 0.5) * 0.09; }
+    else bob = Math.sin(t * 3 + slot) * r * 0.035;
+    if (o.happy) bob -= Math.abs(Math.sin(t * 7)) * r * 0.35;
+    if (o.ouch) rot += Math.sin(t * 40) * 0.12;
+    if (o.fierce) { sc = 1.06; rot += fx * 0.12; }
+    if (o.dizzy) rot += Math.sin(t * 6) * 0.15;
+    ctx.translate(0, r * 0.95 + bob); ctx.rotate(rot); ctx.scale(sc, sc);
+    if (fx < -0.3) ctx.scale(-1, 1);
+    ctx.drawImage(img, -s / 2, -s, s, s);
+    if (o.dizzy || o.ouch && !o.alpha) {
+      if (fx < -0.3) ctx.scale(-1, 1);
+      for (let k = 0; k < 3; k++) {
+        const a = t * 6 + k * 2.1, sx = Math.cos(a) * r * 0.6, sy = -s * 0.95 + Math.sin(a) * r * 0.15;
+        ctx.fillStyle = '#ffcc33'; ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.beginPath();
+        for (let j = 0; j < 10; j++) { const rr2 = j % 2 ? r * 0.08 : r * 0.18, aa = j * Math.PI / 5 - Math.PI / 2; ctx.lineTo(sx + Math.cos(aa) * rr2, sy + Math.sin(aa) * rr2); }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    }
+    ctx.restore(); return;
   }
   const lw = Math.max(2, r * 0.11);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = INK; ctx.lineWidth = lw;
@@ -3084,14 +3108,15 @@ function drawLobby() {
     rr(x, cy0, cw, chh, 22); ctx.fillStyle = p ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = p ? COLORS[i] : 'rgba(255,255,255,.12)'; ctx.setLineDash(p ? [] : [10, 8]); rr(x, cy0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
     const bob = p ? Math.sin(host.t * 4 + i) * 4 : 0;
-    drawCritter(x + 64, cy0 + 92 + bob, 38, i, { alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
+    drawCritter(x + 64, cy0 + 88 + bob, 40, i, { alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
     if (p) {
-      text(p.name, x + 120, cy0 + 70, 28, COLORS[i], 'left');
+      text(p.name, x + 120, cy0 + 58, 28, COLORS[i], 'left');
+      text('as ' + CRITTER_NAMES[i], x + 120, cy0 + 86, 15, 'rgba(255,255,255,.55)', 'left', 600);
       const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Reconnecting') : '⌨ ' + p.keyset.label;
-      text(dev, x + 120, cy0 + 108, 17, 'rgba(255,255,255,.7)', 'left', 500);
+      text(dev, x + 120, cy0 + 114, 17, 'rgba(255,255,255,.7)', 'left', 500);
       if (leader() === p) text('👑 Leader', x + 120, cy0 + 138, 16, '#ffcc33', 'left', 600);
     } else {
-      text(host.botsFill ? 'Open seat' : 'Empty', x + 120, cy0 + 72, 24, 'rgba(255,255,255,.45)', 'left');
+      text(CRITTER_NAMES[i], x + 120, cy0 + 72, 24, 'rgba(255,255,255,.45)', 'left');
       text(host.botsFill ? '🤖 Bot will play' : 'Join to play', x + 120, cy0 + 108, 17, 'rgba(255,255,255,.4)', 'left', 500);
     }
   }
@@ -3169,11 +3194,13 @@ function drawPodium() {
     const r = i === 0 ? 62 : 46;
     drawCritter(s.x, top - r - 10 + (i === 0 ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.slot, { fx: 0, fy: 0.2, happy: i === 0 });
     if (i === 0) { // crown
-      const cy = top - r * 2 - 30 + Math.abs(Math.sin(host.t * 4)) * -18;
+      const art = CRIT_IMG[p.slot] && CRIT_IMG[p.slot].naturalWidth && !CRIT_IMG[p.slot].bad;
+      const cy = (art ? top - r - 10 + r * 0.95 - r * 2.75 - 6 : top - r * 2 - 30) + Math.abs(Math.sin(host.t * (art ? 7 : 4))) * (art ? -r * 0.35 : -18);
       ctx.fillStyle = '#ffcc33'; ctx.beginPath(); ctx.moveTo(s.x - 34, cy + 20); ctx.lineTo(s.x - 34, cy - 10); ctx.lineTo(s.x - 17, cy + 5);
       ctx.lineTo(s.x, cy - 18); ctx.lineTo(s.x + 17, cy + 5); ctx.lineTo(s.x + 34, cy - 10); ctx.lineTo(s.x + 34, cy + 20); ctx.fill();
     }
     nameTag(p, s.x, top + 86);
+    if (i === 0) outlined(CATCHPHRASES[p.slot], s.x + 250, 200, 30, '#fff');
     text(p.cupPts + ' pts', s.x, top + 118, 22, i === 0 ? '#14112b' : '#fff');
   });
   text('Back to lobby in ' + Math.ceil(host.timer), W / 2, 130, 20, 'rgba(255,255,255,.6)');
@@ -3869,6 +3896,10 @@ const MODE_NAMES = { cup: '🏆 Full Cup', goal: 'Goal Guard', sumo: 'Ice Sumo',
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = d.name; $('#pname').style.color = d.color;
+  const ci = $('#chipImg'), artSrc = location.protocol.startsWith('http') ? ART_URL(d.slot) : '';
+  if (artSrc && ci.dataset.slot !== String(d.slot)) { ci.dataset.slot = d.slot; ci.onload = () => { ci.style.display = 'block'; }; ci.onerror = () => { ci.style.display = 'none'; }; ci.src = artSrc; }
+  const portrait = artSrc ? `<img class="portrait" src="${artSrc}" alt="" onerror="this.remove()">` : '';
+  const who = CRITTER_NAMES[d.slot] || '';
   $('#pad').style.background = `linear-gradient(160deg, ${d.color}33, #1b1838 55%)`;
   $('#aBtn').style.background = d.color;
   $('#aBtn').innerHTML = 'A<small>' + esc(d.button || 'ACTION') + '</small>';
@@ -3884,13 +3915,13 @@ function renderPad() {
   } else if (d.phase === 'lobby') {
     hint = 'Lobby';
     if (d.leader) {
-      html = `<b>👑 You're the leader</b><div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
+      html = `${portrait}<b>👑 You're ${esc(who)} · the leader</b><div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
         <div class="row">${Object.keys(MODE_NAMES).map(m => B('mode', MODE_NAMES[m], m, d.mode === m)).join('')}</div>
         <div class="row">${B('bots', '🤖 Bots ' + (d.bots ? 'ON' : 'OFF'), null, d.bots)}${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}</div>
         <div class="row fit"><span class="small">TV screen size</span>${B('fit', '−', -1)}<span class="val">${Math.round(d.fit * 100)}%</span>${B('fit', '+', 1)}</div>
         ${B('start', 'START ▶', null, true, 'big go')}`;
     } else {
-      html = `<b>You're in! 🎉</b>Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
+      html = `${portrait}<b>You're ${esc(who)}! 🎉</b>Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
     }
   } else if (d.phase === 'intro') { hint = d.title; inter = false; html = `<b>${esc(d.title)}</b>${esc(d.how)}`; }
   else if (d.phase === 'play') { hint = d.title + ' · Go!'; inter = false; }
