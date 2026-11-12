@@ -1,6 +1,6 @@
 # Character art
 
-The Couch Clash crew (generated with ChatGPT, cropped to transparent 440×440 WebP):
+The Couch Clash crew (generated with ChatGPT, cropped to transparent 440×440 WebP). critter-4..7 = Shell, Vex, Moxie, Frost:
 
 - `critter-0.webp` Rumble (red): robot rhino-beetle brawler
 - `critter-1.webp` Nova (blue): lanky alien space pilot

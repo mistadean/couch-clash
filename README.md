@@ -17,8 +17,17 @@ Modes:
   tap = jab · hold + release = heavy · swipe ↑ = jump · swipe ↓ + hold = block · swipe ← → = dash attack · double-tap = special ·
   jab, jab, heavy = combo. Or **Buttons**: A = punch, B = special.
 
+- **Fighters** (side-view, one engine, three rule sets):
+  - **Sky Brawl** (Smash-style, 2–4): damage % builds up, launch rivals off the screen, 3 stocks.
+  - **Duel** (Tekken-style, 1v1): health bars, best of 3 rounds. Hold back to block, crouch to duck highs, crouch-block lows.
+  - **Tag Team** (Marvel-style, 2v2): one fighter per team on screen; the benched partner taps TAG IN on their phone.
+  Joystick moves and aims (↑ = up attacks, ↓ = low attacks). Tap = light, hold + release = heavy, swipe ↑ = jump (double jump),
+  swipe ↓ + hold = crouch, swipe toward = dash, swipe away + hold = block, double-tap = special.
+
+Roster (8): Rumble, Nova, Zip, Glorp, Shell (Plasma Shot), Vex (Vanish), Moxie (Pogo Stomp), Frost (Ice Wall).
+
 Keyboard players: WASD + Space (A) + E (B), Arrows + Right Shift (A) + / (B).
 
-Characters: Rumble, Nova, Zip and Glorp. Pick yours on your phone in the lobby (keyboard players: ◀ ▶). The roster lives in `ROSTER` in index.html; art in `assets/`.
+Characters: pick yours on your phone in the lobby (keyboard players: ◀ ▶). The roster lives in `ROSTER` in index.html; art in `assets/`.
 
 Connections use PeerJS (WebRTC); game data goes straight between devices.
