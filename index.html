@@ -236,6 +236,8 @@ html,body{background:var(--sky1)}
 #padMsg .pbtn.key{font-size:40px;padding:16px}#padMsg .codeshow{font:40px monospace;letter-spacing:8px;background:#111428;color:#7dffb0;border-radius:12px;padding:8px;margin:8px auto;width:200px}
 #padMsg .kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:0 auto}#padMsg .kpad .pbtn{font-size:26px;padding:12px 0}
 #padMsg .missions{margin-top:14px;background:rgba(255,255,255,.1);border-radius:14px;padding:10px}#padMsg .mis{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0;text-align:left}#padMsg .mis span{font-size:16px;font-weight:700}#padMsg .mis .pbtn{white-space:nowrap;flex-shrink:0;padding:10px 12px}
+#padMsg .ptxt.lie{border-color:#e8384f;background:#fff0f2}
+#padMsg .sl{margin:12px 0;text-align:left}#padMsg .sl span{font-size:16px;font-weight:700}#padMsg .sl span b{font-size:inherit;margin:0}#padMsg .sl input{width:100%;height:34px;accent-color:#ff7a5c}#padMsg .sl em{font:28px "Lilita One",system-ui;font-style:normal;display:block;text-align:center}#padMsg .sl .ends{display:flex;justify-content:space-between;font-size:13px;opacity:.7}
 </style>
 </head>
 <body>
@@ -6392,9 +6394,9 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
-const botTarget = m => m === 'bomb' || m === 'draw' ? 0 : m === 'odd' ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
+const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6636,8 +6638,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -7375,14 +7377,15 @@ function drawLobby() {
   }
 
   // mode selection
-  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social'].includes(cat) ? cat : 'more'; ensureMissions();
+  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social', 'talk'].includes(cat) ? cat : 'more'; ensureMissions();
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const tops = [['social', '🎉 Party', 140, host.lastSocial || 'bomb', TOY.sun], ['party', '🕹 Arcade', 142, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 130, host.lastCards || 'shit', TOY.coral], ['more', '➕ More games', 196, host.lastMore || 'arena', TOY.aqua]];
+  const tops = [['social', '🎉 Party', 122, host.lastSocial || 'bomb', TOY.sun], ['talk', '💬 Talk', 110, host.lastTalk || 'whosaid', '#ff8fb5'], ['party', '🕹 Arcade', 124, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 112, host.lastCards || 'shit', TOY.coral], ['more', '➕ More', 108, host.lastMore || 'arena', TOY.aqua]];
   let bx = 40;
-  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 21 }); bx += w + 10; }
+  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 20 }); bx += w + 8; }
   const pill = (x, w, t) => { rr(x, 294, w, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(t, x + 18, 317, 19, TOY.navy, 'left', null); };
   if (top === 'party') { let sx = 40; for (const [m, label, w] of [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastParty = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
   else if (top === 'cards') { let sx = 40; for (const [m, label, w] of [['shit', '💩 Shithead', 170], ['big2', '🂡 Big 2', 130], ['cards', '🃏 Colour Clash', 200]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastCards = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
+  else if (top === 'talk') { let sx = 40; for (const [m, label, w] of [['whosaid', '🕵 Who Said It?', 156], ['likely', '👉 Most Likely', 146], ['hot', '🌶 Hot Takes', 130], ['meld', '🧠 Mind Meld', 134], ['lie', '🤥 2 Truths 1 Lie', 156]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastTalk = m; setMode(m); }, TOY.aqua, { px: 17, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'social') { let sx = 40; for (const [m, label, w] of [['bomb', '💣 Bomb Squad', 160], ['draw', '🎨 Draw & Pass', 162], ['heist', '💰 Heist', 108], ['odd', '🕵 Odd One Out', 158]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastSocial = m; setMode(m); }, TOY.aqua, { px: 19, id: 'sub-' + m }); sx += w + 8; }
     toyButton(sx, 294, 136, 44, host.missionsOn ? '🎯 Missions ON' : '🎯 Missions', !!host.missionsOn, () => { host.missionsOn = !host.missionsOn; if (host.missionsOn) toast('🎯 Secret missions are on: check your phone!'); ensureMissions(); SFX.pop(); broadcastPhase(); }, TOY.coral, { px: 17, id: 'missions' }); }
   else { // More games: pick a group, then cycle through its variants
@@ -11304,7 +11307,220 @@ function missionFor(p) { const others = active().filter(q => q !== p && q.kind !
 function ensureMissions() { if (!host.missionsOn) return; let added = false; for (const p of active()) if (p.kind === 'phone') { p.missions = p.missions || []; while (p.missions.length < 2) { p.missions.push(missionFor(p)); added = true; } p.missionPts = p.missionPts || 0; } if (added) broadcastPhase(); }
 function claimMission(p, i) { if (!host.missionsOn || !p.missions || !p.missions[i]) return; const m = p.missions.splice(i, 1)[0]; p.missionPts = (p.missionPts || 0) + 1; toast('🎯 ' + p.name + ' completed a secret mission: ' + m); SFX.cheer(); ensureMissions(); broadcastPhase(); }
 
-const GAMES = { bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   TALK GAMES (18+, not crude): Who Said That? · Most Likely To · Hot Takes · Mind Meld · Two Truths & a Lie
+   Shared pieces: private input on phones, anonymous reveal on the TV, scores.
+   ===================================================================== */
+const WHO_Q = ['Worst date you\'ve ever been on, in five words', 'What would you do with a free Tuesday and $1,000?', 'The most useless skill you have', 'Your most irrational fear', 'A hill you will die on',
+  'The worst job you\'ve ever had', 'What you\'d be famous for if you were famous', 'The last thing that made you cry laughing', 'A guilty-pleasure TV show you love', 'Your go-to karaoke song',
+  'The weirdest thing in your fridge right now', 'Something you pretend to like', 'Your most-used emoji and why', 'A food you can\'t stand that everyone else loves', 'The first thing you\'d buy if you won the lottery',
+  'Your worst haircut ever', 'A celebrity you\'d want at your dinner party', 'Your secret talent', 'The pettiest thing you\'ve ever done', 'The last lie you told',
+  'A trend you never understood', 'The app you waste the most time on', 'Your dream holiday in five words', 'Something you\'re weirdly competitive about', 'The worst gift you\'ve ever received',
+  'A rule you always break', 'Your most embarrassing moment at work or school', 'If you could swap lives with anyone for a day, who?', 'The nickname you had growing up', 'What you\'d name your autobiography',
+  'A smell that instantly takes you back', 'The meal you\'d want for your last dinner', 'Your biggest ick on a date', 'Something on your bucket list', 'The most spontaneous thing you\'ve done',
+  'What you\'re secretly great at cooking', 'The worst advice you\'ve ever followed', 'A movie you\'ve seen way too many times', 'Your morning routine in five words', 'A word you always spell wrong',
+  'What you\'d do if you were invisible for a day', 'A fashion choice you regret', 'The strangest dream you remember', 'The thing you\'d save first in a fire (people and pets are safe)', 'Your hidden red flag',
+  'Your hidden green flag', 'The last thing you Googled', 'A song that is guaranteed to get you dancing', 'Something you believed as a kid for way too long', 'The best compliment you\'ve ever received',
+  'The worst thing you\'ve ever cooked', 'A habit you\'re trying to quit', 'Your ideal Sunday', 'The most out-of-character thing you\'ve done', 'Who you were in your school friend group',
+  'A small thing that makes your day', 'Your most controversial food opinion', 'What you\'d be doing right now if you weren\'t here', 'The place you\'d move to tomorrow if you could', 'A purchase you instantly regretted',
+  'Your favourite way to waste a day', 'Something you\'ll never do again', 'A rumour about yourself you wish was true', 'The best concert or gig you\'ve been to', 'Your celebrity lookalike (be honest)',
+  'Your most-played song this year', 'Your toxic trait', 'The first thing you notice about someone', 'An unpopular opinion you hold', 'The best decision you made this year'];
+const LIKELY_Q = ['text their ex at 2am', 'cry at a Pixar movie', 'become famous', 'get lost with GPS on', 'forget their own birthday', 'win a reality TV show', 'adopt ten pets', 'move overseas on a whim', 'start a podcast',
+  'fall asleep at a party', 'eat food that fell on the floor', 'get a tattoo they regret', 'become a millionaire', 'talk their way out of a speeding ticket', 'have a secret social media account', 'show up late to their own wedding',
+  'befriend a stranger on the bus', 'survive a zombie apocalypse', 'be the first to leave a party', 'be the last to leave a party', 'run a marathon', 'send a screenshot to the wrong person', 'binge a whole series in one night',
+  'know all the gossip', 'say "I\'ll be there in five" and arrive in thirty', 'cancel plans last minute', 'plan a surprise party', 'accidentally like an old photo while stalking', 'buy something useless at 3am',
+  'cry at a wedding', 'start an argument about pineapple on pizza', 'end up on the news', 'befriend their boss', 'quit their job to follow a dream', 'keep a plant alive', 'still be awake at 4am', 'lose their phone tonight',
+  'win an argument they\'re wrong about', 'laugh at the wrong moment', 'remember everyone\'s birthday', 'have a five-year plan', 'go viral', 'get married first', 'become a parent first', 'be a contestant on a game show',
+  'run for parliament', 'spend all their pay in one weekend', 'be secretly rich', 'be a great dancer after two drinks', 'fall for a scam', 'become a chef', 'write a book', 'move to the country', 'know the words to every song',
+  'get a speeding ticket', 'eat the last slice without asking', 'cry over a sad ad', 'forget what they walked into a room for', 'give the best advice', 'give the worst advice', 'have a dramatic exit', 'be a great teacher',
+  'pick a fight with a waiter', 'send back food at a restaurant', 'own matching outfits with their partner', 'organise the group holiday', 'not reply to the group chat for a week', 'be awake before sunrise by choice',
+  'have the messiest car', 'get recognised in public', 'live to 100', 'adopt a strict skincare routine', 'get kicked out of a club', 'befriend a celebrity', 'become a stand-up comedian', 'be terrible at keeping secrets',
+  'be amazing at keeping secrets', 'do karaoke sober', 'try every item on a menu', 'take 200 photos on holiday', 'fall in love on holiday', 'say yes to everything', 'say no to everything', 'go back to their ex',
+  'turn up overdressed', 'turn up underdressed', 'win a bar trivia night alone', 'start a business', 'get a pet snake', 'get lost in IKEA', 'bake a cake from scratch', 'still have their first ever text messages', 'be a secret romantic'];
+const HOT_Q = ['It\'s fine to go through your partner\'s phone', 'Splitting the bill 50/50 on a first date is fair', 'Pineapple belongs on pizza', 'You should tell a friend if their partner is cheating', 'It\'s okay to recline your seat on a plane',
+  'Being late is rude, no excuses', 'Exes can be friends', 'Texting is better than calling', 'Gifts should be practical', 'Talking during a movie is unforgivable', 'Weddings should be small', 'It\'s fine to regift presents',
+  'Dogs are better than cats', 'Social media does more harm than good', 'You should never lend friends money', 'Breakfast is the best meal', 'It\'s okay to ghost after one date', 'Couples should share passwords',
+  'Working from home is better than the office', 'Tipping should be expected in Australia', 'You can be friends with someone with opposite politics', 'Holidays with friends are better than with a partner', 'Reality TV is good TV',
+  'Saying "I love you" first is brave, not risky', 'Soft-launching a relationship online is cringe', 'A messy house is a sign of a busy life, not laziness', 'Coffee is overrated', 'Money can buy happiness',
+  'Having kids is not for everyone', 'You should move in together before marriage', 'Long-distance relationships can work', 'Christmas decorations in November are fine', 'Morning people are smug', 'Remakes ruin movies',
+  'It\'s fine to wear socks with sandals', 'Phones should be banned at dinner', 'Your 20s are the best years', 'Living alone beats having housemates', 'Board games ruin friendships', 'You should always split a hotel bill evenly',
+  'First impressions are usually right', 'Couples\' joint bank accounts are a good idea', 'It\'s okay to cancel plans if you\'re tired', 'Group chats need rules', 'Brunch is overrated', 'Everyone should do a gap year',
+  'Cheating in a board game is part of the game', 'Tattoos on the face are fine', 'Dating apps are the best way to meet people', 'Honesty is always the best policy', 'You should never read the last page first',
+  'It\'s okay to like your friend\'s ex', 'A night in beats a night out', 'Ketchup on eggs is fine', 'Gym selfies are fine', 'Feet on the coffee table is fine', 'Vinyl sounds better', 'Sport is better live than on TV',
+  'Making the bed every morning matters', 'Spoilers don\'t ruin anything', 'Couples should go on separate holidays', 'It\'s fine to text and walk', 'Proposing in public is a bad idea', 'Single people have more fun',
+  'School should teach tax and budgeting before algebra', 'Kids should be allowed phones before high school', 'A 4-day work week should be standard', 'You can tell a lot about someone by their shoes', 'Airport beers before 9am are fine',
+  'Your music taste says a lot about you', 'You should always bring something when invited over', 'Matching tattoos with a friend is a great idea', 'Every party needs a playlist plan'];
+const MELD_Q = ['Name something you\'d find in a handbag', 'Best excuse to leave a party early', 'A word that rhymes with "cat"', 'Something people do on a first date', 'A famous Australian', 'Something you\'d take on a desert island',
+  'A sound that\'s really annoying', 'Something people lie about', 'A pizza topping', 'Something in a bathroom', 'A thing you do on a Sunday', 'A type of dog', 'Something that\'s yellow', 'A place you go on a first date',
+  'Something people forget at home', 'A sport that\'s fun to watch', 'Something people are scared of', 'A movie everyone has seen', 'A reason to call in sick', 'Something you do before bed', 'Something that\'s always sticky',
+  'A breakfast food', 'A famous duo', 'Something in a fridge', 'An item at a barbecue', 'A drink at a party', 'A colour of car', 'Something that has a lot of buttons', 'A word that describes Mondays', 'Something you\'d hate to step on',
+  'A superhero', 'Something people collect', 'A job kids want when they grow up', 'Something in a wallet', 'A fruit', 'A board game', 'Something at the beach', 'A reason to be late', 'A wedding song', 'A thing on a to-do list',
+  'Something you buy at the servo', 'A famous landmark', 'Something with wheels', 'An animal at the zoo', 'Something people do when nervous', 'A dessert', 'A Christmas movie', 'Something you put on toast', 'A cartoon character',
+  'A thing you do on holiday', 'Something that smells good', 'Something that smells bad', 'A fast food chain', 'A word you shout at the TV', 'A thing you yell at the footy', 'Something in a toolbox', 'A vegetable kids hate',
+  'Something people do at a red light', 'A famous singer', 'A reality TV show', 'A thing that goes "beep"', 'A cocktail', 'Something you find under the couch', 'A gift that\'s always a safe bet', 'Something people binge-watch',
+  'A first job', 'A common pet name', 'A social media app', 'Something that\'s round', 'Something you\'d see at a wedding', 'A pub meal', 'Something people do at the gym', 'A thing you do on your phone in bed',
+  'A crisp flavour', 'A famous chef', 'Something you\'d find in the garage', 'A city to visit', 'A word for "money"', 'Something at a kids\' party', 'A famous TV dad', 'A camping item', 'A Halloween costume',
+  'Something that\'s hot', 'Something that\'s cold', 'A thing in a lunchbox', 'A dance move', 'Something you shouldn\'t say on a first date', 'A reason to throw a party', 'A thing at the airport', 'A type of shoe',
+  'Something people argue about', 'A chocolate bar', 'A sound a car makes', 'A thing you put in a smoothie', 'A word you\'d use to describe your mate', 'A video game'];
+// shared TV pieces
+function talkBg(title, accent) { const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#2b2f63'); gr.addColorStop(1, '#151838'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 40; i++) { const x = (i * 197) % W, y = (i * 113) % H, tw = 0.5 + Math.sin(host.t * 2 + i) * 0.5; ctx.fillStyle = `rgba(255,255,255,${0.05 + tw * 0.12})`; ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, 7); ctx.fill(); }
+  headline(title, W / 2, 46, 40, '#fff', accent); }
+function promptCard(text, y = 150, size = 34, w = 1040) { const words = String(text).split(' '); dfont(size); const lines = []; let line = ''; for (const wd of words) { if (ctx.measureText(line + wd).width > w - 60 && line) { lines.push(line.trim()); line = ''; } line += wd + ' '; } lines.push(line.trim());
+  const hh = lines.length * (size + 10) + 40; toyPanel(W / 2 - w / 2, y - hh / 2, w, hh, 26, '#ffffff', 6); lines.forEach((l, i) => toyText(l, W / 2, y - hh / 2 + 20 + (size + 10) * (i + 0.5), size, TOY.navy, 'center', null)); return y + hh / 2; }
+function waitRow(ps, isDone, y = H - 70) { const n = ps.length, gap = Math.min(120, 1100 / n); ps.forEach((o, i) => { const x = W / 2 + (i - (n - 1) / 2) * gap, d = isDone(o); drawAvatar(x, y - (d ? 6 + Math.sin(host.t * 6 + i) * 4 : 0), 30, o.p, { alpha: d ? 1 : 0.45, happy: d }); toyText(d ? '✅' : '…', x + 24, y - 26, 18, '#fff', 'center', null); }); }
+function scoreStrip(ps, y = 104) { const s = ps.slice().sort((a, b) => b.score - a.score), n = s.length, gap = Math.min(160, 1180 / n); s.forEach((o, i) => { const x = W / 2 + (i - (n - 1) / 2) * gap; drawAvatar(x - 34, y, 16, o.p); toyText(String(o.score), x + 8, y + 1, 18, i === 0 && o.score ? TOY.sun : '#fff', 'left', TOY.navy); }); }
+function vbtns(ps, me, sel, prefix = '') { return `<div class="vgrid">${ps.filter(o => o !== me).map(o => `<button class="pbtn${sel === o ? ' on' : ''}" data-c="pp" data-v="${prefix}${o.p.slot}" style="border-color:${o.p.color}">${esc(o.p.name)}${sel === o ? ' ✓' : ''}</button>`).join('')}</div>`; }
+const shuffleArr = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (arr, n) => shuffleArr(arr.slice()).slice(0, n);
+function talkCommon(g, players) { g.ps = players.map(p => ({ p, score: 0 })); g.find = p => g.ps.find(o => o.p === p);
+  g.ranking = () => g.ps.slice().sort((a, b) => b.score - a.score).map(o => o.p.slot);
+  Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => Math.max(0, 3 - i)) });
+  g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; return '🏆 ' + top.p.name + ' wins with ' + top.score + ' points'; }; g.bot = () => {}; }
+
+/* ---- 🕵 Who Said That? ---- */
+const WhoSaid = { title: 'Who Said That?', accent: '#ff6fcf', phones: true, minPhones: 3, panelGame: true, noBots: true,
+  how: 'Answer a personal question on your phone. The TV shows every answer with no names. Guess who wrote each one! +100 for a right guess, +50 for every person you fool.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'write', stateT: 75, round: 0, qs: [], ans: {}, queue: [], cur: null, guesses: {}, endT: 0 }; talkCommon(g, players);
+    const rounds = g.ps.length <= 4 ? 3 : 2; g.qs = pickN(WHO_Q, rounds);
+    const R = () => broadcastPhase();
+    function toGuess() { g.queue = shuffleArr(Object.entries(g.ans).map(([slot, text]) => ({ by: g.ps.find(o => o.p.slot === +slot), text }))); nextAnswer(); }
+    function nextAnswer() { g.cur = g.queue.shift(); g.guesses = {}; if (!g.cur) { g.round++; if (g.round >= rounds) { g.state = 'end'; SFX.win(); } else { g.state = 'write'; g.stateT = 75; g.ans = {}; SFX.beep(); } R(); return; } g.state = 'guess'; g.stateT = 25; SFX.pop(); R(); }
+    function reveal() { const c = g.cur; let fooled = 0; for (const [s, o] of Object.entries(g.guesses)) { const voter = g.ps.find(x => x.p.slot === +s); if (o === c.by) voter.score += 100; else fooled++; } c.by.score += fooled * 50; c.fooled = fooled; g.state = 'reveal'; g.stateT = 5; SFX.cheer(); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'write' && (g.stateT <= 0 || g.ps.every(o => g.ans[o.p.slot]))) { g.ps.forEach(o => { if (!g.ans[o.p.slot]) g.ans[o.p.slot] = '🤐 (no comment)'; }); toGuess(); }
+      else if (g.state === 'guess' && (g.stateT <= 0 || g.ps.every(o => o === g.cur.by || g.guesses[o.p.slot]))) reveal();
+      else if (g.state === 'reveal' && g.stateT <= 0) nextAnswer(); };
+    g.onPick = (p, v) => { const me = g.find(p); if (!me) return; if (g.state === 'write' && typeof v === 'string' && !g.ans[p.slot]) { g.ans[p.slot] = v.slice(0, 90); SFX.pop(); R(); }
+      else if (g.state === 'guess' && me !== g.cur.by && typeof v === 'number') { const t = g.ps.find(o => o.p.slot === v); if (t && t !== me) { g.guesses[p.slot] = t; SFX.click(); R(); } } };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>';
+      if (g.state === 'end') return `<b>🏁 Game over</b>You scored ${me.score}`;
+      if (g.state === 'write') return g.ans[p.slot] ? '<b>✅ Locked in</b>Waiting for the others…' : `<b>🕵 ${esc(g.qs[g.round])}</b><input id="ptxt" class="ptxt" maxlength="90" placeholder="Your answer (stays anonymous)"><button class="pbtn big go" data-c="pp" data-input="ptxt">Send ▶</button>`;
+      if (g.state === 'guess') { if (me === g.cur.by) return '<b>🤫 That one\'s yours!</b>Keep a straight face…'; return `<b>Who wrote this?</b><div class="prompt">“${esc(g.cur.text)}”</div>${vbtns(g.ps, me, g.guesses[p.slot])}`; }
+      return '<b>📺 Look at the TV</b>'; };
+    g.draw = () => { talkBg('WHO SAID THAT?', '#ff6fb5'); scoreStrip(g.ps);
+      if (g.state === 'write') { promptCard(g.qs[g.round], 260); toyText('Answer on your phone · it stays anonymous · ⏱ ' + Math.ceil(g.stateT), W / 2, 380, 24, '#fff', 'center', TOY.navy); waitRow(g.ps, o => !!g.ans[o.p.slot]); }
+      if ((g.state === 'guess' || g.state === 'reveal') && g.cur) { toyText(g.qs[g.round], W / 2, 160, 24, '#c9cde6', 'center', null); promptCard('“' + g.cur.text + '”', 270, 42, 980);
+        if (g.state === 'guess') { toyText('Who wrote it? Guess on your phone · ⏱ ' + Math.ceil(g.stateT), W / 2, 400, 24, '#fff', 'center', TOY.navy); waitRow(g.ps.filter(o => o !== g.cur.by), o => !!g.guesses[o.p.slot]); }
+        else { const k = Math.min(1, (5 - g.stateT) * 2); ctx.save(); ctx.translate(W / 2, 470); ctx.scale(0.5 + k * 0.5, 0.5 + k * 0.5); drawAvatar(-150, 0, 50, g.cur.by.p, { happy: true }); headline(g.cur.by.p.name.toUpperCase() + '!', 60, 0, 50, '#fff', g.cur.by.p.color); ctx.restore();
+          toyText(g.cur.fooled ? 'Fooled ' + g.cur.fooled + ' (+' + g.cur.fooled * 50 + ')' : 'Everyone saw that coming', W / 2, 560, 26, TOY.sun, 'center', TOY.navy);
+          const right = Object.entries(g.guesses).filter(([, o]) => o === g.cur.by).map(([s]) => g.ps.find(x => x.p.slot === +s).p.name); if (right.length) toyText('✅ ' + right.join(', '), W / 2, 610, 22, TOY.mint, 'center', TOY.navy); } }
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' KNOWS YOU BEST', W / 2, H / 2, 52, TOY.sun, '#ff6fb5'); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 👉 Most Likely To ---- */
+const MostLikely = { title: 'Most Likely To', accent: '#ffd23f', phones: true, minPhones: 3, botsOk: true, practiceBots: true, panelGame: true,
+  how: 'Who\'s most likely to…? Vote on your phone (you can vote for yourself). The TV reveals the votes. Score +100 if you voted with the room!',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'vote', stateT: 22, round: 0, rounds: 8, votes: {}, qs: pickN(LIKELY_Q, 8), res: null, endT: 0 }; talkCommon(g, players);
+    const R = () => broadcastPhase();
+    function reveal() { const cnt = new Map(); for (const o of Object.values(g.votes)) cnt.set(o, (cnt.get(o) || 0) + 1); const max = Math.max(0, ...cnt.values()), top = [...cnt].filter(([, c]) => c === max).map(([o]) => o);
+      for (const [s, o] of Object.entries(g.votes)) if (top.includes(o)) g.ps.find(x => x.p.slot === +s).score += 100; g.res = { cnt, top, max }; g.state = 'reveal'; g.stateT = 6; SFX.cheer(); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'vote') { for (const o of g.ps) if (o.p.kind === 'bot' && !g.votes[o.p.slot] && Math.random() < dt * 0.5) { g.votes[o.p.slot] = g.ps[Math.floor(Math.random() * g.ps.length)]; R(); }
+        if (g.stateT <= 0 || g.ps.every(o => g.votes[o.p.slot])) reveal(); }
+      else if (g.state === 'reveal' && g.stateT <= 0) { g.round++; if (g.round >= g.rounds) { g.state = 'end'; SFX.win(); } else { g.state = 'vote'; g.stateT = 22; g.votes = {}; SFX.beep(); } R(); } };
+    g.onPick = (p, v) => { const me = g.find(p); if (!me || g.state !== 'vote' || typeof v !== 'number') return; const t = g.ps.find(o => o.p.slot === v); if (t) { g.votes[p.slot] = t; SFX.click(); R(); } };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; if (g.state === 'end') return `<b>🏁 Game over</b>You scored ${me.score}`;
+      if (g.state === 'vote') { const sel = g.votes[p.slot]; return `<b>Who's most likely to ${esc(g.qs[g.round])}?</b><div class="vgrid">${g.ps.map(o => `<button class="pbtn${sel === o ? ' on' : ''}" data-c="pp" data-v="${o.p.slot}" style="border-color:${o.p.color}">${esc(o === me ? o.p.name + ' (me)' : o.p.name)}${sel === o ? ' ✓' : ''}</button>`).join('')}</div>`; }
+      return '<b>📺 Look at the TV</b>'; };
+    g.draw = () => { talkBg('MOST LIKELY TO…', '#c99200'); scoreStrip(g.ps); promptCard('Who\'s most likely to ' + g.qs[Math.min(g.round, g.rounds - 1)] + '?', 230, 36);
+      if (g.state === 'vote') { toyText('Vote on your phone · ⏱ ' + Math.ceil(g.stateT), W / 2, 330, 24, '#fff', 'center', TOY.navy); waitRow(g.ps, o => !!g.votes[o.p.slot]); }
+      if (g.state === 'reveal' && g.res) { const age = 6 - g.stateT, n = g.ps.length, bw = Math.min(110, 1000 / n), base = 640, scale = 260 / Math.max(1, g.res.max);
+        g.ps.forEach((o, i) => { const x = W / 2 + (i - (n - 1) / 2) * (bw + 14), c = g.res.cnt.get(o) || 0, hgt = c * scale * Math.min(1, age * 1.2), win = g.res.top.includes(o) && age > 1;
+          rr(x - bw / 2, base - hgt, bw, hgt + 4, 12); ctx.fillStyle = win ? TOY.sun : o.p.color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+          drawAvatar(x, base - hgt - 36 - (win ? Math.abs(Math.sin(host.t * 5)) * 10 : 0), 28, o.p, { happy: win }); if (win) toyText('👑', x, base - hgt - 80, 30, '#fff', 'center', null);
+          toyText(Math.round(c * Math.min(1, age * 1.2)), x, base - hgt / 2, 26, '#fff', 'center', TOY.navy); toyText(o.p.name, x, base + 26, 16, '#fff', 'center', TOY.navy); }); }
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(21,24,56,.7)'; ctx.fillRect(0, 0, W, H); const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' READS THE ROOM BEST', W / 2, H / 2, 48, TOY.sun, '#c99200'); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 🌶 Hot Takes ---- */
+const HotTakes = { title: 'Hot Takes', accent: '#ff7a5c', phones: true, minPhones: 3, botsOk: true, practiceBots: true, panelGame: true,
+  how: 'A spicy opinion appears. Slide how much YOU agree (0 to 10) and guess where the group lands on average. The TV plots everyone. Closest guess scores most. Outliers: explain yourselves!',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'vote', stateT: 30, round: 0, rounds: 6, sub: {}, qs: pickN(HOT_Q, 6), res: null, endT: 0 }; talkCommon(g, players);
+    const R = () => broadcastPhase();
+    function reveal() { const vals = Object.values(g.sub), avg = vals.reduce((a, v) => a + v.me, 0) / Math.max(1, vals.length);
+      for (const [s, v] of Object.entries(g.sub)) g.ps.find(x => x.p.slot === +s).score += Math.max(0, Math.round(100 - Math.abs(v.guess - avg) * 25));
+      let out = null, far = -1; for (const [s, v] of Object.entries(g.sub)) { const d = Math.abs(v.me - avg); if (d > far) { far = d; out = g.ps.find(x => x.p.slot === +s); } }
+      g.res = { avg, out: far >= 3 ? out : null }; g.state = 'reveal'; g.stateT = 8; SFX.cheer(); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'vote') { for (const o of g.ps) if (o.p.kind === 'bot' && !g.sub[o.p.slot] && Math.random() < dt * 0.4) { g.sub[o.p.slot] = { me: Math.floor(Math.random() * 11), guess: 3 + Math.floor(Math.random() * 5) }; R(); }
+        if (g.stateT <= 0 || g.ps.every(o => g.sub[o.p.slot])) reveal(); }
+      else if (g.state === 'reveal' && g.stateT <= 0) { g.round++; if (g.round >= g.rounds) { g.state = 'end'; SFX.win(); } else { g.state = 'vote'; g.stateT = 30; g.sub = {}; SFX.beep(); } R(); } };
+    g.onPick = (p, v) => { const me = g.find(p); if (!me || g.state !== 'vote' || typeof v !== 'string' || g.sub[p.slot]) return; const [a, b] = v.split('\u0001').map(Number); if (isNaN(a) || isNaN(b)) return; g.sub[p.slot] = { me: clamp(a, 0, 10), guess: clamp(b, 0, 10) }; SFX.pop(); R(); };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; if (g.state === 'end') return `<b>🏁 Game over</b>You scored ${me.score}`;
+      if (g.state === 'vote') { if (g.sub[p.slot]) return '<b>✅ Locked in</b>Waiting for the others…';
+        return `<b>🌶 “${esc(g.qs[g.round])}”</b><div class="sl"><span>How much do <b style="display:inline">you</b> agree?</span><input id="sme" type="range" min="0" max="10" value="5" oninput="this.nextElementSibling.textContent=this.value"><em>5</em><div class="ends"><i>Hard no</i><i>Hard yes</i></div></div>
+          <div class="sl"><span>Where will the <b style="display:inline">group average</b> land?</span><input id="sgu" type="range" min="0" max="10" value="5" oninput="this.nextElementSibling.textContent=this.value"><em>5</em></div><button class="pbtn big go" data-c="pp" data-input="sme,sgu">Lock in ▶</button>`; }
+      return '<b>📺 Look at the TV</b>'; };
+    g.draw = () => { talkBg('HOT TAKES 🌶', '#ff7a5c'); scoreStrip(g.ps); promptCard('“' + g.qs[Math.min(g.round, g.rounds - 1)] + '”', 220, 36);
+      const x0 = 160, x1 = W - 160, ly = 470, X = v => x0 + (x1 - x0) * v / 10;
+      const gr = ctx.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, '#2fa8ff'); gr.addColorStop(0.5, '#ffffff'); gr.addColorStop(1, '#ff5a6e'); rr(x0, ly - 10, x1 - x0, 20, 10); ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText('HARD NO', x0, ly + 40, 20, '#9fd3ff', 'center', TOY.navy); toyText('HARD YES', x1, ly + 40, 20, '#ff9aab', 'center', TOY.navy);
+      if (g.state === 'vote') { toyText('Slide on your phone · ⏱ ' + Math.ceil(g.stateT), W / 2, 330, 24, '#fff', 'center', TOY.navy); waitRow(g.ps, o => !!g.sub[o.p.slot]); }
+      if (g.state === 'reveal' && g.res) { const age = 8 - g.stateT; let i = 0;
+        for (const [s, v] of Object.entries(g.sub)) { const o = g.ps.find(x => x.p.slot === +s), k = Math.min(1, Math.max(0, age * 1.5 - i * 0.15)), x = X(5) + (X(v.me) - X(5)) * (1 - Math.pow(1 - k, 3)); const stack = Object.values(g.sub).slice(0, i).filter(w => w.me === v.me).length;
+          drawAvatar(x, ly - 50 - stack * 54, 24, o.p, { happy: g.res.out === o }); i++; }
+        if (age > 1.5) { const ax = X(g.res.avg); ctx.fillStyle = TOY.sun; ctx.beginPath(); ctx.moveTo(ax, ly + 16); ctx.lineTo(ax - 14, ly + 40); ctx.lineTo(ax + 14, ly + 40); ctx.closePath(); ctx.fill(); ctx.stroke(); toyText('Group: ' + g.res.avg.toFixed(1), ax, ly + 64, 22, TOY.sun, 'center', TOY.navy); }
+        if (age > 2.5 && g.res.out) toyText('🔥 ' + g.res.out.p.name + ', explain yourself!', W / 2, 640, 30, '#fff', 'center', TOY.coral); }
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(21,24,56,.7)'; ctx.fillRect(0, 0, W, H); const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' KNOWS THE ROOM', W / 2, H / 2, 52, TOY.sun, '#ff7a5c'); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 🧠 Mind Meld ---- */
+const meldNorm = t => String(t).toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/^(a|an|the|my|some) /, '').replace(/\s+/g, ' ').trim().replace(/(es|s)$/, '');
+const MindMeld = { title: 'Mind Meld', accent: '#22d39b', phones: true, minPhones: 2, panelGame: true, noBots: true,
+  how: 'Answer the prompt on your phone, but don\'t be clever: think like the group! You score 100 points for every other player who wrote the same answer.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'write', stateT: 30, round: 0, rounds: 6, ans: {}, qs: pickN(MELD_Q, 6), groups: [], endT: 0 }; talkCommon(g, players);
+    const R = () => broadcastPhase();
+    function reveal() { const map = new Map(); for (const [s, t] of Object.entries(g.ans)) { const k = meldNorm(t) || '…'; if (!map.has(k)) map.set(k, { text: t, ps: [] }); map.get(k).ps.push(g.ps.find(x => x.p.slot === +s)); }
+      g.groups = [...map.values()].sort((a, b) => b.ps.length - a.ps.length); for (const gr of g.groups) for (const o of gr.ps) o.score += (gr.ps.length - 1) * 100; g.state = 'reveal'; g.stateT = 7; SFX.cheer(); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'write' && (g.stateT <= 0 || g.ps.every(o => g.ans[o.p.slot]))) reveal();
+      else if (g.state === 'reveal' && g.stateT <= 0) { g.round++; if (g.round >= g.rounds) { g.state = 'end'; SFX.win(); } else { g.state = 'write'; g.stateT = 30; g.ans = {}; SFX.beep(); } R(); } };
+    g.onPick = (p, v) => { const me = g.find(p); if (!me || g.state !== 'write' || typeof v !== 'string' || g.ans[p.slot]) return; g.ans[p.slot] = v.slice(0, 40); SFX.pop(); R(); };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; if (g.state === 'end') return `<b>🏁 Game over</b>You scored ${me.score}`;
+      if (g.state === 'write') return g.ans[p.slot] ? '<b>✅ Locked in</b>Waiting for the others…' : `<b>🧠 ${esc(g.qs[g.round])}</b><div class="small">Think like the group!</div><input id="ptxt" class="ptxt" maxlength="40" placeholder="One answer"><button class="pbtn big go" data-c="pp" data-input="ptxt">Send ▶</button>`;
+      return '<b>📺 Look at the TV</b>'; };
+    g.draw = () => { talkBg('MIND MELD 🧠', '#1a9c90'); scoreStrip(g.ps); promptCard(g.qs[Math.min(g.round, g.rounds - 1)], 210, 38);
+      if (g.state === 'write') { toyText('Answer on your phone · match the most people · ⏱ ' + Math.ceil(g.stateT), W / 2, 310, 24, '#fff', 'center', TOY.navy); waitRow(g.ps, o => !!g.ans[o.p.slot]); }
+      if (g.state === 'reveal') { const age = 7 - g.stateT; g.groups.slice(0, 8).forEach((gr, i) => { const col = i % 2, row = Math.floor(i / 2), x = col ? W / 2 + 20 : W / 2 - 560, y = 300 + row * 92, k = Math.min(1, Math.max(0, age * 2 - i * 0.25)); if (k <= 0) return;
+          ctx.save(); ctx.globalAlpha = k; ctx.translate((1 - k) * (col ? 80 : -80), 0); rr(x, y, 540, 78, 20); ctx.fillStyle = gr.ps.length > 1 ? (i === 0 ? '#fff6c8' : '#ffffff') : 'rgba(255,255,255,.6)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = i === 0 && gr.ps.length > 1 ? TOY.sun : TOY.navy; ctx.stroke();
+          let t = gr.text; dfont(26); while (ctx.measureText(t).width > 230 && t.length > 3) t = t.slice(0, -1); toyText(t, x + 20, y + 39, 26, TOY.navy, 'left', null);
+          gr.ps.forEach((o, j) => drawAvatar(x + 290 + j * 44, y + 39, 18, o.p)); if (gr.ps.length > 1) toyText('+' + (gr.ps.length - 1) * 100, x + 500, y + 39, 20, '#2f8f4f', 'center', null); ctx.restore(); }); }
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(21,24,56,.7)'; ctx.fillRect(0, 0, W, H); const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' IS THE HIVE MIND', W / 2, H / 2, 52, TOY.sun, '#1a9c90'); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 🤥 Two Truths & a Lie ---- */
+const TwoTruths = { title: 'Two Truths & a Lie', accent: '#b48cff', phones: true, minPhones: 3, panelGame: true, noBots: true,
+  how: 'Write two true things and one lie about yourself. The TV shows each person\'s three statements: vote for the lie! +100 for spotting it, +50 for every person you fool.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'write', stateT: 120, sets: {}, queue: [], cur: null, votes: {}, endT: 0 }; talkCommon(g, players);
+    const R = () => broadcastPhase();
+    function next() { g.cur = g.queue.shift(); g.votes = {}; if (!g.cur) { g.state = 'end'; SFX.win(); R(); return; } g.state = 'vote'; g.stateT = 30; SFX.pop(); R(); }
+    function reveal() { let fooled = 0; for (const [s, i] of Object.entries(g.votes)) { const o = g.ps.find(x => x.p.slot === +s); if (g.cur.items[i].lie) o.score += 100; else fooled++; } g.cur.by.score += fooled * 50; g.cur.fooled = fooled; g.state = 'reveal'; g.stateT = 6; SFX.cheer(); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'write' && (g.stateT <= 0 || g.ps.every(o => g.sets[o.p.slot]))) { g.queue = shuffleArr(Object.entries(g.sets).map(([s, items]) => ({ by: g.ps.find(x => x.p.slot === +s), items: shuffleArr(items) }))); next(); }
+      else if (g.state === 'vote' && (g.stateT <= 0 || g.ps.every(o => o === g.cur.by || g.votes[o.p.slot] != null))) reveal();
+      else if (g.state === 'reveal' && g.stateT <= 0) next(); };
+    g.onPick = (p, v) => { const me = g.find(p); if (!me) return;
+      if (g.state === 'write' && typeof v === 'string' && !g.sets[p.slot]) { const [a, b, c] = v.split('\u0001'); if (!a || !b || !c) return; g.sets[p.slot] = [{ t: a.slice(0, 80) }, { t: b.slice(0, 80) }, { t: c.slice(0, 80), lie: true }]; SFX.pop(); R(); }
+      else if (g.state === 'vote' && me !== g.cur.by && typeof v === 'string' && v[0] === 'v') { g.votes[p.slot] = +v.slice(1); SFX.click(); R(); } };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; if (g.state === 'end') return `<b>🏁 Game over</b>You scored ${me.score}`;
+      if (g.state === 'write') return g.sets[p.slot] ? '<b>✅ Locked in</b>Waiting for the others…' : `<b>🤥 About you…</b><input id="tt1" class="ptxt" maxlength="80" placeholder="✅ Something TRUE"><input id="tt2" class="ptxt" maxlength="80" placeholder="✅ Something else TRUE"><input id="tt3" class="ptxt lie" maxlength="80" placeholder="❌ Your LIE (make it believable!)"><button class="pbtn big go" data-c="pp" data-input="tt1,tt2,tt3">Send ▶</button><div class="small">They'll be shuffled on the TV.</div>`;
+      if (g.state === 'vote') { if (me === g.cur.by) return '<b>🤫 These are yours!</b>Poker face…'; const sel = g.votes[p.slot];
+        return `<b>Which one is ${esc(g.cur.by.p.name)}'s lie?</b>${g.cur.items.map((it, i) => `<button class="pbtn big${sel === i ? ' on' : ''}" data-c="pp" data-v="v${i}" style="text-align:left">${'ABC'[i]}. ${esc(it.t)}</button>`).join('')}`; }
+      return '<b>📺 Look at the TV</b>'; };
+    g.draw = () => { talkBg('TWO TRUTHS & A LIE', '#8a5cff'); scoreStrip(g.ps);
+      if (g.state === 'write') { promptCard('Write two truths and one lie about yourself on your phone', 260, 34); toyText('⏱ ' + Math.ceil(g.stateT), W / 2, 360, 28, '#fff', 'center', TOY.navy); waitRow(g.ps, o => !!g.sets[o.p.slot]); }
+      if ((g.state === 'vote' || g.state === 'reveal') && g.cur) { drawAvatar(W / 2 - 200, 180, 36, g.cur.by.p); toyText(g.cur.by.p.name + ' says…', W / 2 + 10, 180, 34, '#fff', 'center', TOY.navy);
+        g.cur.items.forEach((it, i) => { const y = 260 + i * 110, rev = g.state === 'reveal' && (6 - g.stateT) > 1, lie = it.lie && rev, cnt = Object.values(g.votes).filter(v => v === i).length;
+          const sh = lie && (6 - g.stateT) < 1.6 ? Math.sin(g.t * 50) * 6 : 0; rr(W / 2 - 480 + sh, y, 960, 92, 22); ctx.fillStyle = lie ? '#ffd0d8' : rev ? '#d6f7e0' : '#ffffff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = lie ? TOY.coral : TOY.navy; ctx.stroke();
+          toyText('ABC'[i], W / 2 - 440 + sh, y + 46, 36, TOY.navy, 'center', null); let t = it.t; dfont(28); while (ctx.measureText(t).width > 760 && t.length > 4) t = t.slice(0, -1); toyText(t, W / 2 - 400 + sh, y + 46, 28, TOY.navy, 'left', null);
+          if (rev) { toyText(lie ? '🤥 LIE' : '✅ TRUE', W / 2 + 400, y + 30, 22, lie ? TOY.coral : '#2f8f4f', 'center', null); toyText(cnt + ' vote' + (cnt === 1 ? '' : 's'), W / 2 + 400, y + 62, 18, TOY.navy, 'center', null); } });
+        if (g.state === 'vote') { toyText('Vote for the lie on your phone · ⏱ ' + Math.ceil(g.stateT), W / 2, 610, 24, '#fff', 'center', TOY.navy); }
+        else toyText(g.cur.fooled ? g.cur.by.p.name + ' fooled ' + g.cur.fooled + '! (+' + g.cur.fooled * 50 + ')' : 'Nobody was fooled!', W / 2, 610, 28, TOY.sun, 'center', TOY.navy); }
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' WINS', W / 2, H / 2, 60, TOY.sun, '#8a5cff'); confetti(40, 1); } };
+    return g; } };
+
+const GAMES = { whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -11397,7 +11613,7 @@ function showMsg(html, interactive) {
   if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -11435,10 +11651,11 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['bomb', '🎉 Party', 'social'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More games', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        <div class="row">${[['bomb', '🎉 Party', 'social'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        ${MODE_CAT[d.mode] === 'talk' ? `<div class="row">${[['whosaid', '🕵 Who Said It?'], ['likely', '👉 Most Likely'], ['hot', '🌶 Hot Takes'], ['meld', '🧠 Mind Meld'], ['lie', '🤥 2 Truths 1 Lie']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'social' ? `<div class="row">${[['bomb', '💣 Bomb Squad'], ['draw', '🎨 Draw & Pass'], ['heist', '💰 Heist'], ['odd', '🕵 Odd One Out']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
-        ${!['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
+        ${!['party', 'cards', 'social', 'talk'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
@@ -11612,7 +11829,7 @@ function setupPadInput() {
     const pb = e.target.closest('[data-pen]'); if (pb) { pen.col = pb.dataset.pen; document.querySelectorAll('#padMsg [data-pen]').forEach(x => x.classList.toggle('on', x === pb)); return; }
     if (e.target.closest('[data-pclear]')) { const c = $('#pdraw'); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height); return; }
     const b = e.target.closest('[data-c]'); if (!b) return;
-    if (b.dataset.input) { const inp = document.getElementById(b.dataset.input), val = inp ? inp.value.trim() : ''; if (!val) { inp && inp.focus(); return; } ctlSend({ t: 'cmd', c: b.dataset.c, v: val }); return; }
+    if (b.dataset.input) { const ids = b.dataset.input.split(','), vals = []; for (const id of ids) { const inp = document.getElementById(id), val = inp ? inp.value.trim() : ''; if (!val) { inp && inp.focus(); return; } vals.push(val); } ctlSend({ t: 'cmd', c: b.dataset.c, v: vals.join('\u0001') }); return; }
     if (b.dataset.draw) { const c = document.getElementById(b.dataset.draw); if (!c) return; const o = document.createElement('canvas'); o.width = o.height = 240; const x = o.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 240, 240); x.drawImage(c, 0, 0, 240, 240);
       ctlSend({ t: 'cmd', c: b.dataset.c, v: o.toDataURL('image/jpeg', 0.7) }); return; }
     const raw = b.dataset.v, v = raw == null ? undefined : (isNaN(+raw) ? raw : +raw);
