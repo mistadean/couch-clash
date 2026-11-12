@@ -220,6 +220,22 @@ html,body{background:var(--sky1)}
 #padMsg .pcard.red{color:#e8384f}#padMsg .pcard.dim{opacity:.4}#padMsg .pcard.sm{width:40px;height:56px}
 #padMsg .pcard.sel{transform:translateY(-12px);background:#fff6c8;border-color:#ffc61a;box-shadow:0 4px 0 #c99200}
 #padMsg .pcard.back{background:#e8384f;color:#fff;border-color:#fff;outline:3px solid #1b1f5e}
+
+#pad.panelmode #padMsg{overflow-y:auto;-webkit-overflow-scrolling:touch}
+#padMsg .ptxt{width:100%;box-sizing:border-box;font:20px system-ui;padding:12px;border-radius:14px;border:3px solid #1b1f5e;margin:10px 0}
+#padMsg #pdraw{width:min(80vw,320px);height:min(80vw,320px);background:#fff;border-radius:14px;border:4px solid #1b1f5e;touch-action:none;display:block;margin:8px auto}
+#padMsg .pens{display:flex;gap:8px;justify-content:center;margin:6px 0}#padMsg .pens button{width:38px;height:38px;border-radius:50%;border:3px solid #1b1f5e}#padMsg .pens button.on{outline:4px solid #ffd23f}#padMsg .pens [data-pclear]{background:#fff}
+#padMsg .prompt{font:24px "Lilita One",system-ui;background:#fff6c8;color:#1b1f5e;border-radius:12px;padding:8px 12px;margin:6px 0}
+#padMsg .pimg{width:min(70vw,260px);border-radius:12px;border:4px solid #1b1f5e;display:block;margin:8px auto;background:#fff}
+#padMsg .manual{text-align:left;margin-top:8px}#padMsg .manual h4{font:22px "Lilita One",system-ui;margin:14px 0 4px;color:#e8384f}#padMsg .manual p{margin:6px 0;font-size:16px;line-height:1.4}#padMsg .manual p b{display:inline;font-size:inherit;margin:0;color:#1b1f5e;font-weight:800}
+#padMsg .kcols{display:flex;gap:8px;justify-content:center}#padMsg .kcols div{display:flex;flex-direction:column;gap:2px;background:#f3efe2;color:#1b1f5e;border:3px solid #1b1f5e;border-radius:10px;padding:6px 10px;font-size:24px}
+#padMsg .ltab{border-collapse:collapse;margin:6px auto;background:#fff;color:#1b1f5e;border-radius:10px;overflow:hidden}#padMsg .ltab td,#padMsg .ltab th{padding:6px 9px;border:1px solid #c9cde6;font-size:16px}
+#padMsg .wires{display:flex;flex-direction:column;gap:8px;margin:10px 0}#padMsg .wire{height:38px;border-radius:19px;border:3px solid #1b1f5e;background:linear-gradient(90deg,var(--wc) 0 100%);position:relative;font:16px "Lilita One",system-ui;color:#1b1f5e}#padMsg .wire span{background:#fff;border-radius:10px;padding:1px 8px}
+#padMsg .wire.cut{background:linear-gradient(90deg,var(--wc) 0 42%,transparent 42% 58%,var(--wc) 58% 100%);opacity:.5}
+#padMsg .bigbtn{width:170px;height:170px;border-radius:50%;border:6px solid #1b1f5e;box-shadow:0 8px 0 #1b1f5e;font:32px "Lilita One",system-ui;color:#1b1f5e;margin:10px auto;display:block}#padMsg .bigbtn:active{transform:translateY(6px);box-shadow:0 2px 0 #1b1f5e}
+#padMsg .pbtn.key{font-size:40px;padding:16px}#padMsg .codeshow{font:40px monospace;letter-spacing:8px;background:#111428;color:#7dffb0;border-radius:12px;padding:8px;margin:8px auto;width:200px}
+#padMsg .kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:0 auto}#padMsg .kpad .pbtn{font-size:26px;padding:12px 0}
+#padMsg .missions{margin-top:14px;background:rgba(255,255,255,.1);border-radius:14px;padding:10px}#padMsg .mis{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0;text-align:left}#padMsg .mis span{font-size:16px;font-weight:700}#padMsg .mis .pbtn{white-space:nowrap;flex-shrink:0;padding:10px 12px}
 </style>
 </head>
 <body>
@@ -6376,9 +6392,9 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
-const botTarget = m => m === 'odd' ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
+const botTarget = m => m === 'bomb' || m === 'draw' ? 0 : m === 'odd' ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6499,7 +6515,7 @@ function musicTick() {
 const canvas = $('#tv'); let ctx = canvas.getContext('2d');
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 };
 const host = {
-  started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'cup',
+  started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'bomb',
   cup: [], cupIndex: 0, game: null, timer: 0, results: null, pending: [], buttons: [], t: 0, shake: 0,
   net: { status: 'off', code: '', err: '', url: '', qr: null }, toast: '', toastT: 0,
 };host.fortEndless = !!lsGet('cc_fort_endless');
@@ -6620,8 +6636,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -6630,6 +6646,7 @@ function hostCmd(p, c, v) {
   if (c === 'resume') { setPaused(false, p); return; }
   if (c === 'tag') { if (host.phase === 'play' && host.game && host.game.requestTag) host.game.requestTag(p); return; }
   if (c === 'pick') { if (pickChar(p, +v)) broadcastPhase(); else sendPhase(p); return; }
+  if (c === 'mis') { if (host.phase === 'lobby' || host.phase === 'results' || host.phase === 'podium') claimMission(p, +v); return; }
   if (c === 'pp') { if (host.phase === 'play' && !host.paused && host.game && host.game.onPick) host.game.onPick(p, v); return; }
   if (leader() !== p) return;
   switch (c) {
@@ -6679,6 +6696,7 @@ function phaseInfo(p) {
   const G = currentGameDef();
   const msg = { t: 'ph', phase: host.phase, slot: p.slot, color: p.color, name: p.name, leader: leader() === p };
   if (host.game && host.game.teamColor && host.phase !== 'lobby') { const tc = host.game.teamColor(p.slot); if (tc) msg.color = tc; }
+  if (host.missionsOn && p.missions) { msg.missions = p.missions; msg.missionPts = p.missionPts || 0; }
   if (host.game && host.game.panel && host.phase === 'play') { try { msg.panel = host.game.panel(p); } catch (e) { msg.panel = ''; } }
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; msg.buttonB = G.buttonB ? ROSTER[p.char].ability.name : ''; msg.ability = G.buttonB ? ROSTER[p.char].ability : null; }
   const l = leader();
@@ -7357,15 +7375,16 @@ function drawLobby() {
   }
 
   // mode selection
-  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social'].includes(cat) ? cat : 'more';
+  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social'].includes(cat) ? cat : 'more'; ensureMissions();
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const tops = [['party', '🎉 Party', 140, host.lastParty || 'cup', TOY.sun], ['cards', '🃏 Cards', 136, host.lastCards || 'shit', TOY.coral], ['social', '🕵 Interactive', 178, 'odd', TOY.grape], ['more', '➕ More games', 196, host.lastMore || 'arena', TOY.aqua]];
+  const tops = [['social', '🎉 Party', 140, host.lastSocial || 'bomb', TOY.sun], ['party', '🕹 Arcade', 142, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 130, host.lastCards || 'shit', TOY.coral], ['more', '➕ More games', 196, host.lastMore || 'arena', TOY.aqua]];
   let bx = 40;
   for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 21 }); bx += w + 10; }
   const pill = (x, w, t) => { rr(x, 294, w, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(t, x + 18, 317, 19, TOY.navy, 'left', null); };
   if (top === 'party') { let sx = 40; for (const [m, label, w] of [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastParty = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
   else if (top === 'cards') { let sx = 40; for (const [m, label, w] of [['shit', '💩 Shithead', 170], ['big2', '🂡 Big 2', 130], ['cards', '🃏 Colour Clash', 200]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastCards = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
-  else if (top === 'social') { toyButton(40, 294, 200, 44, '🕵 Odd One Out', true, () => setMode('odd'), TOY.aqua, { px: 21, id: 'sub-odd' }); pill(252, 500, 'Secret words on phones · clues out loud · vote'); }
+  else if (top === 'social') { let sx = 40; for (const [m, label, w] of [['bomb', '💣 Bomb Squad', 160], ['draw', '🎨 Draw & Pass', 162], ['heist', '💰 Heist', 108], ['odd', '🕵 Odd One Out', 158]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastSocial = m; setMode(m); }, TOY.aqua, { px: 19, id: 'sub-' + m }); sx += w + 8; }
+    toyButton(sx, 294, 136, 44, host.missionsOn ? '🎯 Missions ON' : '🎯 Missions', !!host.missionsOn, () => { host.missionsOn = !host.missionsOn; if (host.missionsOn) toast('🎯 Secret missions are on: check your phone!'); ensureMissions(); SFX.pop(); broadcastPhase(); }, TOY.coral, { px: 17, id: 'missions' }); }
   else { // More games: pick a group, then cycle through its variants
     const groups = [['arena', '⚔ Arena', 96, 'arena'], ['fight', '🥊 Fighters', 118, host.lastFight || 'smash'], ['race', '🏁 Racing', 106, 'race'], ['coop', '🤝 Co-op', 104, host.lastCoop || 'raid'], ['team', '🏆 5v5', 84, host.lastTeam || 'gems']];
     let sx = 40; for (const [c, label, w, def] of groups) { toyButton(sx, 294, w, 44, label, cat === c, () => { host.lastMore = def; setMode(def); }, TOY.coral, { px: 18, id: 'grp-' + c }); sx += w + 8; }
@@ -7391,6 +7410,7 @@ function drawLobby() {
       toyText(nm, x + 102, y0 + 30, 22, col, 'left', TOY.navy);
       toyText(charsOn() ? ROSTER[ci].name + ' · ' + ROSTER[ci].role : 'Ready to play', x + 102, y0 + 56, 13, '#4a568f', 'left', null);
       const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Lost') : p.kind === 'bot' ? '🤖 Bot' : '⌨ Keyboard';
+      if (host.missionsOn && p.missionPts) { rr(x + cw - 62, y0 + 6, 54, 24, 12); ctx.fillStyle = TOY.coral; ctx.fill(); toyText('🎯 ' + p.missionPts, x + cw - 35, y0 + 18, 14, '#fff', 'center', TOY.navy); }
       const watching = p.kind !== 'bot' && humans().sort((a, b) => a.slot - b.slot).indexOf(p) >= (MODE_MAX[host.mode] || 4);
       if (watching) { rr(x + 98, y0 + 70, 120, 24, 12); ctx.fillStyle = 'rgba(27,31,94,.75)'; ctx.fill(); toyText('👀 Watching', x + 158, y0 + 82, 14, '#fff', 'center', null); }
       else toyText(dev + (leader() === p ? '  👑' : ''), x + 102, y0 + 82, 14, TOY.navy, 'left', null);
@@ -11034,7 +11054,257 @@ const BigTwo = {
   },
 };
 
-const GAMES = { shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   SCREEN-ONLY PARTY GAMES: things you can't do with a deck of cards.
+   Bomb Squad · Draw & Pass · The Heist  (+ Secret Missions, which run in the lobby between games)
+   ===================================================================== */
+const imgCache = new Map();
+function dataImg(src) { if (!src) return null; let im = imgCache.get(src); if (!im) { im = new Image(); im.src = src; imgCache.set(src, im); } return im.complete && im.naturalWidth ? im : null; }
+function phoneRows(list) { return `<div class="vgrid">${list.join('')}</div>`; }
+function bigTimer(x, y, t, warn) { toyText(Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'), x, y, 34, warn ? TOY.coral : '#fff', 'center', TOY.navy); }
+
+/* ---------------- 💣 BOMB SQUAD ---------------- */
+const WIRE_COLS = { red: '#ff5a6e', blue: '#2fa8ff', yellow: '#ffd23f', white: '#ffffff', black: '#2b2f45' };
+const KEY_COLUMNS = [['☀', '☂', '♞', '⚓', '✿', '☘'], ['⚡', '☯', '✈', '♫', '☀', '⌛'], ['☎', '✂', '❄', '☘', '♜', '⚡'], ['♫', '☕', '♞', '✂', '☂', '❄']];
+const BTN_COLS = { red: '#ff5a6e', blue: '#2fa8ff', yellow: '#ffd23f', white: '#ffffff' };
+const LOCK_TABLE = { red: { circle: '314', triangle: '527', square: '860' }, green: { circle: '492', triangle: '135', square: '718' }, blue: { circle: '206', triangle: '943', square: '651' } };
+const BOMB_MANUAL = {
+  wires: `<h4>✂ Wires</h4><p>Count the wires, top to bottom.</p><p><b>3 wires:</b> no blue wires → cut the <b>middle</b>. Else if the first is red → cut the <b>last</b>. Otherwise cut the <b>first blue</b>.</p>
+<p><b>4 wires:</b> two or more yellow → cut the <b>first yellow</b>. Else if the last is white → cut the <b>second</b>. Else if there's no red → cut the <b>last</b>. Otherwise cut the <b>third</b>.</p>
+<p><b>5 wires:</b> first and last are the same colour → cut the <b>fourth</b>. Else if there's exactly one black → cut the <b>black</b> one. Else if there are more red than blue → cut the <b>first</b>. Otherwise cut the <b>middle</b>.</p>
+<p><b>6 wires:</b> no white → cut the <b>fifth</b>. Else if three or more blue → cut the <b>last blue</b>. Else if the third is yellow → cut the <b>first</b>. Otherwise cut the <b>second-last</b>.</p>`,
+  button: `<h4>🔴 The Button</h4><p>Tap the button a number of times, then press DONE.</p><p>Start from its colour: <b>red 1 · blue 2 · yellow 3 · white 4</b>.</p><p>Word says <b>HOLD</b> → add 1. Word says <b>STOP</b> → take away 1 (never below 1). Word says <b>BOOM</b> → it's always <b>2</b>, ignore everything else.</p><p>Then, if the serial number ends in an <b>even</b> digit, add 1.</p>`,
+  keypad: `<h4>⌨ Symbol Keypad</h4><p>The four symbols all appear in <b>one</b> of these columns. Press them in the order they appear in that column, top to bottom.</p><div class="kcols">${KEY_COLUMNS.map(c => `<div>${c.map(s => `<span>${s}</span>`).join('')}</div>`).join('')}</div>`,
+  lock: `<h4>🔒 Code Lock</h4><p>Look at the light colour and the shape on the lock. Find the code:</p><table class="ltab"><tr><th></th><th>● circle</th><th>▲ triangle</th><th>■ square</th></tr>${Object.entries(LOCK_TABLE).map(([c, r]) => `<tr><th>${c}</th><td>${r.circle}</td><td>${r.triangle}</td><td>${r.square}</td></tr>`).join('')}</table><p>Then add the number of <b>batteries</b> on the bomb to the <b>last</b> digit (if it goes past 9, keep only the last digit).</p>`,
+};
+function solveWires(w) {
+  const n = w.length, cnt = c => w.filter(x => x === c).length, last = c => w.lastIndexOf(c), first = c => w.indexOf(c);
+  if (n === 3) return !cnt('blue') ? 1 : w[0] === 'red' ? 2 : first('blue');
+  if (n === 4) return cnt('yellow') >= 2 ? first('yellow') : w[3] === 'white' ? 1 : !cnt('red') ? 3 : 2;
+  if (n === 5) return w[0] === w[4] ? 3 : cnt('black') === 1 ? first('black') : cnt('red') > cnt('blue') ? 0 : 2;
+  return !cnt('white') ? 4 : cnt('blue') >= 3 ? last('blue') : w[2] === 'yellow' ? 0 : 4;
+}
+const BombSquad = {
+  title: 'Bomb Squad', accent: '#ff5a6e', phones: true, minPhones: 1, panelGame: true, noBots: true,
+  how: 'The bomb is on the TV. One of you is the Defuser and works the controls on their phone. Everyone else has a different page of the manual on their phone and nobody else can see it. Talk! Read your rules out loud and defuse it before the timer runs out. 3 mistakes and BOOM.',
+  create(players) {
+    const g = { t: 0, done: false, panelGame: true, ps: players.map(p => ({ p })), bomb: null, defused: 0, state: 'brief', stateT: 5, boomT: 0, endT: 0, lost: false, best: +(lsGet('cc_bomb_best') || 0), defuserIdx: 0, taps: 0, codeIn: '', tab: {} };
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    function newBomb() {
+      const level = g.defused, kinds = ['wires', 'button', 'keypad'].concat(level >= 1 ? ['lock'] : []);
+      const serial = 'CC' + Math.floor(Math.random() * 9) + pick(['A', 'K', 'Z', 'Q']) + Math.floor(Math.random() * 10), batteries = Math.floor(Math.random() * 4);
+      const mods = kinds.map(k => {
+        if (k === 'wires') { const n = 3 + Math.floor(Math.random() * 4), w = Array.from({ length: n }, () => pick(Object.keys(WIRE_COLS))); return { k, wires: w, cut: [], ans: solveWires(w) }; }
+        if (k === 'button') { const col = pick(Object.keys(BTN_COLS)), word = pick(['PUSH', 'HOLD', 'STOP', 'BOOM']); let a = { red: 1, blue: 2, yellow: 3, white: 4 }[col];
+          if (word === 'BOOM') a = 2; else { if (word === 'HOLD') a++; if (word === 'STOP') a = Math.max(1, a - 1); if (+serial.slice(-1) % 2 === 0) a++; } return { k, col, word, ans: a }; }
+        if (k === 'keypad') { let col, syms; for (let tries = 0; tries < 50; tries++) { col = pick(KEY_COLUMNS); syms = col.slice().sort(() => Math.random() - 0.5).slice(0, 4);
+            if (KEY_COLUMNS.filter(c => syms.every(s => c.includes(s))).length === 1) break; }
+          const order = syms.slice().sort((a, b) => col.indexOf(a) - col.indexOf(b)); return { k, syms, order, pressed: [] }; }
+        const light = pick(['red', 'green', 'blue']), shape = pick(['circle', 'triangle', 'square']), base = LOCK_TABLE[light][shape];
+        return { k, light, shape, ans: base.slice(0, 2) + ((+base[2] + batteries) % 10) };
+      });
+      g.bomb = { serial, batteries, mods, strikes: 0, time: Math.max(100, 210 - level * 25), max: Math.max(100, 210 - level * 25), flash: 0 };
+      g.defuserIdx = level % g.ps.length; g.taps = 0; g.codeIn = ''; g.tab = {}; g.state = 'live'; SFX.go(); broadcastPhase();
+    }
+    const defuser = () => g.ps[g.defuserIdx];
+    function pagesFor(o) { const experts = g.ps.filter(x => x !== defuser()); if (!experts.length) return g.bomb.mods.map(m => m.k);
+      const i = experts.indexOf(o); if (i < 0) return []; return g.bomb.mods.map(m => m.k).filter((_, k) => k % experts.length === i); }
+    function solved(m) { m.done = true; SFX.cheer(); burst(W / 2, H / 2, TOY.mint, 20, 260, 6, 0.5); if (g.bomb.mods.every(x => x.done)) { g.defused++; g.state = 'win'; g.stateT = 4; SFX.win(); if (g.defused > g.best) { g.best = g.defused; lsSet('cc_bomb_best', g.best); } } broadcastPhase(); }
+    function strike() { const b = g.bomb; b.strikes++; b.flash = 0.6; SFX.bonk(); shake(0.4); g.ps.forEach(o => buzz(o.p, 200)); if (b.strikes >= 3) explode(); broadcastPhase(); }
+    function explode() { g.state = 'boom'; g.boomT = 0; SFX.boom(); shake(1); burst(W / 2, H / 2, '#ffb067', 80, 600, 9, 1.2); broadcastPhase(); }
+    g.update = dt => { g.t += dt;
+      if (g.state === 'brief') { g.stateT -= dt; if (g.stateT <= 0) newBomb(); return; }
+      if (g.state === 'live') { const b = g.bomb; b.time -= dt; b.flash = Math.max(0, b.flash - dt); if (Math.floor(b.time) !== Math.floor(b.time + dt)) tone(b.time < 30 ? 1200 : 900, 600, 0.03, 'square', 0.03); if (b.time <= 0) explode(); }
+      if (g.state === 'win') { g.stateT -= dt; if (g.stateT <= 0) newBomb(); }
+      if (g.state === 'boom') { g.boomT += dt; if (g.boomT > 6) g.done = true; } };
+    g.onPick = (p, v) => { if (g.state !== 'live' || typeof v !== 'string') return; const o = g.ps.find(x => x.p === p); if (!o) return;
+      if (v.startsWith('tab:')) { g.tab[p.slot] = v.slice(4); sendPhase(p); return; }
+      if (o !== defuser()) return; const [k, arg] = v.split(':'), m = g.bomb.mods.find(x => x.k === k); if (!m || m.done) return;
+      if (k === 'wires') { const i = +arg; if (m.cut.includes(i)) return; m.cut.push(i); SFX.whack(); if (i === m.ans) solved(m); else strike(); }
+      else if (k === 'button') { if (arg === 'tap') { g.taps++; SFX.click(); sendPhase(p); } else if (arg === 'reset') { g.taps = 0; sendPhase(p); } else if (arg === 'done') { if (g.taps === m.ans) solved(m); else { strike(); g.taps = 0; } } }
+      else if (k === 'keypad') { const s = arg; if (m.pressed.includes(s)) return; if (s === m.order[m.pressed.length]) { m.pressed.push(s); SFX.pop(); if (m.pressed.length === 4) solved(m); else broadcastPhase(); } else { m.pressed = []; strike(); } }
+      else if (k === 'lock') { if (arg === 'clr') g.codeIn = ''; else if (arg === 'ok') { if (g.codeIn === m.ans) solved(m); else { strike(); } g.codeIn = ''; } else if (g.codeIn.length < 3) g.codeIn += arg; SFX.click(); sendPhase(p); } };
+    g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
+      if (g.state === 'brief') return `<b>💣 Bomb Squad</b>${g.ps.length > 1 ? (o === g.ps[0] ? 'You\'re the first <b style="display:inline">Defuser</b>. You work the controls.' : 'You\'re an <b style="display:inline">Expert</b>. You\'ll get secret pages of the manual. Read them out loud!') : 'Solo practice: you get the controls <b style="display:inline">and</b> the manual.'}`;
+      if (g.state === 'boom') return `<b>💥 BOOM!</b>Bombs defused: ${g.defused}`;
+      if (g.state === 'win') return '<b>✅ Bomb defused!</b>Next bomb incoming…';
+      const b = g.bomb, isDef = o === defuser(), pages = pagesFor(o), mods = b.mods.filter(m => !m.done);
+      let out = '';
+      if (isDef) { const tabK = g.tab[p.slot] && mods.some(m => m.k === g.tab[p.slot]) ? g.tab[p.slot] : (mods[0] || {}).k, m = mods.find(x => x.k === tabK);
+        out += `<b>🧰 You're the Defuser</b><div class="small" style="opacity:1">Describe what you see on the TV · Strikes ${'❌'.repeat(b.strikes)}${'▫'.repeat(3 - b.strikes)}</div><div class="row">${mods.map(x => `<button class="pbtn${x.k === tabK ? ' on' : ''}" data-c="pp" data-v="tab:${x.k}">${{ wires: '✂ Wires', button: '🔴 Button', keypad: '⌨ Keypad', lock: '🔒 Lock' }[x.k]}</button>`).join('')}</div>`;
+        if (m && m.k === 'wires') out += `<div class="wires">${m.wires.map((c, i) => `<button class="wire${m.cut.includes(i) ? ' cut' : ''}" data-c="pp" data-v="wires:${i}" style="--wc:${WIRE_COLS[c]}"><span>${i + 1}</span></button>`).join('')}</div><div class="small">Tap a wire to cut it</div>`;
+        if (m && m.k === 'button') out += `<button class="bigbtn" data-c="pp" data-v="button:tap" style="background:${BTN_COLS[m.col]}">${m.word}</button><div class="small" style="opacity:1">Taps: <b style="display:inline">${g.taps}</b></div><div class="row"><button class="pbtn" data-c="pp" data-v="button:reset">Reset</button><button class="pbtn go" data-c="pp" data-v="button:done">DONE</button></div>`;
+        if (m && m.k === 'keypad') out += phoneRows(m.syms.map(s => `<button class="pbtn key${m.pressed.includes(s) ? ' on' : ''}" data-c="pp" data-v="keypad:${s}">${s}</button>`));
+        if (m && m.k === 'lock') out += `<div class="codeshow">${(g.codeIn + '___').slice(0, 3).split('').join(' ')}</div><div class="kpad">${'123456789'.split('').map(d => `<button class="pbtn" data-c="pp" data-v="lock:${d}">${d}</button>`).join('')}<button class="pbtn" data-c="pp" data-v="lock:clr">⌫</button><button class="pbtn" data-c="pp" data-v="lock:0">0</button><button class="pbtn go" data-c="pp" data-v="lock:ok">✓</button></div>`;
+      }
+      if (pages.length) out += `<div class="manual">${!isDef ? '<b>📖 Your secret manual pages</b><div class="small">Only you can see these. Read them out!</div>' : '<b style="margin-top:12px">📖 Manual</b>'}${pages.map(k => BOMB_MANUAL[k]).join('')}</div>`;
+      else if (!isDef) out += '<b>📖 No pages this bomb</b>Help the Defuser describe the bomb!';
+      return out; };
+    g.ranking = () => g.ps.map(o => o.p.slot);
+    Object.defineProperty(g, 'pointTable', { get: () => g.ps.map(() => Math.min(4, g.defused)) });
+    g.coop = true; g.resultLine = () => `💣 Your squad defused ${g.defused} bomb${g.defused === 1 ? '' : 's'}` + (g.defused >= g.best && g.defused ? ' · NEW BEST!' : ` · best ${g.best}`);
+    g.bot = () => {};
+    // ---------- TV: the bomb ----------
+    function drawWires(x, y, m) { m.wires.forEach((c, i) => { const yy = y + 34 + i * 30, cut = m.cut.includes(i); ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.strokeStyle = TOY.navy;
+        const seg = (a, b) => { ctx.beginPath(); ctx.moveTo(x + a, yy + Math.sin(a * 0.05 + i) * 4); for (let s = a; s <= b; s += 10) ctx.lineTo(x + s, yy + Math.sin(s * 0.05 + i) * 4); ctx.stroke(); ctx.lineWidth = 7; ctx.strokeStyle = WIRE_COLS[c]; ctx.stroke(); ctx.lineWidth = 12; ctx.strokeStyle = TOY.navy; };
+        if (cut) { seg(30, 110); seg(150, 230); } else seg(30, 230);
+        rr(x + 14, yy - 9, 14, 18, 4); ctx.fillStyle = '#c9cde6'; ctx.fill(); rr(x + 232, yy - 9, 14, 18, 4); ctx.fill(); }); }
+    function drawModule(x, y, m) { const w = 260, h = 220;
+      rr(x, y, w, h, 18); ctx.fillStyle = '#3a3f63'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      ctx.fillStyle = m.done ? TOY.mint : (Math.floor(g.t * 2) % 2 ? '#ff5a6e' : '#7a3040'); ctx.beginPath(); ctx.arc(x + w - 20, y + 20, 9, 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+      toyText({ wires: 'WIRES', button: 'BUTTON', keypad: 'KEYPAD', lock: 'LOCK' }[m.k], x + 16, y + 20, 15, '#c9cde6', 'left', null);
+      if (m.k === 'wires') drawWires(x, y + 10, m);
+      if (m.k === 'button') { const pr = m.done ? 0 : Math.sin(g.t * 3) * 3; ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(x + w / 2, y + 128, 70, 0, 7); ctx.fill(); ctx.fillStyle = BTN_COLS[m.col]; ctx.beginPath(); ctx.arc(x + w / 2, y + 120 + pr, 68, 0, 7); ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(m.word, x + w / 2, y + 122 + pr, 34, m.col === 'white' || m.col === 'yellow' ? TOY.navy : '#fff', 'center', m.col === 'white' || m.col === 'yellow' ? null : TOY.navy); }
+      if (m.k === 'keypad') m.syms.forEach((s, i) => { const bx = x + 30 + (i % 2) * 104, by = y + 40 + Math.floor(i / 2) * 86, on = m.pressed.includes(s); rr(bx, by, 96, 76, 12); ctx.fillStyle = on ? '#b9f5c9' : '#f3efe2'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(s, bx + 48, by + 40, 42, TOY.navy, 'center', null); });
+      if (m.k === 'lock') { ctx.fillStyle = { red: '#ff5a6e', green: '#4ee07a', blue: '#2fa8ff' }[m.light]; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 25; ctx.beginPath(); ctx.arc(x + 70, y + 110, 34, 0, 7); ctx.fill(); ctx.shadowBlur = 0; ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); const sx = x + 180, sy = y + 110; if (m.shape === 'circle') ctx.arc(sx, sy, 38, 0, 7); else if (m.shape === 'square') ctx.rect(sx - 36, sy - 36, 72, 72); else { ctx.moveTo(sx, sy - 42); ctx.lineTo(sx + 42, sy + 34); ctx.lineTo(sx - 42, sy + 34); ctx.closePath(); } ctx.fill(); ctx.stroke();
+        rr(x + 50, y + 168, 160, 36, 8); ctx.fillStyle = '#111428'; ctx.fill(); toyText((g.codeIn + '___').slice(0, 3).split('').join(' '), x + 130, y + 187, 24, '#7dffb0', 'center', null); }
+      if (m.done) { ctx.fillStyle = 'rgba(78,224,122,.25)'; rr(x, y, w, h, 18); ctx.fill(); toyText('✓', x + w / 2, y + h / 2, 90, TOY.mint, 'center', TOY.navy); } }
+    g.draw = () => {
+      ctx.fillStyle = '#20243f'; ctx.fillRect(0, 0, W, H); const gr = ctx.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, 760); gr.addColorStop(0, '#3a4170'); gr.addColorStop(1, '#141730'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      if (g.state === 'brief') { headline('BOMB SQUAD', W / 2, 200, 84, TOY.sun, TOY.coral); toyText('Defuser: ' + g.ps[0].p.name + ' · everyone else reads their manual out loud', W / 2, 300, 26, '#fff', 'center', TOY.navy); toyText('First bomb in ' + Math.ceil(g.stateT), W / 2, 380, 36, TOY.sun, 'center', TOY.navy); return; }
+      const b = g.bomb, sh = b.flash > 0 ? (Math.random() - 0.5) * 16 : 0;
+      ctx.save(); ctx.translate(sh, 0);
+      const n = b.mods.length, bw = n * 280 + 40, bx = W / 2 - bw / 2, by = 150;
+      rr(bx - 20, by - 30, bw + 40, 300, 30); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.lineWidth = 7; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      b.mods.forEach((m, i) => drawModule(bx + 20 + i * 280, by, m));
+      // timer, strikes, serial, batteries
+      rr(W / 2 - 150, 40, 300, 82, 16); ctx.fillStyle = '#111428'; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText(Math.floor(Math.max(0, b.time) / 60) + ':' + String(Math.floor(Math.max(0, b.time) % 60)).padStart(2, '0'), W / 2 - 30, 82, 56, b.time < 30 ? '#ff5a6e' : '#ff8a8a', 'center', null);
+      for (let k = 0; k < 3; k++) toyText(k < b.strikes ? '❌' : '▫', W / 2 + 90 + (k % 3) * 0 + 0, 60 + k * 22, 16, '#fff', 'center', null);
+      rr(bx, by + 290, 220, 46, 10); ctx.fillStyle = '#fff6c8'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('SERIAL  ' + b.serial, bx + 110, by + 314, 22, TOY.navy, 'center', null);
+      for (let k = 0; k < b.batteries; k++) { rr(bx + bw - 60 - k * 54, by + 292, 46, 40, 8); ctx.fillStyle = '#4ee07a'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke(); toyText('🔋', bx + bw - 37 - k * 54, by + 312, 22, '#fff', 'center', null); }
+      toyText(b.batteries + ' batter' + (b.batteries === 1 ? 'y' : 'ies'), bx + bw - 80, by + 360, 18, '#c9cde6', 'center', null);
+      ctx.restore();
+      toyText('🧰 Defuser: ' + defuser().p.name + '   ·   Bombs defused: ' + g.defused + '   ·   best ' + g.best, W / 2, H - 40, 24, '#fff', 'center', TOY.navy);
+      if (b.flash > 0) { ctx.fillStyle = `rgba(255,60,80,${b.flash * 0.5})`; ctx.fillRect(0, 0, W, H); headline('STRIKE!', W / 2, H / 2 + 220, 60, '#fff', TOY.coral); }
+      if (g.state === 'win') { ctx.fillStyle = 'rgba(78,224,122,.25)'; ctx.fillRect(0, 0, W, H); headline('DEFUSED!', W / 2, H / 2 + 200, 80, '#fff', TOY.mint); confetti(40, 1); }
+      if (g.state === 'boom') { const k = Math.min(1, g.boomT * 2); ctx.fillStyle = `rgba(255,${180 - k * 120},80,${0.9 - g.boomT * 0.12})`; ctx.fillRect(0, 0, W, H); headline('💥 BOOM 💥', W / 2, H / 2 - 20, 110 * (0.6 + k * 0.4), '#fff', TOY.coral); toyText('Bombs defused: ' + g.defused, W / 2, H / 2 + 90, 36, '#fff', 'center', TOY.navy); }
+    };
+    return g;
+  },
+};
+
+/* ---------------- 🎨 DRAW & PASS ---------------- */
+const DRAW_PROMPTS = ['A duck robbing a bank', 'Grandma on a skateboard', 'A shark at a barbecue', 'The world\'s worst haircut', 'A cat running for prime minister', 'A kangaroo at the gym', 'An angry pineapple', 'Batman doing the dishes',
+  'A dog driving a bus', 'A ghost at the beach', 'Spaghetti monster on a date', 'A wizard stuck in traffic', 'Your mate after one too many', 'A penguin in a sauna', 'A robot learning to dance', 'Shrek at a job interview',
+  'A pigeon stealing chips', 'The first day at a new job', 'A snail racing a turtle', 'A dinosaur at a wedding', 'A koala DJ', 'Toast that\'s on fire', 'A very confident potato', 'Aliens at Bunnings'];
+const DrawPass = {
+  title: 'Draw & Pass', accent: '#ff8fb5', phones: true, minPhones: 2, panelGame: true, noBots: true,
+  how: 'Everyone writes something weird. Phones pass it on: the next person DRAWS it, the next person DESCRIBES the drawing, and so on. Then watch every chain go hilariously wrong on the TV!',
+  create(players) {
+    const n = players.length, steps = Math.max(3, n), g = { t: 0, done: false, panelGame: true, ps: players.map(p => ({ p })), chains: players.map(() => []), step: 0, stepT: 45, state: 'play', sub: {}, show: { c: 0, k: 0, t: 0 }, endT: 0 };
+    const kindOf = k => k === 0 ? 'write' : k % 2 ? 'draw' : 'guess';
+    const chainFor = (i, k) => (i + k) % n;
+    const lim = k => kindOf(k) === 'draw' ? 75 : 45;
+    function submit(i, v) { const k = g.step, c = chainFor(i, k); if (g.sub[i]) return; g.sub[i] = true; g.chains[c][k] = { by: g.ps[i].p, kind: kindOf(k), v }; SFX.pop(); if (Object.keys(g.sub).length >= n) advance(); else broadcastPhase(); }
+    function advance() { for (let i = 0; i < n; i++) if (!g.sub[i]) { const c = chainFor(i, g.step); g.chains[c][g.step] = { by: g.ps[i].p, kind: kindOf(g.step), v: kindOf(g.step) === 'draw' ? null : '🤷 (ran out of time)' }; }
+      g.sub = {}; g.step++; if (g.step >= steps) { g.state = 'show'; g.show = { c: 0, k: 0, t: 0 }; SFX.cheer(); } else { g.stepT = lim(g.step); SFX.beep(); } broadcastPhase(); }
+    g.update = dt => { g.t += dt;
+      if (g.state === 'play') { g.stepT -= dt; if (g.stepT <= 0) advance(); }
+      else if (g.state === 'show') { g.show.t += dt; if (g.show.t > 4.2) { g.show.t = 0; g.show.k++; SFX.pop(); if (g.show.k >= steps) { g.show.k = 0; g.show.c++; SFX.cheer(); if (g.show.c >= n) { g.state = 'end'; } } } }
+      else if (g.state === 'end') { g.endT += dt; if (g.endT > 3) g.done = true; } };
+    g.onPick = (p, v) => { const i = g.ps.findIndex(o => o.p === p); if (i < 0 || g.state !== 'play') return;
+      if (v === '__rand') { submit(i, DRAW_PROMPTS[Math.floor(Math.random() * DRAW_PROMPTS.length)]); return; }
+      if (typeof v === 'string' && v.length) submit(i, v.startsWith('data:image') ? v.slice(0, 120000) : v.slice(0, 80)); };
+    g.panel = p => { const i = g.ps.findIndex(o => o.p === p); if (i < 0) return '<b>👀 Watching</b>';
+      if (g.state !== 'play') return '<b>📺 Watch the TV!</b>Every chain is being revealed…';
+      if (g.sub[i]) return '<b>✅ Sent!</b>Waiting for the others…';
+      const k = g.step, prev = k > 0 ? g.chains[chainFor(i, k)][k - 1] : null, kind = kindOf(k);
+      if (kind === 'write') return `<b>✏ Write something weird to draw</b><input id="ptxt" class="ptxt" maxlength="60" placeholder="e.g. a koala DJ"><div class="row"><button class="pbtn" data-c="pp" data-v="__rand">🎲 Random</button><button class="pbtn go" data-c="pp" data-input="ptxt">Send ▶</button></div>`;
+      if (kind === 'draw') return `<b>🎨 Draw this:</b><div class="prompt">${esc(prev ? prev.v : '')}</div><canvas id="pdraw" width="320" height="320"></canvas><div class="pens">${['#1b1f5e', '#ff5a6e', '#2fa8ff', '#3ccf6e', '#ffc61a', '#ffffff'].map(c => `<button data-pen="${c}" style="background:${c}"></button>`).join('')}<button data-pclear="1">🗑</button></div><button class="pbtn big go" data-c="pp" data-draw="pdraw">Done ▶</button>`;
+      return `<b>🤔 What is this?</b>${prev && prev.v ? `<img class="pimg" src="${prev.v}">` : '<div class="prompt">(they didn\'t draw anything 😅)</div>'}<input id="ptxt" class="ptxt" maxlength="60" placeholder="Describe the drawing"><button class="pbtn big go" data-c="pp" data-input="ptxt">Send ▶</button>`; };
+    g.ranking = () => g.ps.map(o => o.p.slot); Object.defineProperty(g, 'pointTable', { get: () => g.ps.map(() => 2) });
+    g.coop = true; g.resultLine = () => '🎨 Masterpieces, every one of them';
+    g.bot = () => {};
+    g.draw = () => {
+      skyScene({ hills: true }); headline('DRAW & PASS', W / 2, 54, 46, '#fff', '#ff6fb5');
+      if (g.state === 'play') { const kind = kindOf(g.step);
+        toyText(kind === 'write' ? '✏ Everyone: write something weird' : kind === 'draw' ? '🎨 Everyone: draw what your phone says' : '🤔 Everyone: describe the drawing on your phone', W / 2, 120, 30, '#fff', 'center', TOY.navy);
+        toyText('Round ' + (g.step + 1) + ' of ' + steps + '   ·   ⏱ ' + Math.ceil(g.stepT), W / 2, 165, 24, TOY.sun, 'center', TOY.navy);
+        g.ps.forEach((o, i) => { const x = W / 2 + (i - (n - 1) / 2) * Math.min(150, 1100 / n), y = 360, done = g.sub[i];
+          drawAvatar(x, y + (done ? Math.sin(g.t * 6 + i) * 6 : 0), 44, o.p, { happy: done }); toyText(o.p.name, x, y + 70, 20, o.p.color, 'center', TOY.navy); toyText(done ? '✅' : '✍', x, y + 104, 26, '#fff', 'center', null); }); return; }
+      if (g.state === 'end') { headline("THAT'S A WRAP!", W / 2, H / 2, 70, TOY.sun, TOY.orange); confetti(40, 1); return; }
+      const ch = g.chains[g.show.c] || [], start = ch[0];
+      toyText('Chain ' + (g.show.c + 1) + ' of ' + n + ' · started by ' + (start ? start.by.name : ''), W / 2, 110, 26, '#fff', 'center', TOY.navy);
+      for (let k = 0; k <= g.show.k && k < ch.length; k++) { const it = ch[k], cols = Math.min(steps, 4), wv = 270, x = W / 2 + ((k % cols) - (Math.min(cols, steps) - 1) / 2) * (wv + 20), y = 150 + Math.floor(k / cols) * 270, age = k === g.show.k ? g.show.t : 9, s = Math.min(1, age * 3);
+        ctx.save(); ctx.translate(x, y + 120); ctx.scale(0.6 + s * 0.4, 0.6 + s * 0.4); ctx.globalAlpha = s;
+        toyPanel(-wv / 2, -120, wv, 240, 20, '#ffffff', 5);
+        if (it && it.kind === 'draw') { const im = dataImg(it.v); if (im) ctx.drawImage(im, -86, -110, 172, 172); else toyText('(blank 😅)', 0, -20, 22, '#8a93b8', 'center', null); }
+        else { const words = String(it ? it.v : '').split(' '); let line = '', ly = -60; dfont(24); for (const w of words) { if (ctx.measureText(line + w).width > wv - 30) { toyText(line, 0, ly, 24, TOY.navy, 'center', null); ly += 32; line = ''; } line += w + ' '; } toyText(line, 0, ly, 24, TOY.navy, 'center', null); }
+        toyText((it && it.kind === 'draw' ? '🎨 ' : it && it.kind === 'write' ? '✏ ' : '🤔 ') + (it ? it.by.name : ''), 0, 96, 18, it ? it.by.color : '#999', 'center', TOY.navy);
+        ctx.restore(); }
+    };
+    return g;
+  },
+};
+
+/* ---------------- 💰 THE HEIST ---------------- */
+const Heist = {
+  title: 'The Heist', accent: '#ffd23f', phones: true, minPhones: 1, botsOk: true, panelGame: true,
+  how: 'Each round there\'s loot on the table. Everyone secretly picks SHARE or STEAL on their phone. Nobody steals → everyone splits it. ONE thief → they take it all. Two or more thieves → the alarm goes off, nobody gets anything and the thieves get fined. Talk, promise, lie. Richest after 6 jobs wins!',
+  create(players) {
+    const g = { t: 0, done: false, panelGame: true, ps: players.map(p => ({ p, cash: 0, pick: null, trust: Math.random() })), round: 1, rounds: 6, state: 'talk', stateT: 20, loot: 0, reveal: [], revT: 0, outcome: '', endT: 0 };
+    const LOOTS = [1000, 2000, 3000, 5000, 8000, 12000];
+    g.loot = LOOTS[0];
+    function startChoose() { g.state = 'choose'; g.stateT = 15; g.ps.forEach(o => o.pick = null); SFX.beep(); broadcastPhase(); }
+    function resolve() { g.ps.forEach(o => { if (!o.pick) o.pick = 'share'; });
+      const thieves = g.ps.filter(o => o.pick === 'steal');
+      if (!thieves.length) { const each = Math.round(g.loot / g.ps.length); g.ps.forEach(o => o.cash += each); g.outcome = `🤝 Everyone shared! $${each.toLocaleString()} each`; }
+      else if (thieves.length === 1) { thieves[0].cash += g.loot; g.outcome = `🦹 ${thieves[0].p.name} STOLE IT ALL! +$${g.loot.toLocaleString()}`; }
+      else { thieves.forEach(o => o.cash -= 500); g.outcome = `🚨 ${thieves.length} thieves! Alarm! Thieves fined $500`; }
+      g.state = 'reveal'; g.revT = 0; SFX.boom(); broadcastPhase(); }
+    g.update = dt => { g.t += dt;
+      if (g.state === 'talk') { g.stateT -= dt; if (g.stateT <= 0) startChoose(); }
+      else if (g.state === 'choose') { g.stateT -= dt; for (const o of g.ps) if (o.p.kind === 'bot' && !o.pick && Math.random() < dt * 0.5) { o.pick = Math.random() < 0.35 + (g.round / g.rounds) * 0.25 - o.trust * 0.2 ? 'steal' : 'share'; broadcastPhase(); }
+        if (g.stateT <= 0 || g.ps.every(o => o.pick)) resolve(); }
+      else if (g.state === 'reveal') { g.revT += dt; if (g.revT > g.ps.length * 0.6 + 4) { if (g.round >= g.rounds) { g.state = 'end'; SFX.win(); broadcastPhase(); } else { g.round++; g.loot = LOOTS[g.round - 1]; g.state = 'talk'; g.stateT = 20; broadcastPhase(); } } }
+      else if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; } };
+    g.onPick = (p, v) => { const o = g.ps.find(x => x.p === p); if (!o) return; if (g.state === 'talk' && v === 'ready') { g.stateT = Math.min(g.stateT, 3); broadcastPhase(); } if (g.state === 'choose' && (v === 'share' || v === 'steal')) { o.pick = v; SFX.click(); broadcastPhase(); } };
+    g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.cash - a.cash)[0]; return `<b>${top === o ? '👑 You\'re the richest!' : esc(top.p.name) + ' wins'}</b>You finished with ${o.cash < 0 ? '-$' : '$'}${Math.abs(o.cash).toLocaleString()}`; }
+      if (g.state === 'talk') return `<b>💬 Job ${g.round}: $${g.loot.toLocaleString()} on the table</b>Talk it out. Make promises… or don't.<div class="small" style="opacity:1">Your cash: ${o.cash < 0 ? '-$' : '$'}${Math.abs(o.cash).toLocaleString()}</div><button class="pbtn big" data-c="pp" data-v="ready">Skip to the choice ▶</button>`;
+      if (g.state === 'choose') return `<b>🤫 Share or steal?</b>${o.pick ? `<div class="small" style="opacity:1">You picked <b style="display:inline">${o.pick.toUpperCase()}</b>. You can still change it.</div>` : ''}<div class="row"><button class="pbtn big${o.pick === 'share' ? ' on' : ''}" data-c="pp" data-v="share">🤝 SHARE</button><button class="pbtn big${o.pick === 'steal' ? ' on' : ''}" data-c="pp" data-v="steal" style="background:linear-gradient(#ff8a9a,#ff5a6e);color:#fff">🦹 STEAL</button></div>`;
+      return `<b>📺 Look at the TV…</b>Your cash: ${o.cash < 0 ? '-$' : '$'}${Math.abs(o.cash).toLocaleString()}`; };
+    g.ranking = () => g.ps.slice().sort((a, b) => b.cash - a.cash).map(o => o.p.slot);
+    g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.cash - a.cash)[0]; return '💰 ' + top.p.name + ' got away with $' + top.cash.toLocaleString(); };
+    g.bot = () => {};
+    g.draw = () => {
+      ctx.fillStyle = '#1b1f3a'; ctx.fillRect(0, 0, W, H); const gr = ctx.createRadialGradient(W / 2, 260, 40, W / 2, 260, 700); gr.addColorStop(0, '#4a3f7a'); gr.addColorStop(1, '#141730'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      headline('THE HEIST', W / 2, 50, 44, TOY.sun, '#8a6a10');
+      toyText('Job ' + g.round + ' of ' + g.rounds, W / 2, 96, 22, '#c9cde6', 'center', null);
+      // the loot
+      const bob = Math.sin(g.t * 2) * 6; rr(W / 2 - 150, 120 + bob, 300, 110, 22); ctx.fillStyle = '#3ccf6e'; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('💰 $' + g.loot.toLocaleString(), W / 2, 176 + bob, 46, '#fff', 'center', TOY.navy);
+      const sub = g.state === 'talk' ? '💬 Talk it out… ' + Math.ceil(g.stateT) : g.state === 'choose' ? '🤫 Choose on your phone! ' + Math.ceil(g.stateT) : g.state === 'reveal' ? '' : '';
+      toyText(sub, W / 2, 268, 28, '#fff', 'center', TOY.navy);
+      const n = g.ps.length;
+      g.ps.forEach((o, i) => { const cw = Math.min(200, 1180 / n - 12), x = W / 2 + (i - (n - 1) / 2) * (cw + 12), y = 470;
+        let flip = 0; if (g.state === 'reveal') flip = Math.min(1, Math.max(0, (g.revT - i * 0.6) * 3));
+        rr(x - cw / 2, y - 140, cw, 280, 22); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+        drawAvatar(x, y - 80, 40, o.p); toyText(o.p.name, x, y - 22, 20, o.p.color, 'center', TOY.navy); toyText((o.cash < 0 ? '-$' : '$') + Math.abs(o.cash).toLocaleString(), x, y + 10, 22, o.cash < 0 ? TOY.coral : '#2f8f4f', 'center', null);
+        const cx = x, cy = y + 80, sx = Math.abs(Math.cos(flip * Math.PI)); ctx.save(); ctx.translate(cx, cy); ctx.scale(Math.max(0.04, sx), 1);
+        if (flip < 0.5) { rr(-60, -38, 120, 76, 14); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.lineWidth = 4; ctx.stroke(); toyText(g.state === 'choose' ? (o.pick ? '✔' : '…') : '?', 0, 0, 32, '#fff', 'center', null); }
+        else { const st = o.pick === 'steal'; rr(-60, -38, 120, 76, 14); ctx.fillStyle = st ? '#ff5a6e' : '#4ee07a'; ctx.fill(); ctx.lineWidth = 4; ctx.stroke(); toyText(st ? '🦹 STEAL' : '🤝 SHARE', 0, 0, 22, '#fff', 'center', TOY.navy); }
+        ctx.restore(); });
+      if (g.state === 'reveal' && g.revT > n * 0.6 + 0.6) { const k = Math.min(1, (g.revT - n * 0.6 - 0.6) * 3); ctx.save(); ctx.translate(W / 2, 300); ctx.scale(0.7 + k * 0.3, 0.7 + k * 0.3); headline(g.outcome, 0, 0, 40, '#fff', g.outcome.startsWith('🚨') ? TOY.coral : g.outcome.startsWith('🦹') ? '#8a3cff' : TOY.mint); ctx.restore();
+        if (g.outcome.startsWith('🚨') && Math.floor(g.t * 6) % 2) { ctx.fillStyle = 'rgba(255,60,80,.15)'; ctx.fillRect(0, 0, W, H); } }
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.cash - a.cash)[0]; ctx.fillStyle = 'rgba(20,23,48,.7)'; ctx.fillRect(0, 0, W, H); headline('👑 ' + top.p.name.toUpperCase() + ' GETS AWAY WITH IT', W / 2, H / 2, 54, TOY.sun, '#8a6a10'); confetti(40, 1); }
+    };
+    return g;
+  },
+};
+
+/* ---------------- 🎯 SECRET MISSIONS (lobby side-game) ---------------- */
+const MISSIONS = ['Get {p} to say "mate"', 'Get {p} to high-five you', 'Get {p} to say your name', 'Get {p} to say "no way"', 'Get {p} to tell you the time', 'Get {p} to show you a photo on their phone',
+  'Get {p} to say a number bigger than 100', 'Get {p} to hand you something', 'Get {p} to say "sorry"', 'Get {p} to do an impression of someone', 'Get {p} to sing a line of any song', 'Get {p} to say "literally"',
+  'Get {p} to stand up', 'Get {p} to give you a compliment', 'Get {p} to say "bro"', 'Get {p} to laugh at your joke', 'Get {p} to say "what?"', 'Get {p} to agree with you three times in a row',
+  'Get {p} to say the name of a footy team', 'Get {p} to tell you what they had for lunch', 'Get two people to argue about pineapple on pizza', 'Get everyone to cheers', 'Get {p} to say "yes" without you asking a question', 'Get {p} to fist-bump you',
+  'Get {p} to say "Couch Clash"', 'Get {p} to name their favourite movie', 'Get {p} to pick the next game', 'Get {p} to say "legend"'];
+function missionFor(p) { const others = active().filter(q => q !== p && q.kind !== 'bot'); const t = MISSIONS[Math.floor(Math.random() * MISSIONS.length)]; const o = others.length ? others[Math.floor(Math.random() * others.length)].name : 'someone'; return t.replace('{p}', o); }
+function ensureMissions() { if (!host.missionsOn) return; let added = false; for (const p of active()) if (p.kind === 'phone') { p.missions = p.missions || []; while (p.missions.length < 2) { p.missions.push(missionFor(p)); added = true; } p.missionPts = p.missionPts || 0; } if (added) broadcastPhase(); }
+function claimMission(p, i) { if (!host.missionsOn || !p.missions || !p.missions[i]) return; const m = p.missions.splice(i, 1)[0]; p.missionPts = (p.missionPts || 0) + 1; toast('🎯 ' + p.name + ' completed a secret mission: ' + m); SFX.cheer(); ensureMissions(); broadcastPhase(); }
+
+const GAMES = { bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -11124,10 +11394,10 @@ function enterPad() {
 }
 function showMsg(html, interactive) {
   const m = $('#padMsg'); m.classList.toggle('interactive', !!interactive);
-  if (html) { m.innerHTML = html; m.classList.remove('hidden'); } else m.classList.add('hidden');
+  if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -11165,7 +11435,8 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['cup', '🎉 Party', 'party'], ['shit', '🃏 Cards', 'cards'], ['odd', '🕵 Interactive', 'social'], ['arena', '➕ More games', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        <div class="row">${[['bomb', '🎉 Party', 'social'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More games', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        ${MODE_CAT[d.mode] === 'social' ? `<div class="row">${[['bomb', '💣 Bomb Squad'], ['draw', '🎨 Draw & Pass'], ['heist', '💰 Heist'], ['odd', '🕵 Odd One Out']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${!['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
@@ -11179,6 +11450,7 @@ function renderPad() {
     } else {
       html = `<b>${picker ? 'Pick your character' : "✅ You're in, " + esc(d.name) + '!'}</b>${picker}Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
     }
+    if (d.missions && d.missions.length) html += `<div class="missions"><b>🎯 Your secret missions</b><div class="small">Don't let anyone see! Tap when you pull one off.</div>${d.missions.map((m, i) => `<div class="mis"><span>${esc(m)}</span><button class="pbtn go" data-c="mis" data-v="${i}">Did it ✓</button></div>`).join('')}<div class="small" style="opacity:1">Missions done: ${d.missionPts || 0}</div></div>`;
   } else if ((d.phase === 'play' || d.phase === 'intro') && d.role === 'bench' && !d.paused) {
     hint = 'On the bench'; html = `<b>🪑 You're on the bench</b>Your partner is fighting. Tap to swap in when they need help!<button class="pbtn big go" data-c="tag">TAG IN ⇄</button><div class="small">Benched fighters heal a little.</div>`;
   } else if ((d.phase === 'play' || d.phase === 'intro') && d.role === 'spectator' && !d.paused) {
@@ -11330,8 +11602,19 @@ function setupPadInput() {
   // the whole right half acts as the button too, for big thumbs
   $('#btnZone').addEventListener('pointerdown', e => { if (e.target === $('#btnZone')) bdown(e); });
   $('#btnZone').addEventListener('pointerup', bup); $('#btnZone').addEventListener('pointercancel', bup);
+  // drawing pad for Draw & Pass
+  const pen = { col: '#1b1f5e', down: false, last: null };
+  $('#padMsg').addEventListener('pointerdown', e => { const c = e.target.closest('#pdraw'); if (!c) return; e.preventDefault(); c.setPointerCapture(e.pointerId); pen.down = true; const r = c.getBoundingClientRect(); pen.last = [(e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height]; const x = c.getContext('2d'); x.fillStyle = pen.col; x.beginPath(); x.arc(pen.last[0], pen.last[1], pen.col === '#ffffff' ? 9 : 4, 0, 7); x.fill(); });
+  $('#padMsg').addEventListener('pointermove', e => { if (!pen.down) return; const c = $('#pdraw'); if (!c) return; const r = c.getBoundingClientRect(), p = [(e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height], x = c.getContext('2d');
+    x.strokeStyle = pen.col; x.lineWidth = pen.col === '#ffffff' ? 18 : 8; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(pen.last[0], pen.last[1]); x.lineTo(p[0], p[1]); x.stroke(); pen.last = p; });
+  window.addEventListener('pointerup', () => { pen.down = false; });
   $('#padMsg').addEventListener('click', e => {
+    const pb = e.target.closest('[data-pen]'); if (pb) { pen.col = pb.dataset.pen; document.querySelectorAll('#padMsg [data-pen]').forEach(x => x.classList.toggle('on', x === pb)); return; }
+    if (e.target.closest('[data-pclear]')) { const c = $('#pdraw'); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height); return; }
     const b = e.target.closest('[data-c]'); if (!b) return;
+    if (b.dataset.input) { const inp = document.getElementById(b.dataset.input), val = inp ? inp.value.trim() : ''; if (!val) { inp && inp.focus(); return; } ctlSend({ t: 'cmd', c: b.dataset.c, v: val }); return; }
+    if (b.dataset.draw) { const c = document.getElementById(b.dataset.draw); if (!c) return; const o = document.createElement('canvas'); o.width = o.height = 240; const x = o.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 240, 240); x.drawImage(c, 0, 0, 240, 240);
+      ctlSend({ t: 'cmd', c: b.dataset.c, v: o.toDataURL('image/jpeg', 0.7) }); return; }
     const raw = b.dataset.v, v = raw == null ? undefined : (isNaN(+raw) ? raw : +raw);
     ctlSend({ t: 'cmd', c: b.dataset.c, v }); try { navigator.vibrate && navigator.vibrate(12); } catch (x) {}
   });
