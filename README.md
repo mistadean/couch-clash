@@ -26,13 +26,15 @@ Every player has a seat colour (P1 red, P2 blue, P3 yellow, P4 green) shown as a
   Joystick moves and aims (↑ = up attacks, ↓ = low attacks). Tap = light, hold + release = heavy, swipe ↑ = jump (double jump),
   swipe ↓ + hold = crouch, swipe toward = dash, swipe away + hold = block, double-tap = special.
 
-- **Racing** (3D kart racing, Sunset Circuit, 3 laps): split-screen for every player on the couch (2 = top/bottom, 3 = quarters with a live track map, 4 = quarters).
+- **Racing** (3D kart racing, Sunshine Circuit, 3 laps): split-screen for every player on the couch (2 = top/bottom, 3 = quarters with a live track map, 4 = quarters).
   Turn the phone sideways and tilt it like a steering wheel. Right thumb = gas, left thumb = brake / reverse, hold both = use your item.
   Items from ? boxes: Turbo, Homing Missile, Goo Slick, Shield, Thunder. Arrow pads boost you; off-road slows you down.
   Re-centre and Invert buttons on the phone; iPhones need one tap on "Enable tilt steering". No tilt sensor? Drag left/right on GAS.
   Needs a browser with WebGL (most laptops and recent smart TVs).
 
 3D characters (pilot: Zip): made with free tools only. Reference art from ChatGPT (T-pose), 3D model from Tencent Hunyuan 3D (free daily generations, GLB download), rigged in Blender with Mixamo-named bones, animated with Mixamo motion capture retargeted in Blender. Rigged models live in `models/` (`models/src/` keeps the raw Hunyuan output). Zip is 3D everywhere: lobby, all party games, Battle Arena, Fighters (run, punch, jump, hit, knockdown), Racing (drive, hit, victory) and the podium (dance). Characters without a model yet keep their 2D art.
+
+Look: "Toybox Blockbuster" style (sunny skies, glossy candy plastic, chunky navy outlines, Lilita One + Fredoka type). Worlds: Beach Stadium (Goal Guard), Polar Splash (Ice Sumo), Candy Board (Tile Takeover), Sky Island (Battle Arena), sky island + cloud platforms (Sky Brawl), Toy Town Stadium (Duel, Tag Team), Sunshine Circuit (Racing).
 
 Roster (8): Rumble, Nova, Zip, Glorp, Shell (Plasma Shot), Vex (Vanish), Moxie (Pogo Stomp), Frost (Ice Wall).
 
