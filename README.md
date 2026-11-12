@@ -27,7 +27,7 @@ Every player has a seat colour (P1 red, P2 blue, P3 yellow, P4 green) shown as a
   swipe ↓ + hold = crouch, swipe toward = dash, swipe away + hold = block, double-tap = special.
 
 - **Racing** (3D kart racing, Sunshine Circuit, 3 laps): split-screen for every player on the couch (2 = top/bottom, 3 = quarters with a live track map, 4 = quarters).
-- **📱 Phone games** (secret screens): **Odd One Out**, everyone gets a secret word but one player's is different (3+ phones), and **Colour Clash**, a card game with your hand on your phone (bots can join).
+- **📱 Phone games** (secret screens): **Odd One Out**, everyone gets a secret word but one player's is different (3+ phones), and card games with your hand on your phone: **Shithead** (2 resets, 7 mirror, 10 and four of a kind bomb), **Big 2** and **Colour Clash** (bots can join).
 - **Co-op** (up to 10): **Gloom Raid**, an endless side-on brawler, and **Fort Frenzy**, defend the toy fort (8 waves or endless).
 - **5v5 Team** (up to 10, bots fill the rest): every character has a role (Tank, Bruiser, Assassin, Scout, Marksman, Mage, Support). Four games: **Gem Grab** (capture the flag), **Zone Control** (hold zones for points), **Toy Ball** (team ball game), **Push the Train** (push the train into the other base).
   Turn the phone sideways and tilt it like a steering wheel. Right thumb = gas, left thumb = brake / reverse, hold both = use your item.
