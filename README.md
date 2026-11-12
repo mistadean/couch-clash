@@ -2,7 +2,7 @@
 
 Free arcade party games for 2–4 players. The TV is the console, phones are the controllers.
 
-**Play:** https://mistadean.github.io/couch-clash/
+**Play:** https://is.gd/couchclash (short link to https://mistadean.github.io/couch-clash/)
 
 1. Open the link on the TV or laptop. It opens the host screen automatically (add `?menu` to see the menu).
 2. Everyone scans the QR code and enters a name. The first phone becomes the 👑 leader.
