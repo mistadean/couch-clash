@@ -238,6 +238,9 @@ html,body{background:var(--sky1)}
 #padMsg .missions{margin-top:14px;background:rgba(255,255,255,.1);border-radius:14px;padding:10px}#padMsg .mis{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0;text-align:left}#padMsg .mis span{font-size:16px;font-weight:700}#padMsg .mis .pbtn{white-space:nowrap;flex-shrink:0;padding:10px 12px}
 #padMsg .ptxt.lie{border-color:#e8384f;background:#fff0f2}
 #padMsg .sl{margin:12px 0;text-align:left}#padMsg .sl span{font-size:16px;font-weight:700}#padMsg .sl span b{font-size:inherit;margin:0}#padMsg .sl input{width:100%;height:34px;accent-color:#ff7a5c}#padMsg .sl em{font:28px "Lilita One",system-ui;font-style:normal;display:block;text-align:center}#padMsg .sl .ends{display:flex;justify-content:space-between;font-size:13px;opacity:.7}
+#padMsg .bigbtn.wait{background:#c9cde6;color:#5b64a8}#padMsg .bigbtn.bang{background:#ff5a6e;color:#fff;font-size:44px}
+#padMsg .forehead{display:flex;flex-direction:column;gap:10px;height:calc(100vh - 140px)}#padMsg .fh{flex:1;border-radius:20px;border:5px solid #1b1f5e;font:30px "Lilita One",system-ui}#padMsg .fh small{display:block;font:14px system-ui;opacity:.7}
+#padMsg .fh.yes{background:#4ee07a}#padMsg .fh.pass{background:#ffd23f}#padMsg .fword{font:min(14vw,64px) "Lilita One",system-ui;color:#1b1f5e;text-align:center;padding:10px 0;transform:rotate(0deg)}
 </style>
 </head>
 <body>
@@ -6394,7 +6397,7 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
 const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
@@ -6638,8 +6641,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -7377,14 +7380,15 @@ function drawLobby() {
   }
 
   // mode selection
-  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social', 'talk'].includes(cat) ? cat : 'more'; ensureMissions();
+  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social', 'talk', 'active'].includes(cat) ? cat : 'more'; ensureMissions();
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const tops = [['social', '🎉 Party', 122, host.lastSocial || 'bomb', TOY.sun], ['talk', '💬 Talk', 110, host.lastTalk || 'whosaid', '#ff8fb5'], ['party', '🕹 Arcade', 124, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 112, host.lastCards || 'shit', TOY.coral], ['more', '➕ More', 108, host.lastMore || 'arena', TOY.aqua]];
+  const tops = [['social', '🎉 Party', 112, host.lastSocial || 'bomb', TOY.sun], ['active', '🤸 Active', 116, host.lastActive || 'qdraw', TOY.mint], ['talk', '💬 Talk', 100, host.lastTalk || 'whosaid', '#ff8fb5'], ['party', '🕹 Arcade', 114, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 104, host.lastCards || 'shit', TOY.coral], ['more', '➕ More', 98, host.lastMore || 'arena', TOY.aqua]];
   let bx = 40;
-  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 20 }); bx += w + 8; }
+  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 18 }); bx += w + 7; }
   const pill = (x, w, t) => { rr(x, 294, w, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(t, x + 18, 317, 19, TOY.navy, 'left', null); };
   if (top === 'party') { let sx = 40; for (const [m, label, w] of [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastParty = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
   else if (top === 'cards') { let sx = 40; for (const [m, label, w] of [['shit', '💩 Shithead', 170], ['big2', '🂡 Big 2', 130], ['cards', '🃏 Colour Clash', 200]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastCards = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
+  else if (top === 'active') { let sx = 40; for (const [m, label, w] of [['qdraw', '🤠 Quick Draw', 160], ['shake', '📳 Shake Race', 160], ['head', '🤪 Forehead', 144], ['says', '📱 Phone Says', 160]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastActive = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'talk') { let sx = 40; for (const [m, label, w] of [['whosaid', '🕵 Who Said It?', 156], ['likely', '👉 Most Likely', 146], ['hot', '🌶 Hot Takes', 130], ['meld', '🧠 Mind Meld', 134], ['lie', '🤥 2 Truths 1 Lie', 156]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastTalk = m; setMode(m); }, TOY.aqua, { px: 17, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'social') { let sx = 40; for (const [m, label, w] of [['bomb', '💣 Bomb Squad', 160], ['draw', '🎨 Draw & Pass', 162], ['heist', '💰 Heist', 108], ['odd', '🕵 Odd One Out', 158]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastSocial = m; setMode(m); }, TOY.aqua, { px: 19, id: 'sub-' + m }); sx += w + 8; }
     toyButton(sx, 294, 136, 44, host.missionsOn ? '🎯 Missions ON' : '🎯 Missions', !!host.missionsOn, () => { host.missionsOn = !host.missionsOn; if (host.missionsOn) toast('🎯 Secret missions are on: check your phone!'); ensureMissions(); SFX.pop(); broadcastPhase(); }, TOY.coral, { px: 17, id: 'missions' }); }
@@ -11520,7 +11524,153 @@ const TwoTruths = { title: 'Two Truths & a Lie', accent: '#b48cff', phones: true
       if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' WINS', W / 2, H / 2, 60, TOY.sun, '#8a5cff'); confetti(40, 1); } };
     return g; } };
 
-const GAMES = { whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   ACTIVE GAMES: get off the couch. Quick Draw · Shake Race · Forehead · Phone Says
+   Phones stream motion (shakes + which way they're facing) when the panel asks for it.
+   ===================================================================== */
+const MOTION_BTN = `<button class="pbtn big" data-motion="1">📳 Turn on motion</button><div class="small">Needed to read shakes and tilts. iPhone will ask permission.</div>`;
+function sensorOf(g, p) { return g.sens[p.slot] || (g.sens[p.slot] = { shakes: 0, o: '?', beta: 0, taps: 0, live: false }); }
+function sensorPick(g, p, v) { if (typeof v !== 'string') return false; if (v.startsWith('s:')) { const [, sh, o, b] = v.split(':'), s = sensorOf(g, p); s.shakes = +sh || 0; s.o = o; s.beta = +b || 0; s.live = true; return true; } if (v === 'motion:ok') { sensorOf(g, p).live = true; broadcastPhase(); return true; } if (v === 'tap') { sensorOf(g, p).taps++; return true; } return false; }
+function westernBg() { const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#ff9a5a'); gr.addColorStop(0.55, '#ffd27a'); gr.addColorStop(0.56, '#e8a55c'); gr.addColorStop(1, '#b8743c'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff3c4'; ctx.beginPath(); ctx.arc(W / 2, 400, 110, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = '#c96a3a'; ctx.beginPath(); ctx.moveTo(0, 400); ctx.lineTo(180, 300); ctx.lineTo(320, 400); ctx.lineTo(900, 400); ctx.lineTo(1060, 280); ctx.lineTo(1280, 400); ctx.closePath(); ctx.fill();
+  for (const [x, s] of [[120, 1], [1150, 1.2], [260, 0.7]]) { ctx.fillStyle = '#3c8a4a'; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 4; rr(x - 14 * s, 480 - 120 * s, 28 * s, 120 * s, 14 * s); ctx.fill(); ctx.stroke(); rr(x - 46 * s, 480 - 90 * s, 22 * s, 50 * s, 11 * s); ctx.fill(); ctx.stroke(); rr(x + 24 * s, 480 - 100 * s, 22 * s, 44 * s, 11 * s); ctx.fill(); ctx.stroke(); } }
+
+/* ---- 🤠 Quick Draw: reaction duel ---- */
+const QuickDraw = { title: 'Quick Draw', accent: '#ff9a5a', phones: true, minPhones: 1, botsOk: true, practiceBots: true, panelGame: true,
+  how: 'Hold your finger over your phone. When the TV (and your phone) shouts DRAW!, tap as fast as you can. Tap too early and you\'re out of the round! Fastest gun wins.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'ready', stateT: 3, round: 0, rounds: 6, shots: {}, early: {}, endT: 0, flash: 0 }; talkCommon(g, players);
+    const R = () => broadcastPhase();
+    function result() { const order = Object.entries(g.shots).sort((a, b) => a[1] - b[1]); [100, 60, 30].forEach((pts, i) => { if (order[i]) g.ps.find(o => o.p.slot === +order[i][0]).score += pts; }); for (const s in g.early) g.ps.find(o => o.p.slot === +s).score -= 30; g.order = order; g.state = 'result'; g.stateT = 4; SFX.cheer(); R(); }
+    g.update = dt => { g.t += dt; g.flash = Math.max(0, g.flash - dt); if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'ready' && g.stateT <= 0) { g.state = 'wait'; g.stateT = 1.5 + Math.random() * 3.5; g.shots = {}; g.early = {}; R(); }
+      else if (g.state === 'wait' && g.stateT <= 0) { g.state = 'draw'; g.stateT = 3; g.flash = 0.5; SFX.boom(); shake(0.3); g.ps.forEach(o => buzz(o.p, 120)); for (const o of g.ps) if (o.p.kind === 'bot') o.botAt = 0.22 + Math.random() * 0.35; g.drawT = 0; R(); }
+      else if (g.state === 'draw') { g.drawT += dt; for (const o of g.ps) if (o.p.kind === 'bot' && !g.shots[o.p.slot] && g.drawT > o.botAt) g.shots[o.p.slot] = Math.round(o.botAt * 1000);
+        if (g.stateT <= 0 || g.ps.every(o => g.shots[o.p.slot] || g.early[o.p.slot])) result(); }
+      else if (g.state === 'result' && g.stateT <= 0) { g.round++; if (g.round >= g.rounds) { g.state = 'end'; SFX.win(); } else { g.state = 'ready'; g.stateT = 2.5; } R(); } };
+    g.onPick = (p, v) => { const me = g.find(p); if (!me) return;
+      if (v === 'early' && g.state === 'wait' && !g.early[p.slot]) { g.early[p.slot] = true; SFX.bonk(); buzz(p, 300); R(); }
+      else if (typeof v === 'string' && v.startsWith('r:') && g.state === 'draw' && !g.shots[p.slot] && !g.early[p.slot]) { g.shots[p.slot] = clamp(+v.slice(2) || 999, 80, 3000); SFX.whack(); R(); } };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; if (g.state === 'end') return `<b>🏁 Game over</b>You scored ${me.score}`;
+      if (g.state === 'ready') return '<b>🤠 Get ready…</b><div class="small" style="opacity:1">Finger over the button. Don\'t jump the gun!</div><button class="bigbtn wait" disabled>…</button>';
+      if (g.state === 'wait') return g.early[p.slot] ? '<b>😬 Too early!</b>You\'re out this round (−30)' : '<b>🤫 Wait for it…</b><button class="bigbtn wait" data-c="pp" data-v="early">WAIT</button>';
+      if (g.state === 'draw') return g.early[p.slot] ? '<b>😬 Too early!</b>' : g.shots[p.slot] ? `<b>💥 ${g.shots[p.slot]} ms</b>` : '<b>💥 DRAW!</b><button class="bigbtn bang" data-c="pp" data-react="1">BANG!</button>';
+      return `<b>📺 Look at the TV</b>${g.shots[p.slot] ? 'You: ' + g.shots[p.slot] + ' ms' : ''}`; };
+    g.draw = () => { westernBg(); headline('QUICK DRAW', W / 2, 52, 50, '#fff', '#c4402a'); scoreStrip(g.ps, 108); toyText('Round ' + Math.min(g.round + 1, g.rounds) + ' of ' + g.rounds, W / 2, 150, 22, TOY.navy, 'center', null);
+      const n = g.ps.length; g.ps.forEach((o, i) => { const x = W / 2 + (i - (n - 1) / 2) * Math.min(170, 1100 / n), y = 560, shot = g.shots[o.p.slot], early = g.early[o.p.slot];
+        drawAvatar(x, y - (shot ? 10 : 0), 46, o.p, { happy: !!shot }); toyText('🤠', x, y - 52, 40, '#fff', 'center', null);
+        toyText(o.p.name, x, y + 66, 20, '#fff', 'center', TOY.navy); if (shot) toyText(shot + ' ms', x, y + 96, 24, TOY.navy, 'center', '#fff'); if (early) toyText('TOO EARLY', x, y + 96, 18, TOY.coral, 'center', '#fff'); });
+      if (g.state === 'wait' || g.state === 'ready') toyText(g.state === 'ready' ? 'Get ready…' : 'Wait for it…', W / 2, 300, 50, '#fff', 'center', TOY.navy);
+      if (g.state === 'draw') { ctx.fillStyle = `rgba(255,255,255,${g.flash})`; ctx.fillRect(0, 0, W, H); headline('DRAW!', W / 2, 300, 140, '#fff', '#c4402a'); }
+      if (g.state === 'result' && g.order && g.order[0]) { const w = g.ps.find(o => o.p.slot === +g.order[0][0]); headline('🏆 ' + w.p.name + ' · ' + g.order[0][1] + ' ms', W / 2, 300, 50, TOY.sun, '#c4402a'); }
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline('FASTEST GUN: ' + top.p.name.toUpperCase(), W / 2, 300, 54, TOY.sun, '#c4402a'); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 📳 Shake Race ---- */
+const ShakeRace = { title: 'Shake Race', accent: '#4ee07a', phones: true, minPhones: 1, botsOk: true, practiceBots: true, panelGame: true,
+  how: 'SHAKE YOUR PHONE to run! Every shake moves your runner. First across the line wins. (Phone won\'t share motion? Mash the TAP button instead.) Hold on tight!',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'setup', stateT: 10, sens: {}, base: {}, prog: {}, order: [], endT: 0, race: 0 }; talkCommon(g, players);
+    const GOAL = 100, R = () => broadcastPhase();
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'setup' && (g.stateT <= 0 || g.ps.every(o => o.p.kind === 'bot' || sensorOf(g, o.p).live))) { g.state = 'count'; g.stateT = 3; SFX.beep(); R(); }
+      else if (g.state === 'count' && g.stateT <= 0) { g.state = 'go'; g.race = 0; SFX.go(); for (const o of g.ps) { const s = sensorOf(g, o.p); g.base[o.p.slot] = { sh: s.shakes, tp: s.taps }; g.prog[o.p.slot] = 0; } R(); }
+      else if (g.state === 'go') { g.race += dt;
+        for (const o of g.ps) { if (g.order.includes(o)) continue; let pr;
+          if (o.p.kind === 'bot') { o.bs = (o.bs || 0) + dt * (3 + Math.random() * 3.5); pr = o.bs; } else { const s = sensorOf(g, o.p), b = g.base[o.p.slot]; pr = (s.shakes - b.sh) + (s.taps - b.tp) * 0.5; }
+          g.prog[o.p.slot] = pr; if (pr >= GOAL) { g.order.push(o); SFX.cheer(); burst(W - 160, 0, '#fff', 1, 0, 1, 0.1); } }
+        if (g.order.length === g.ps.length || g.race > 45) { const rest = g.ps.filter(o => !g.order.includes(o)).sort((a, b) => g.prog[b.p.slot] - g.prog[a.p.slot]); g.order.push(...rest); g.order.forEach((o, i) => o.score = Math.max(0, 300 - i * 100)); g.state = 'end'; SFX.win(); R(); } } };
+    g.onPick = (p, v) => { if (sensorPick(g, p, v)) { if (v === 'tap' && g.state !== 'go') sensorOf(g, p).taps--; } };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; const s = sensorOf(g, p);
+      if (g.state === 'end') return `<b>🏁 You came ${g.order.indexOf(me) + 1}${['st', 'nd', 'rd'][g.order.indexOf(me)] || 'th'}!</b>`;
+      if (g.state === 'setup') return `<b>📳 Shake Race</b>${s.live ? '<div class="small" style="opacity:1">✅ Motion is on. Get a grip on your phone!</div>' : MOTION_BTN}<div data-sensor="1"></div>`;
+      if (g.state === 'count') return '<b>Get ready to SHAKE!</b><div data-sensor="1"></div>';
+      return `<b>📳 SHAKE SHAKE SHAKE!</b><div data-sensor="1"></div><button class="bigbtn bang" data-c="pp" data-v="tap">TAP</button><div class="small">No motion? Mash TAP instead</div>`; };
+    g.draw = () => { skyScene({ hills: true }); headline('SHAKE RACE', W / 2, 52, 50, '#fff', '#2f8f4f');
+      const n = g.ps.length, top = 130, lh = Math.min(100, 520 / n), x0 = 140, x1 = W - 140;
+      g.ps.forEach((o, i) => { const y = top + i * lh + lh / 2, pr = Math.min(1, (g.prog[o.p.slot] || 0) / GOAL), x = x0 + (x1 - x0) * pr;
+        rr(x0 - 60, y - lh / 2 + 6, x1 - x0 + 120, lh - 12, 16); ctx.fillStyle = i % 2 ? 'rgba(201,146,90,.75)' : 'rgba(214,165,110,.75)'; ctx.fill();
+        ctx.fillStyle = '#fff'; for (let k = 0; k < 6; k++) ctx.fillRect(x1 + (k % 2) * 10, y - lh / 2 + 6 + k * (lh - 12) / 6, 10, (lh - 12) / 6);
+        const bob = g.state === 'go' ? Math.abs(Math.sin(g.t * 18 + i)) * 8 : 0; drawAvatar(x, y - bob, Math.min(30, lh * 0.36), o.p, { happy: g.order.includes(o) });
+        toyText(o.p.name, x0 - 70, y, 18, '#fff', 'right', TOY.navy); const pl = g.order.indexOf(o); if (pl >= 0 && g.state !== 'go' || pl >= 0) toyText(['🥇', '🥈', '🥉'][pl] || '', x1 + 50, y, 30, '#fff', 'center', null); });
+      if (g.state === 'setup') toyText('Turn on motion on your phone · ' + Math.ceil(g.stateT), W / 2, H - 40, 26, '#fff', 'center', TOY.navy);
+      if (g.state === 'count') headline(String(Math.ceil(g.stateT)), W / 2, H / 2, 140, TOY.sun, TOY.orange);
+      if (g.state === 'go' && g.race < 1) headline('SHAKE!', W / 2, H / 2, 140, TOY.sun, TOY.coral);
+      if (g.state === 'end') { headline((g.order[0] ? g.order[0].p.name.toUpperCase() : '') + ' WINS!', W / 2, H / 2, 70, TOY.sun, TOY.orange); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 🤪 Forehead: guess the word on your own forehead ---- */
+const HEAD_DECKS = { Animals: ['Kangaroo', 'Penguin', 'Giraffe', 'Octopus', 'Platypus', 'Flamingo', 'Sloth', 'Koala', 'Crocodile', 'Peacock', 'Hedgehog', 'Shark', 'Wombat', 'Chicken', 'Elephant', 'Snail', 'Gorilla', 'Bat', 'Camel', 'Frog'],
+  Jobs: ['Dentist', 'Pilot', 'Plumber', 'Lifeguard', 'Chef', 'Magician', 'Firefighter', 'Teacher', 'Barista', 'Personal trainer', 'Astronaut', 'Hairdresser', 'Uber driver', 'Zookeeper', 'Referee', 'DJ', 'Wedding planner', 'Tradie', 'Vet', 'Nurse'],
+  Actions: ['Brushing teeth', 'Doing the worm', 'Skydiving', 'Changing a nappy', 'Parallel parking', 'Taking a selfie', 'Ironing', 'Surfing', 'Proposing', 'Milking a cow', 'Juggling', 'Playing the drums', 'Bowling', 'Sneezing', 'Hailing a taxi', 'Walking a dog', 'Doing yoga', 'Fishing', 'Crowd surfing', 'Washing a car'],
+  'Around the house': ['Toaster', 'Remote control', 'Vacuum cleaner', 'Bunk bed', 'Doorbell', 'Fridge magnet', 'Toilet brush', 'Hair dryer', 'Couch', 'Ceiling fan', 'Microwave', 'Smoke alarm', 'Pillow', 'Bathtub', 'Clothes peg', 'Fly swatter', 'Lawn mower', 'Mirror', 'Kettle', 'Rubber duck'],
+  'Big night out': ['Karaoke', 'Kebab', 'Bouncer', 'Uber surge', 'Dance floor', 'Cocktail', 'Hangover', 'Taxi queue', 'Photo booth', 'Last drinks', 'Birthday cake', 'Group selfie', 'Bar tab', 'Disco ball', 'Wedding speech', 'Encore', 'Mosh pit', 'Drinking game', 'Lost phone', 'Sunrise'] };
+const Forehead = { title: 'Forehead', accent: '#ff8fb5', phones: true, minPhones: 2, panelGame: true, noBots: true,
+  how: 'Take turns being the guesser. Hold your phone on your forehead, screen facing out, so everyone else can read it. They act, describe and shout clues; you guess! Tap the TOP of your phone if you got it, the BOTTOM to pass. 60 seconds each.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'prep', stateT: 6, turn: 0, words: [], wi: 0, log: [], deck: '', endT: 0 }; talkCommon(g, players);
+    const turns = Math.min(g.ps.length, 6), R = () => broadcastPhase(), guesser = () => g.ps[g.turn % g.ps.length];
+    function startTurn() { const names = Object.keys(HEAD_DECKS); g.deck = names[Math.floor(Math.random() * names.length)]; g.words = shuffleArr(HEAD_DECKS[g.deck].slice()); g.wi = 0; g.log = []; g.state = 'prep'; g.stateT = 6; R(); }
+    startTurn();
+    function mark(ok) { const w = g.words[g.wi]; g.log.push({ w, ok }); if (ok) { guesser().score += 100; SFX.cheer(); } else SFX.click(); g.wi = (g.wi + 1) % g.words.length; R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'prep' && g.stateT <= 0) { g.state = 'play'; g.stateT = 60; SFX.go(); R(); }
+      else if (g.state === 'play' && g.stateT <= 0) { g.state = 'recap'; g.stateT = 6; SFX.win(); R(); }
+      else if (g.state === 'recap' && g.stateT <= 0) { g.turn++; if (g.turn >= turns) { g.state = 'end'; R(); } else startTurn(); } };
+    g.onPick = (p, v) => { if (g.state !== 'play' || guesser().p !== p) return; if (v === 'yes') mark(true); else if (v === 'pass') mark(false); };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; const gs = guesser(), mine = gs === me;
+      if (g.state === 'end') return `<b>🏁 Game over</b>You got ${me.score / 100} right`;
+      if (g.state === 'prep') return mine ? `<b>🤪 You're guessing!</b>Hold your phone on your forehead, screen facing OUT.<div class="small" style="opacity:1">Category: ${esc(g.deck)}</div>` : `<b>🎭 Help ${esc(gs.p.name)} guess!</b>Act it out, describe it, but don't say the word.<div class="small" style="opacity:1">Category: ${esc(g.deck)}</div>`;
+      if (g.state === 'play') return mine ? `<div class="forehead"><button class="fh yes" data-c="pp" data-v="yes">✅ GOT IT<small>tap top</small></button><div class="fword">${esc(g.words[g.wi])}</div><button class="fh pass" data-c="pp" data-v="pass">⏭ PASS<small>tap bottom</small></button></div>`
+        : `<b>Help ${esc(gs.p.name)}!</b><div class="prompt" style="font-size:34px">${esc(g.words[g.wi])}</div><div class="small">Act it, describe it, don't say it!</div>`;
+      return '<b>📺 Look at the TV</b>'; };
+    g.draw = () => { talkBg('FOREHEAD', '#ff6fb5'); scoreStrip(g.ps); const gs = guesser();
+      if (g.state === 'prep') { drawAvatar(W / 2, 300, 70, gs.p, { happy: true }); headline(gs.p.name.toUpperCase() + ' IS GUESSING', W / 2, 420, 50, '#fff', '#ff6fb5'); toyText('Category: ' + g.deck + '   ·   phone on your forehead!   ·   ' + Math.ceil(g.stateT), W / 2, 500, 26, TOY.sun, 'center', TOY.navy); }
+      if (g.state === 'play') { drawAvatar(W / 2 - 300, 290, 60, gs.p); toyText(gs.p.name + ' is guessing', W / 2 + 40, 270, 34, '#fff', 'center', TOY.navy); toyText(g.deck, W / 2 + 40, 320, 24, TOY.sun, 'center', TOY.navy);
+        const t = g.stateT; ctx.lineWidth = 18; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.arc(W / 2, 500, 90, 0, 7); ctx.stroke(); ctx.strokeStyle = t < 10 ? TOY.coral : TOY.mint; ctx.beginPath(); ctx.arc(W / 2, 500, 90, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * t / 60); ctx.stroke(); toyText(Math.ceil(t), W / 2, 500, 54, '#fff', 'center', TOY.navy);
+        toyText('✅ ' + g.log.filter(l => l.ok).length + '   ⏭ ' + g.log.filter(l => !l.ok).length, W / 2, 630, 34, '#fff', 'center', TOY.navy); }
+      if (g.state === 'recap') { headline(gs.p.name.toUpperCase() + ' GOT ' + g.log.filter(l => l.ok).length, W / 2, 190, 56, TOY.sun, '#ff6fb5'); g.log.slice(0, 18).forEach((l, i) => toyText((l.ok ? '✅ ' : '⏭ ') + l.w, W / 2 - 330 + (i % 3) * 330, 270 + Math.floor(i / 3) * 52, 26, l.ok ? '#b9f5c9' : '#c9cde6', 'center', TOY.navy)); }
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' WINS', W / 2, H / 2, 64, TOY.sun, '#ff6fb5'); confetti(40, 1); } };
+    return g; } };
+
+/* ---- 📱 Phone Says: a Simon Says your phone can check ---- */
+const SAYS_ACTS = { flat: 'Lay your phone FLAT, screen up', down: 'Put your phone FACE DOWN', up: 'Hold your phone UPRIGHT', side: 'Turn your phone SIDEWAYS', shake: 'SHAKE your phone', tap5: 'TAP 5 times', still: 'FREEZE! Don\'t move your phone' };
+const PhoneSays = { title: 'Phone Says', accent: '#2fa8ff', phones: true, minPhones: 1, botsOk: true, practiceBots: true, panelGame: true,
+  how: 'Do what the TV says, but ONLY if it starts with "Phone says…". Your phone checks if you did it (it can feel tilts and shakes). Get it wrong and you lose a life. Last one standing wins!',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'setup', stateT: 12, sens: {}, cmd: null, n: 0, start: {}, seen: {}, endT: 0, msg: '' }; talkCommon(g, players); g.ps.forEach(o => { o.lives = 3; o.score = 0; });
+    const R = () => broadcastPhase(), alive = () => g.ps.filter(o => o.lives > 0);
+    function nextCmd() { g.n++; const keys = Object.keys(SAYS_ACTS); let act; do act = keys[Math.floor(Math.random() * keys.length)]; while (g.cmd && act === g.cmd.act);
+      g.cmd = { act, say: Math.random() < 0.72 }; g.state = 'cmd'; g.stateT = Math.max(2.6, 5 - g.n * 0.12); g.start = {}; g.seen = {};
+      for (const o of g.ps) { const s = sensorOf(g, o.p); g.start[o.p.slot] = { o: s.o, sh: s.shakes, tp: s.taps }; g.seen[o.p.slot] = new Set(); if (o.p.kind === 'bot') o.botOK = Math.random() < 0.82; } SFX.beep(); R(); }
+    function did(o) { const s = sensorOf(g, o.p), st = g.start[o.p.slot], a = g.cmd.act;
+      if (o.p.kind === 'bot') return g.cmd.say ? o.botOK : !o.botOK;
+      if (a === 'shake') return s.shakes - st.sh >= 3; if (a === 'tap5') return s.taps - st.tp >= 5; if (a === 'still') return s.shakes === st.sh && s.live;
+      return g.cmd.say ? s.o === a : (s.o === a && st.o !== a); } // without "Phone says", you only lose if you moved into it
+    function judge() { g.out = [];
+      for (const o of alive()) { const live = o.p.kind === 'bot' || sensorOf(g, o.p).live, needsSensor = !['tap5'].includes(g.cmd.act); if (needsSensor && !live) continue; // no motion: sensor rounds can't be judged
+        const d = did(o), ok = g.cmd.say ? d : !(g.cmd.act === 'still' ? false : d); if (!ok) { o.lives--; g.out.push(o); buzz(o.p, 250); } else o.score += 10; }
+      g.state = 'judge'; g.stateT = 2.4; g.out.length ? SFX.bonk() : SFX.pop(); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'setup' && (g.stateT <= 0 || g.ps.every(o => o.p.kind === 'bot' || sensorOf(g, o.p).live))) { g.state = 'gap'; g.stateT = 2; R(); }
+      else if (g.state === 'gap' && g.stateT <= 0) nextCmd();
+      else if (g.state === 'cmd' && g.stateT <= 0) judge();
+      else if (g.state === 'judge' && g.stateT <= 0) { const a = alive(); if (a.length <= (g.ps.length > 1 ? 1 : 0) || g.n >= 25) { g.ps.forEach(o => o.score += o.lives * 50); g.state = 'end'; SFX.win(); R(); } else { g.state = 'gap'; g.stateT = 1.2; R(); } } };
+    g.onPick = (p, v) => { sensorPick(g, p, v); };
+    g.panel = p => { const me = g.find(p); if (!me) return '<b>👀 Watching</b>'; const s = sensorOf(g, p), hearts = '❤️'.repeat(Math.max(0, me.lives)) + '🖤'.repeat(3 - Math.max(0, me.lives));
+      if (g.state === 'end') return `<b>🏁 Game over</b>Lives left: ${hearts}`;
+      if (me.lives <= 0) return '<b>💀 You\'re out!</b>Watch the others squirm.';
+      if (g.state === 'setup') return `<b>📱 Phone Says</b>${s.live ? '<div class="small" style="opacity:1">✅ Motion is on!</div>' : MOTION_BTN}<div data-sensor="1"></div>`;
+      return `<b>${hearts}</b><div class="small" style="opacity:1">Watch the TV!</div><div data-sensor="1"></div><button class="bigbtn" data-c="pp" data-v="tap" style="background:#2fa8ff;color:#fff">TAP</button>`; };
+    g.draw = () => { talkBg('PHONE SAYS', '#136bb0');
+      const n = g.ps.length; g.ps.forEach((o, i) => { const x = W / 2 + (i - (n - 1) / 2) * Math.min(150, 1100 / n), y = H - 110, out = g.state === 'judge' && g.out.includes(o);
+        drawAvatar(x + (out ? Math.sin(g.t * 50) * 6 : 0), y, 36, o.p, { alpha: o.lives > 0 ? 1 : 0.3 }); toyText(o.lives > 0 ? '❤️'.repeat(o.lives) : '💀', x, y + 56, 18, '#fff', 'center', null); toyText(o.p.name, x, y - 52, 16, '#fff', 'center', TOY.navy); });
+      if (g.state === 'setup') { promptCard('Turn on motion on your phone, then hold it in your hand', 300, 34); toyText(Math.ceil(g.stateT), W / 2, 400, 40, TOY.sun, 'center', TOY.navy); }
+      if ((g.state === 'cmd' || g.state === 'judge') && g.cmd) { const say = g.cmd.say; toyText(say ? 'PHONE SAYS…' : '', W / 2, 190, 44, TOY.sun, 'center', TOY.navy);
+        promptCard(SAYS_ACTS[g.cmd.act] + '!', 290, 48, 1000); if (g.state === 'cmd') { const k = g.stateT; rr(W / 2 - 300, 380, 600 * Math.max(0, k / 5), 16, 8); ctx.fillStyle = k < 1.5 ? TOY.coral : TOY.mint; ctx.fill(); }
+        if (g.state === 'judge') toyText(g.out.length ? '❌ ' + g.out.map(o => o.p.name).join(', ') : '✅ Everyone survived!', W / 2, 430, 32, g.out.length ? '#ff9aab' : TOY.mint, 'center', TOY.navy); }
+      if (g.state === 'end') { const top = g.ps.slice().sort((a, b) => b.lives - a.lives || b.score - a.score)[0]; headline(top.p.name.toUpperCase() + ' SURVIVES!', W / 2, H / 2 - 60, 64, TOY.sun, '#136bb0'); confetti(40, 1); } };
+    g.ranking = () => g.ps.slice().sort((a, b) => b.lives - a.lives || b.score - a.score).map(o => o.p.slot);
+    return g; } };
+
+const GAMES = { qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -11608,12 +11758,22 @@ function enterPad() {
   if (!ctl.joined) { ctl.joined = true; $('#joinForm').classList.add('hidden'); $('#joinGo').disabled = false; $('#joinErr').textContent = ''; }
   banner('');
 }
+// Motion sensors for the Active games: counts shakes and which way the phone is facing.
+const SENS = { on: false, shakes: 0, o: '?', beta: 0, last: 0 };
+function motionStart() { if (SENS.on) return; SENS.on = true;
+  window.addEventListener('devicemotion', e => { const a = e.acceleration; let m; if (a && a.x != null) m = Math.hypot(a.x || 0, a.y || 0, a.z || 0); else { const gv = e.accelerationIncludingGravity || {}; m = Math.abs(Math.hypot(gv.x || 0, gv.y || 0, gv.z || 0) - 9.8); }
+    if (m > 13 && performance.now() - SENS.last > 140) { SENS.shakes++; SENS.last = performance.now(); } });
+  window.addEventListener('deviceorientation', e => { const b = e.beta || 0, gm = e.gamma || 0; SENS.beta = b; SENS.o = Math.abs(b) > 140 ? 'down' : b > 55 ? 'up' : Math.abs(gm) > 55 ? 'side' : (Math.abs(b) < 25 && Math.abs(gm) < 25 ? 'flat' : 'tilt'); });
+  setInterval(() => { if (document.querySelector('#padMsg [data-sensor]')) ctlSend({ t: 'cmd', c: 'pp', v: 's:' + SENS.shakes + ':' + SENS.o + ':' + Math.round(SENS.beta) }); }, 200); }
+function motionOn() { const ok = () => { motionStart(); ctlSend({ t: 'cmd', c: 'pp', v: 'motion:ok' }); };
+  try { const asks = []; if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) asks.push(DeviceMotionEvent.requestPermission()); if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) asks.push(DeviceOrientationEvent.requestPermission());
+    if (asks.length) Promise.all(asks).then(r => { if (r.every(x => x === 'granted')) ok(); else alert('Motion was blocked. You can still play with the TAP button.'); }).catch(() => ok()); else ok(); } catch (e) { ok(); } }
 function showMsg(html, interactive) {
   const m = $('#padMsg'); m.classList.toggle('interactive', !!interactive);
-  if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
+  if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; if (m.querySelector('[data-react]')) window.reactT0 = performance.now(); } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -11651,11 +11811,12 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['bomb', '🎉 Party', 'social'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        <div class="row">${[['bomb', '🎉 Party', 'social'], ['qdraw', '🤸 Active', 'active'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk', 'active'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        ${MODE_CAT[d.mode] === 'active' ? `<div class="row">${[['qdraw', '🤠 Quick Draw'], ['shake', '📳 Shake Race'], ['head', '🤪 Forehead'], ['says', '📱 Phone Says']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'talk' ? `<div class="row">${[['whosaid', '🕵 Who Said It?'], ['likely', '👉 Most Likely'], ['hot', '🌶 Hot Takes'], ['meld', '🧠 Mind Meld'], ['lie', '🤥 2 Truths 1 Lie']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'social' ? `<div class="row">${[['bomb', '💣 Bomb Squad'], ['draw', '🎨 Draw & Pass'], ['heist', '💰 Heist'], ['odd', '🕵 Odd One Out']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
-        ${!['party', 'cards', 'social', 'talk'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
+        ${!['party', 'cards', 'social', 'talk', 'active'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
@@ -11826,6 +11987,8 @@ function setupPadInput() {
     x.strokeStyle = pen.col; x.lineWidth = pen.col === '#ffffff' ? 18 : 8; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(pen.last[0], pen.last[1]); x.lineTo(p[0], p[1]); x.stroke(); pen.last = p; });
   window.addEventListener('pointerup', () => { pen.down = false; });
   $('#padMsg').addEventListener('click', e => {
+    const mb = e.target.closest('[data-motion]'); if (mb) { motionOn(); return; }
+    const rb = e.target.closest('[data-react]'); if (rb) { ctlSend({ t: 'cmd', c: 'pp', v: 'r:' + Math.round(performance.now() - (window.reactT0 || performance.now())) }); rb.disabled = true; try { navigator.vibrate && navigator.vibrate(30); } catch (x) {} return; }
     const pb = e.target.closest('[data-pen]'); if (pb) { pen.col = pb.dataset.pen; document.querySelectorAll('#padMsg [data-pen]').forEach(x => x.classList.toggle('on', x === pb)); return; }
     if (e.target.closest('[data-pclear]')) { const c = $('#pdraw'); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height); return; }
     const b = e.target.closest('[data-c]'); if (!b) return;
