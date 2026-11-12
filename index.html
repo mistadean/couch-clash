@@ -6185,7 +6185,11 @@ const CRITTER_NAMES = ROSTER.map(c => c.name), CATCHPHRASES = ROSTER.map(c => c.
 const BOT_NAMES = CRITTER_NAMES;
 const ART_URL = i => 'assets/' + ROSTER[i].art;
 /* Player (seat) colours: identity for gameplay + rings, independent of character art. */
-const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f', '#b8900a'], ['#4ee07a', '#1f9a47']];
+const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f', '#b8900a'], ['#4ee07a', '#1f9a47'], ['#ff8a3c', '#c0561a'],
+  ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
+const MAXP = 10;
+// How many players each mode takes. Extra people in the lobby watch that game from their phones.
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10 };
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6306,7 +6310,7 @@ function musicTick() {
 const canvas = $('#tv'); let ctx = canvas.getContext('2d');
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 };
 const host = {
-  started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: [null, null, null, null], botsFill: true, mode: 'cup',
+  started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'cup',
   cup: [], cupIndex: 0, game: null, timer: 0, results: null, pending: [], buttons: [], t: 0, shake: 0,
   net: { status: 'off', code: '', err: '', url: '', qr: null }, toast: '', toastT: 0,
 };host.fortEndless = !!lsGet('cc_fort_endless');
@@ -6470,7 +6474,7 @@ function freeChars() { const used = new Set(host.players.filter(Boolean).map(p =
 function setChar(p, ci) { p.char = ci; } // colour stays tied to the seat (P1 red, P2 blue, P3 yellow, P4 green)
 function pickChar(p, ci) {
   if (host.phase !== 'lobby' || !(ci >= 0 && ci < ROSTER.length) || p.char === ci) return false;
-  if (host.players.some(q => q && q !== p && q.char === ci)) return false;
+  if (active().length <= ROSTER.length && host.players.some(q => q && q !== p && q.char === ci)) return false; // shared characters only once there are more players than characters
   const was = p.name; setChar(p, ci); if (p.kind === 'key') p.name = ROSTER[ci].name;
   SFX.join(); toast((p.kind === 'key' ? 'Keyboard ' + was : p.name) + ' picked ' + ROSTER[ci].name + '!'); return true;
 }
@@ -6486,7 +6490,7 @@ function phaseInfo(p) {
   const l = leader();
   Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music,
     leaderName: l ? l.name : '', count: humans().length, char: p.char, controls: host.controls, fight: !!(G && G.fighter),
-    role: host.game && host.game.roleOf && (host.phase === 'play' || host.phase === 'intro') ? host.game.roleOf(p.slot) : 'fighter', gestures: !!(G && G.gestures && host.controls === 'gestures' && p.kind === 'phone'), race: !!(G && G.race) });
+    role: host.game && (host.phase === 'play' || host.phase === 'intro') ? (host.inGame && !host.inGame.has(p.slot) ? 'spectator' : host.game.roleOf ? host.game.roleOf(p.slot) : 'fighter') : 'fighter', gestures: !!(G && G.gestures && host.controls === 'gestures' && p.kind === 'phone'), race: !!(G && G.race) });
   if (host.phase === 'lobby') msg.roster = ROSTER.map((c, i) => {
     const owner = host.players.find(q => q && q.char === i);
     return { name: c.name, color: c.color, role: c.role, bio: c.bio, art: c.art, taken: owner && owner !== p ? owner.name : '' };
@@ -6532,7 +6536,8 @@ function pollKeys() {
 function startMatch() {
   if (host.phase !== 'lobby') return;
   const n = humans().length;
-  for (let i = 0; i < 4; i++) {
+  const want = Math.min(4, MODE_MAX[host.mode] || 4);
+  for (let i = 0; i < MAXP && active().length < want; i++) {
     if (!host.players[i] && (host.botsFill || n < 2 || host.mode === 'tag')) {
       const b = makePlayer(i, 'bot', ''); b.name = ROSTER[b.char].name; b.prevA = false; host.players[i] = b;
     }
@@ -6545,7 +6550,11 @@ function startMatch() {
 function beginGame() {
   const G = GAMES[host.cup[host.cupIndex]];
   active().forEach(p => { p.input = p.kind === 'phone' ? p.input : { x: 0, y: 0, a: false, b: false }; p.prevA = true; p.prevB = true; });
-  disposeGame(); host.game = G.create(active());
+  const max = MODE_MAX[host.cup[host.cupIndex]] || MODE_MAX[host.mode] || 4;
+  const ps = active().slice().sort((a, b) => (a.kind === 'bot') - (b.kind === 'bot') || a.slot - b.slot).slice(0, max).sort((a, b) => a.slot - b.slot);
+  active().forEach(p => p.gs = -1); ps.forEach((p, i) => p.gs = i);
+  host.inGame = new Set(ps.map(p => p.slot));
+  disposeGame(); host.game = G.create(ps);
   host.phase = 'intro'; host.timer = 5; host.paused = false; audioState.duck = false; applyVolume();
   parts.length = 0;
   broadcastPhase();
@@ -6554,12 +6563,13 @@ function disposeGame() { if (host.game && host.game.dispose) { try { host.game.d
 function finishGame() {
   const order = host.game.ranking();
   const pts = host.game.pointTable || [3, 2, 1, 0];
-  host.results = order.map((slot, i) => { const p = host.players[slot]; const add = pts[i] || 0; p.cupPts += add; return { slot, add }; });
+  host.results = order.map((slot, i) => { const p = host.players[slot]; const add = pts[Math.min(i, pts.length - 1)] || 0; p.cupPts += add; return { slot, add }; });
   host.phase = 'results'; host.timer = 7;
   SFX.win(); SFX.cheer(); broadcastPhase();
 }
 function backToLobby() {
-  for (let i = 0; i < 4; i++) {
+  host.inGame = null;
+  for (let i = 0; i < MAXP; i++) {
     const p = host.players[i];
     if (p && (p.kind === 'bot' || (p.kind === 'phone' && !p.connected))) host.players[i] = null;
   }
@@ -6577,7 +6587,7 @@ function hostUpdate(dt) {
   pollKeys();
   if (host.paused) { if (host.toastT > 0) host.toastT -= dt; for (const p of active()) { p.prevA = p.input.a; p.prevB = p.input.b; } return; }
   host.t += dt;
-  if (host.phase === 'play' && host.game) for (const p of active()) if (p.kind === 'bot') host.game.bot(p, dt); // bots decide before presses are read
+  if (host.phase === 'play' && host.game) for (const p of active()) if (p.kind === 'bot' && (!host.inGame || host.inGame.has(p.slot))) host.game.bot(p, dt); // bots decide before presses are read
   for (const p of active()) {
     p.aDown = (p.input.a && !p.prevA) || !!p.aLatch; p.aUp = !p.input.a && (p.prevA || !!p.aLatch); p.bDown = (!!p.input.b && !p.prevB) || !!p.bLatch;
     p.aLatch = p.bLatch = false;
@@ -7139,31 +7149,32 @@ function drawLobby() {
   if (host.mode === 'fort') toyButton(452, 294, 150, 44, host.fortEndless ? '♾ Endless' : '8 Waves', !!host.fortEndless, () => { host.fortEndless = !host.fortEndless; lsSet('cc_fort_endless', host.fortEndless ? '1' : ''); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 19, id: 'endless' });
   if (cat === 'arena' || cat === 'fight') toyButton(660, 294, 120, 44, host.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons', host.controls === 'gestures', () => { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 18, id: 'ctl' });
 
-  // player cards
-  const cw = 284, cy0 = 380, chh = 196, gap = 16, cx0 = (W - (cw * 4 + gap * 3)) / 2, spare = freeChars();
-  let sp = 0;
-  for (let i = 0; i < 4; i++) {
-    const p = host.players[i], x = cx0 + i * (cw + gap), ci = p ? p.char : spare[sp++] ?? 0;
+  // player cards: two rows of five seats
+  const cw = 230, chh = 108, gap = 12, cx0 = (W - (cw * 5 + gap * 4)) / 2, spare = freeChars(), botSeats = Math.max(0, Math.min(4, MODE_MAX[host.mode] || 4) - active().length);
+  let sp = 0, bots = 0;
+  for (let i = 0; i < MAXP; i++) {
+    const p = host.players[i], x = cx0 + (i % 5) * (cw + gap), y0 = 368 + Math.floor(i / 5) * (chh + 10), ci = p ? p.char : spare[sp] ?? 0;
     const col = PLAYER_COLORS[i][0];
     if (p) {
-      toyPanel(x, cy0, cw, chh, 26, shade(col, 0.72), 10, shade(col, -0.2));
-      // spotlight behind the character
-      const g = ctx.createRadialGradient(x + 80, cy0 + 120, 6, x + 80, cy0 + 120, 90); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.fillRect(x + 4, cy0 + 4, 160, chh - 8);
-      ctx.fillStyle = shade(col, 0.2); ctx.beginPath(); ctx.ellipse(x + 80, cy0 + 168, 54, 13, 0, 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
-      drawCritter(x + 80, cy0 + 112, 44, ci, { noShadow: true, fx: Math.sin(host.t * 0.6 + i) * 0.5, happy: (host.t + i) % 5 < 0.6, anim: 'idle' });
-      rr(x + 14, cy0 + 14, 46, 28, 14); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('P' + (i + 1), x + 37, cy0 + 29, 17, '#fff', 'center', TOY.navy);
-      let nm = p.name; dfont(30); while (ctx.measureText(nm).width > 120 && nm.length > 3) nm = nm.slice(0, -1);
-      toyText(nm, x + 158, cy0 + 50, 30, col, 'left', TOY.navy);
-      toyText(ROSTER[ci].name + ' · ' + ROSTER[ci].role, x + 158, cy0 + 84, 16, '#4a568f', 'left', null);
-      const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Lost') : '⌨ Keyboard';
-      toyText(dev, x + 158, cy0 + 114, 17, TOY.navy, 'left', null);
-      if (leader() === p) { rr(x + 156, cy0 + 132, 104, 28, 14); ctx.fillStyle = TOY.sun; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('👑 Leader', x + 208, cy0 + 147, 16, TOY.navy, 'center', null); }
+      toyPanel(x, y0, cw, chh, 22, shade(col, 0.72), 7, shade(col, -0.2));
+      const g = ctx.createRadialGradient(x + 52, y0 + 60, 4, x + 52, y0 + 60, 56); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.fillRect(x + 4, y0 + 4, 100, chh - 8);
+      drawCritter(x + 52, y0 + 56, 30, ci, { noShadow: true, fx: Math.sin(host.t * 0.6 + i) * 0.5, happy: (host.t + i) % 5 < 0.6, anim: 'idle' });
+      rr(x + 8, y0 + 8, 36, 22, 11); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('P' + (i + 1), x + 26, y0 + 20, 13, '#fff', 'center', TOY.navy);
+      let nm = p.name; dfont(22); while (ctx.measureText(nm).width > 116 && nm.length > 3) nm = nm.slice(0, -1);
+      toyText(nm, x + 102, y0 + 30, 22, col, 'left', TOY.navy);
+      toyText(ROSTER[ci].name + ' · ' + ROSTER[ci].role, x + 102, y0 + 56, 13, '#4a568f', 'left', null);
+      const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Lost') : p.kind === 'bot' ? '🤖 Bot' : '⌨ Keyboard';
+      const watching = p.kind !== 'bot' && humans().sort((a, b) => a.slot - b.slot).indexOf(p) >= (MODE_MAX[host.mode] || 4);
+      if (watching) { rr(x + 98, y0 + 70, 120, 24, 12); ctx.fillStyle = 'rgba(27,31,94,.75)'; ctx.fill(); toyText('👀 Watching', x + 158, y0 + 82, 14, '#fff', 'center', null); }
+      else toyText(dev + (leader() === p ? '  👑' : ''), x + 102, y0 + 82, 14, TOY.navy, 'left', null);
     } else {
-      rr(x, cy0, cw, chh, 26); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fill();
-      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(27,31,94,.35)'; ctx.setLineDash([12, 10]); ctx.lineDashOffset = -host.t * 20; rr(x, cy0, cw, chh, 26); ctx.stroke(); ctx.setLineDash([]);
-      drawCritter(x + 80, cy0 + 112, 40, ci, { noShadow: true, alpha: 0.35 });
-      toyText(host.botsFill ? ROSTER[ci].name : 'Empty seat', x + 158, cy0 + 70, 24, 'rgba(27,31,94,.6)', 'left', null);
-      toyText(host.botsFill ? '🤖 Bot' : 'Scan to join!', x + 158, cy0 + 104, 18, 'rgba(27,31,94,.5)', 'left', null);
+      const bot = host.botsFill && bots < botSeats; if (bot) { bots++; sp++; }
+      rr(x, y0, cw, chh, 22); ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(27,31,94,.3)'; ctx.setLineDash([10, 9]); ctx.lineDashOffset = -host.t * 20; rr(x, y0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
+      if (bot) drawCritter(x + 52, y0 + 56, 28, ci, { noShadow: true, alpha: 0.35 });
+      else toyText('P' + (i + 1), x + 52, y0 + 56, 26, 'rgba(27,31,94,.25)', 'center', null);
+      toyText(bot ? ROSTER[ci].name : 'Open seat', x + 102, y0 + 44, 19, 'rgba(27,31,94,.55)', 'left', null);
+      toyText(bot ? '🤖 Bot' : 'Scan to join!', x + 102, y0 + 70, 14, 'rgba(27,31,94,.45)', 'left', null);
     }
   }
 
@@ -7217,7 +7228,12 @@ function drawResults() {
   else toyText('RESULTS', W / 2, 128, 26, TOY.sun, 'center', TOY.navy);
   const medal = [TOY.sun, '#d9e2f2', '#f0a35a', '#b9c3dc'];
   host.results.forEach((r, i) => {
-    const p = host.players[r.slot], yy = 168 + i * 112, x = W / 2 - 360;
+    const p = host.players[r.slot], rowH = Math.min(112, 452 / host.results.length), yy = 168 + i * rowH, x = W / 2 - 360;
+    if (host.results.length > 4) { const appear = clamp(age * 4 - i * 0.3, 0, 1); if (appear <= 0) return; ctx.save(); ctx.globalAlpha = appear;
+      toyPanel(x, yy, 720, rowH - 6, 18, i === 0 ? '#fff6d6' : '#ffffff', 4); const cy = yy + (rowH - 6) / 2;
+      toyText(String(i + 1), x + 34, cy, 22, TOY.navy, 'center', null); drawCritter(x + 92, cy - 4, 18, p.char, { noShadow: true, happy: i === 0, anim: i === 0 ? 'victory' : 'idle' });
+      toyText(p.name, x + 130, cy, 22, p.color, 'left', TOY.navy); toyText('+' + r.add, x + 546, cy, 22, TOY.mint, 'center', TOY.navy); toyText(p.cupPts + ' pts', x + 662, cy, 18, TOY.navy, 'center', null);
+      ctx.restore(); return; }
     const appear = clamp(age * 3 - i * 0.6, 0, 1), slide = (1 - Math.pow(1 - appear, 3)) ;
     if (appear <= 0) return;
     ctx.save(); ctx.globalAlpha = appear; ctx.translate((1 - slide) * (i % 2 ? 300 : -300), 0);
@@ -7244,7 +7260,7 @@ function drawPodium() {
   ctx.restore();
   confetti(60, 1);
   headline(host.cup.length > 1 ? 'CUP CHAMPION!' : 'WINNER!', W / 2, 74 + Math.sin(host.t * 2.5) * 4, 72, TOY.sun, TOY.orange);
-  const order = active().slice().sort((a, b) => b.cupPts - a.cupPts);
+  const order = active().filter(p => !host.inGame || host.inGame.has(p.slot)).sort((a, b) => b.cupPts - a.cupPts);
   const spots = [{ x: W / 2, h: 210, c: TOY.sun }, { x: W / 2 - 270, h: 150, c: '#d9e2f2' }, { x: W / 2 + 270, h: 105, c: '#f0a35a' }, { x: W / 2 + 500, h: 84, c: '#b9c3dc' }];
   order.forEach((p, i) => {
     const s = spots[i]; if (!s) return;
@@ -7281,7 +7297,7 @@ const GoalGuard = {
   create(players) {
     const cx = 640, cy = 374, h = 282, C = 70, LIVES = 8, PAD = 46;
     const g = { t: 0, limit: 105, balls: [], spawnT: 1.0, elim: [], done: false, qs: [] };
-    for (const p of players) g.qs.push({ p, side: p.slot, u: 0, lunge: 0, cd: 0, lives: LIVES, out: false, flash: 0, err: 0, errBall: null, hitT: 0 });
+    for (const p of players) g.qs.push({ p, side: p.gs, u: 0, lunge: 0, cd: 0, lives: LIVES, out: false, flash: 0, err: 0, errBall: null, hitT: 0 });
     const q4 = s => g.qs.find(q => q.side === s);
     const isWall = s => { const q = q4(s); return !q || q.out; };
     const axis = s => s < 2 ? [1, 0] : [0, 1];               // direction along the side
@@ -7529,7 +7545,7 @@ const IceSumo = {
     const cx = 640, cy = 400, R0 = 300, RMIN = 150, LIVES = 3;
     const g = { t: 0, limit: 90, R: R0, qs: [], elim: [], done: false, waves: 0 };
     players.forEach(p => {
-      const a = Math.PI / 4 + p.slot * Math.PI / 2;
+      const a = Math.PI / 4 + p.gs * Math.PI / 2;
       g.qs.push({ p, x: cx + Math.cos(a) * 160, y: cy + Math.sin(a) * 160, vx: 0, vy: 0, r: 30, fx: -Math.cos(a), fy: -Math.sin(a),
         lives: LIVES, charge: 0, charging: false, dashT: 0, fall: 0, respawn: 0, inv: 0, out: false, hitT: 0, botCd: 0, botWant: 0.7, lastHit: null });
     });
@@ -7706,7 +7722,7 @@ const IceSumo = {
       }
       ctx.fillStyle = 'rgba(255,255,255,.75)';
       for (const f of snow) { const y = (f.y + host.t * f.v) % H, x = f.x + Math.sin(host.t * 0.8 + f.y) * 12; ctx.beginPath(); ctx.arc(x, y, f.s, 0, 7); ctx.fill(); }
-      g.qs.forEach(q => { const i = q.p.slot; hudPanel(i % 2 ? W - 284 : 24, i < 2 ? 80 : H - 50, q.p, q.out, q.lives, LIVES); });
+      g.qs.forEach(q => { const i = q.p.gs; hudPanel(i % 2 ? W - 284 : 24, i < 2 ? 80 : H - 50, q.p, q.out, q.lives, LIVES); });
       timerBadge(g.limit - g.t);
     };
     return g;
@@ -7723,16 +7739,16 @@ const TileTakeover = {
   how: 'Run over tiles to paint them your colour. Tap A to DASH, and dash into rivals to stun them. Grab power-ups. Most tiles at the buzzer wins!',
   create(players) {
     const COLS = 20, ROWS = 11, TS = 54, OX = (W - COLS * TS) / 2, OY = 100;
-    const g = { t: 0, limit: 60, tiles: new Int8Array(COLS * ROWS).fill(-1), pop: new Float32Array(COLS * ROWS), qs: [], pw: [], pwT: 5, done: false, counts: [0, 0, 0, 0] };
+    const g = { t: 0, limit: 60, tiles: new Int8Array(COLS * ROWS).fill(-1), pop: new Float32Array(COLS * ROWS), qs: [], pw: [], pwT: 5, done: false, counts: Array(10).fill(0) };
     const starts = [[1, 1], [COLS - 2, ROWS - 2], [COLS - 2, 1], [1, ROWS - 2]];
     players.forEach(p => {
-      const [c, r] = starts[p.slot];
+      const [c, r] = starts[p.gs];
       g.qs.push({ p, x: OX + (c + 0.5) * TS, y: OY + (r + 0.5) * TS, vx: 0, vy: 0, kx: 0, ky: 0, r: 24, fx: 0, fy: 1,
         dashT: 0, cd: 0, stun: 0, frozen: 0, rush: 0, tx: 0, ty: 0, think: 0 });
     });
     const tileAt = (x, y) => { const c = Math.floor((x - OX) / TS), r = Math.floor((y - OY) / TS); return c >= 0 && r >= 0 && c < COLS && r < ROWS ? r * COLS + c : -1; };
     function paint(idx, slot) { if (idx >= 0 && g.tiles[idx] !== slot) { g.tiles[idx] = slot; g.pop[idx] = 0.3; return true; } return false; }
-    function recount() { g.counts = [0, 0, 0, 0]; for (const v of g.tiles) if (v >= 0) g.counts[v]++; }
+    function recount() { g.counts = Array(10).fill(0); for (const v of g.tiles) if (v >= 0) g.counts[v]++; }
     function applyPower(q, type) {
       if (type === 'bomb') {
         const c0 = Math.floor((q.x - OX) / TS), r0 = Math.floor((q.y - OY) / TS);
@@ -7909,7 +7925,7 @@ const BattleArena = {
     const CDS = { rumble: 5, nova: 4, zip: 5.5, glorp: 6.5, shell: 2.2, vex: 6, moxie: 5, frost: 6 };
     const g = { t: 0, limit: 150, qs: [], elim: [], done: false, goo: [], pw: [], pwT: 7, pops: [], swings: [], shots: [] };
     players.forEach(p => {
-      const [x, y] = spawns[p.slot];
+      const [x, y] = spawns[p.gs];
       g.qs.push({ p, C: ROSTER[p.char], x, y, vx: 0, vy: 0, kx: 0, ky: 0, r: 28, fx: x < CX ? 1 : -1, fy: 0,
         hp: HP, lives: LIVES, out: false, fall: 0, respawn: 0, inv: 0, stun: 0, atkCD: 0, atkT: 0, abCD: 0, abMax: 1,
         charge: 0, chargeHits: null, hover: 0, ambush: 0, mega: 0, slow: 0, gooTick: 0, flash: 0, kos: 0, dealt: 0, lastBy: null, lastByT: 0,
@@ -8252,7 +8268,7 @@ const BattleArena = {
       }
       for (const pp of g.pops) { ctx.globalAlpha = Math.min(1, pp.t * 2); outlined(pp.txt, pp.x, pp.y, pp.small ? 17 : 24, pp.col); ctx.globalAlpha = 1; }
       g.qs.forEach(q => {
-        const i = q.p.slot, x = i % 2 ? W - 284 : 24, y = i < 2 ? 52 : H - 36;
+        const i = q.p.gs, x = i % 2 ? W - 284 : 24, y = i < 2 ? 52 : H - 36;
         hudPanel(x, y, q.p, q.out, q.lives, LIVES, '', q.flash);
         if (!q.out) {
           rr(x + 150, y + 6, 92, 10, 5); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
@@ -8513,7 +8529,8 @@ function createFight(rules, players) {
       f.prevJoyY = inp.y;
       if (f.heavyT > 0) { f.heavyT += dt; if (f.heavyT > 2.2) startAttack(f, true, 1); }
       f.crouch = false;
-      const wantBlock = f.onGround && canAct && !f.atk && f.heavyT <= 0 && f.blockCD <= 0 && (inp.y > 0.55 || f.swDuck);
+      const keepGuard = f.blocking && f.blockstun > 0 && f.hitstun <= 0 && f.frozen <= 0; // a blocked hit doesn't drop your shield
+      const wantBlock = f.onGround && (canAct || keepGuard) && !f.atk && f.heavyT <= 0 && f.blockCD <= 0 && (inp.y > 0.55 || f.swDuck);
       if (wantBlock && !f.blocking) { f.blockT = 0; SFX.freeze(); }
       f.blocking = wantBlock;
       if (f.blocking) { f.blockT += dt; if (f.blockT > 3) { f.blocking = false; f.swDuck = false; f.blockCD = 0.8; } }
@@ -9227,7 +9244,7 @@ const FortFrenzy = {
     const g = { t: 0, coop: true, done: false, qs: [], foes: [], coins: [], turrets: [], bolts: [], pops: [], swings: [],
       bank: 40, fortHP: 100, wave: 0, waveT: 3.5, spawnLeft: 0, spawnT: 0, state: 'break', won: false, lost: false, endT: 0, banner: 'GET READY!', bannerT: 3, flash: 0, endless: ENDLESS, best: +(lsGet('cc_fort_best') || 0), newBest: false };
     const spawns = [[FX - 120, FY + 90], [FX + 120, FY + 90], [FX - 120, FY - 90], [FX + 120, FY - 90]];
-    players.forEach(p => { const [x, y] = spawns[p.slot]; g.qs.push({ p, C: ROSTER[p.char], x, y, vx: 0, vy: 0, fx: 0, fy: 1, r: 26, hp: 100, down: 0, inv: 0, atkCD: 0, atkT: 0, kills: 0, builds: 0, coinsGot: 0, hitT: 0 }); });
+    players.forEach((p, i) => { const a = (i / players.length) * Math.PI * 2 + Math.PI / 4, x = FX + Math.cos(a) * 150, y = FY + Math.sin(a) * 110; g.qs.push({ p, C: ROSTER[p.char], x, y, vx: 0, vy: 0, fx: 0, fy: 1, r: 26, hp: 100, down: 0, inv: 0, atkCD: 0, atkT: 0, kills: 0, builds: 0, coinsGot: 0, hitT: 0 }); });
     const FOE = {
       gloom: { r: 20, hp: 3, sp: 62, dmg: 4, coin: 6, col: '#8fd16b', dark: '#4e9a3a' },
       windup: { r: 16, hp: 2, sp: 118, dmg: 3, coin: 5, col: '#ff9ab0', dark: '#d9506f' },
@@ -9360,7 +9377,7 @@ const FortFrenzy = {
     g.bot = (p, dt) => {
       const q = g.qs.find(x => x.p === p); if (!q || q.down > 0) { p.input = { x: 0, y: 0, a: false, b: false }; return; }
       // guard a spot on a ring around the fort, chase anything close
-      const ang = (p.slot / Math.max(1, n)) * Math.PI * 2 + 0.6, gx = FX + Math.cos(ang) * 170, gy = FY + Math.sin(ang) * 130;
+      const ang = (Math.max(0, p.gs) / Math.max(1, n)) * Math.PI * 2 + 0.6, gx = FX + Math.cos(ang) * 170, gy = FY + Math.sin(ang) * 130;
       let tgt = null, bd = 260; for (const f of g.foes) { const d = hyp(f.x - q.x, f.y - q.y); if (d < bd) { bd = d; tgt = f; } }
       let tx = gx, ty = gy;
       const coin = g.coins.find(c => hyp(c.x - q.x, c.y - q.y) < 200);
@@ -9626,7 +9643,7 @@ const GloomRaid = {
       if (g.lost) { g.endT += dt; if (g.endT > 3.8) g.done = true; }
       // ---- waves ----
       if (!g.lost && g.state === 'fight') {
-        const cap = 3 + n * 2, live = g.foes.filter(e => !e.dying).length;
+        const cap = Math.min(16, 3 + n * 2), live = g.foes.filter(e => !e.dying).length;
         g.spawnT -= dt;
         if (g.toSpawn > 0 && g.spawnT <= 0 && live < cap) { g.toSpawn--; spawn(pick()); g.spawnT = rand(0.5, 1.1); }
         if (!g.bossOut && g.toSpawn <= g.total / 2) { g.bossOut = true; spawn('boss'); toast('The Big Gloom is here!'); shake(0.4); }
@@ -9781,7 +9798,7 @@ const GloomRaid = {
       for (const f of g.fx) if (f.k === 'swing') { const a = 1 - f.t / 0.2; if (a <= 0) continue; ctx.globalAlpha = a; ctx.strokeStyle = '#fff'; ctx.lineWidth = f.big ? 9 : 6; ctx.beginPath(); ctx.arc(f.x - g.camX, f.z - f.h, (f.big ? 30 : 22) + f.t * 100, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
       for (const pp of g.pops) { ctx.globalAlpha = 1 - pp.t / 1.1; toyText(pp.txt, pp.x - g.camX, pp.z - pp.h - pp.t * 40, 22, pp.col, 'center', TOY.navy); ctx.globalAlpha = 1; }
       // HUD: one card per player along the top
-      g.qs.forEach((q, i) => { const w = Math.min(240, (W - 300) / n - 10), x = 20 + i * (w + 10), y = 12;
+      g.qs.forEach((q, i) => { const per = n > 5 ? Math.ceil(n / 2) : n, w = Math.min(240, (W - 300) / per - 10), x = 20 + (i % per) * (w + 10), y = 12 + Math.floor(i / per) * 66;
         rr(x, y, w, 60, 18); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
         toyText(q.p.name, x + 14, y + 18, 18, q.p.color, 'left', TOY.navy);
         rr(x + 12, y + 32, w - 24, 10, 5); ctx.fillStyle = '#e4e8f8'; ctx.fill(); rr(x + 12, y + 32, (w - 24) * q.hp / 100, 10, 5); ctx.fillStyle = q.hp > 35 ? TOY.mint : TOY.coral; ctx.fill();
@@ -9943,7 +9960,7 @@ function renderPad() {
   } else if ((d.phase === 'play' || d.phase === 'intro') && d.role === 'bench' && !d.paused) {
     hint = 'On the bench'; html = `<b>🪑 You're on the bench</b>Your partner is fighting. Tap to swap in when they need help!<button class="pbtn big go" data-c="tag">TAG IN ⇄</button><div class="small">Benched fighters heal a little.</div>`;
   } else if ((d.phase === 'play' || d.phase === 'intro') && d.role === 'spectator' && !d.paused) {
-    hint = 'Watching'; html = `<b>👀 Watching this duel</b>Next time, pick Duel again for a rematch (or try Sky Brawl so everyone fights).`;
+    hint = 'Watching'; html = d.mode === 'duel' ? `<b>👀 Watching this duel</b>Next time, pick Duel again for a rematch (or try Sky Brawl so everyone fights).` : `<b>👀 Watching this one</b>This game fits 4 players, so you're cheering from the couch. Co-op games fit everyone!`;
   } else if (d.phase === 'intro' && d.gestures) {
     hint = d.title; inter = false;
     html = `<b>${esc(d.title)}</b><div class="small" style="opacity:.9">Left: joystick · Right: gesture pad</div><div class="glist">${(d.fight ? FIGHT_HELP : GESTURE_HELP).map(([a, b]) => `<span><b>${esc(a)}</b> ${esc(b)}</span>`).join('')}</div>` +

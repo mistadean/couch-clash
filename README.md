@@ -1,6 +1,6 @@
 # Couch Clash
 
-Free arcade party games for 2–4 players. The TV is the console, phones are the controllers.
+Free arcade party games for up to 10 players (co-op modes take everyone; most other modes take 4 and the rest watch). The TV is the console, phones are the controllers.
 
 **Play:** https://is.gd/couchclash (short link to https://mistadean.github.io/couch-clash/)
 
@@ -20,7 +20,7 @@ Modes:
 Every player has a seat colour (P1 red, P2 blue, P3 yellow, P4 green) shown as a ring under their character, on name tags and in gameplay (goals, tiles, HUD).
 
 - **Fighters** (side-view, one engine, three rule sets):
-  - **Sky Brawl** (Smash-style, 2–4): damage % builds up, launch rivals off the screen, 3 stocks.
+  - **Sky Brawl** (2–4): damage % builds up, launch rivals off the screen, 3 stocks.
   - **Duel** (Tekken-style, 1v1): health bars, best of 3 rounds. Hold back to block, crouch to duck highs, crouch-block lows.
   - **Tag Team** (Marvel-style, 2v2): one fighter per team on screen; the benched partner taps TAG IN on their phone.
   Joystick moves and aims (↑ = up attacks, ↓ = low attacks). Tap = light, hold + release = heavy, swipe ↑ = jump (double jump),
