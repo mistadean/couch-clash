@@ -6373,7 +6373,7 @@ const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
 const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
-const botTarget = m => m === 'odd' ? 0 : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
+const botTarget = m => m === 'odd' ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6616,7 +6616,7 @@ function onCtrlClose(conn) {
   broadcastPhase(); // leadership may have moved to another phone
 }
 const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'phone', cards: 'phone' };
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -6725,7 +6725,7 @@ function pollKeys() {
 function startMatch() {
   if (host.phase !== 'lobby') return;
   const GM = GAMES[host.mode], phones = active().filter(p => p.kind === 'phone').length;
-  if (GM && GM.minPhones && phones < GM.minPhones) { toast(GM.title + ' needs ' + GM.minPhones + '+ phones (it uses secret screens)'); SFX.bonk && SFX.bonk(); return; }
+  if (GM && GM.minPhones && phones < (GM.practiceBots && host.botsFill ? 1 : GM.minPhones)) { toast(GM.title + ' needs ' + GM.minPhones + '+ phones (it uses secret screens)'); SFX.bonk && SFX.bonk(); return; }
   const n = humans().length;
   const want = botTarget(host.mode);
   for (let i = 0; i < MAXP && active().length < want; i++) {
@@ -7339,22 +7339,24 @@ function drawLobby() {
   }
 
   // mode selection
-  const cat = MODE_CAT[host.mode] || 'party';
+  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social'].includes(cat) ? cat : 'more';
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const cats = [['party', '🎉 Party', 104, host.lastParty || 'cup', TOY.sun], ['phone', '📱 Phones', 118, host.lastPhone || 'odd', TOY.coral], ['arena', '⚔ Arena', 100, 'arena', TOY.grape], ['fight', '🥊 Fight', 98, host.lastFight || 'smash', TOY.orange], ['race', '🏁 Race', 92, 'race', TOY.mint], ['coop', '🤝 Co-op', 104, host.lastCoop || 'raid', TOY.aqua], ['team', '🏆 5v5', 88, host.lastTeam || 'gems', '#ff8fb5']];
+  const tops = [['party', '🎉 Party', 140, host.lastParty || 'cup', TOY.sun], ['cards', '🃏 Cards', 136, 'cards', TOY.coral], ['social', '🕵 Interactive', 178, 'odd', TOY.grape], ['more', '➕ More games', 196, host.lastMore || 'arena', TOY.aqua]];
   let bx = 40;
-  for (const [c, label, w, def, col] of cats) { toyButton(bx, 222, w, 54, label, cat === c, () => setMode(def), col, { bounce: cat === c, id: 'cat-' + c, px: 18 }); bx += w + 7; }
-  const subs = cat === 'party' ? [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]
-    : cat === 'fight' ? [['smash', 'Sky Brawl · FFA', 200], ['duel', 'Duel · 1v1', 158], ['tag', 'Tag Team · 2v2', 196]]
-    : cat === 'coop' ? [['raid', '👊 Gloom Raid', 190], ['fort', '🏰 Fort Frenzy', 196]]
-    : cat === 'phone' ? [['odd', '🕵 Odd One Out', 200], ['cards', '🃏 Colour Clash', 210]]
-    : cat === 'team' ? [['gems', '💎 Gem Grab', 168], ['zones', '🚩 Zones', 140], ['ball', '⚽ Toy Ball', 156], ['train', '🚂 Train', 128]] : [];
-  let sx = 40;
-  for (const [m, label, w] of subs) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { if (cat === 'party') host.lastParty = m; else if (cat === 'coop') host.lastCoop = m; else if (cat === 'team') host.lastTeam = m; else if (cat === 'phone') host.lastPhone = m; else host.lastFight = m; setMode(m); }, cat === 'fight' ? TOY.coral : TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
-  const blurb = cat === 'phone' ? '' : cat === 'arena' ? 'Top-down brawl · abilities · power-ups' : cat === 'race' ? 'Sunshine Circuit · 3 laps · items · split-screen' : cat === 'coop' ? '' : '';
-  if (blurb) { rr(40, 294, 600, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(blurb, 60, 317, 21, TOY.navy, 'left', null); }
-  if (host.mode === 'fort') toyButton(452, 294, 150, 44, host.fortEndless ? '♾ Endless' : '8 Waves', !!host.fortEndless, () => { host.fortEndless = !host.fortEndless; lsSet('cc_fort_endless', host.fortEndless ? '1' : ''); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 19, id: 'endless' });
-  if (cat === 'arena' || cat === 'fight') toyButton(660, 294, 120, 44, host.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons', host.controls === 'gestures', () => { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 18, id: 'ctl' });
+  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 21 }); bx += w + 10; }
+  const pill = (x, w, t) => { rr(x, 294, w, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(t, x + 18, 317, 19, TOY.navy, 'left', null); };
+  if (top === 'party') { let sx = 40; for (const [m, label, w] of [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastParty = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
+  else if (top === 'cards') { toyButton(40, 294, 210, 44, '🃏 Colour Clash', true, () => setMode('cards'), TOY.aqua, { px: 21, id: 'sub-cards' }); pill(262, 500, 'Your hand is on your phone · more card games soon'); }
+  else if (top === 'social') { toyButton(40, 294, 200, 44, '🕵 Odd One Out', true, () => setMode('odd'), TOY.aqua, { px: 21, id: 'sub-odd' }); pill(252, 500, 'Secret words on phones · clues out loud · vote'); }
+  else { // More games: pick a group, then cycle through its variants
+    const groups = [['arena', '⚔ Arena', 96, 'arena'], ['fight', '🥊 Fighters', 118, host.lastFight || 'smash'], ['race', '🏁 Racing', 106, 'race'], ['coop', '🤝 Co-op', 104, host.lastCoop || 'raid'], ['team', '🏆 5v5', 84, host.lastTeam || 'gems']];
+    let sx = 40; for (const [c, label, w, def] of groups) { toyButton(sx, 294, w, 44, label, cat === c, () => { host.lastMore = def; setMode(def); }, TOY.coral, { px: 18, id: 'grp-' + c }); sx += w + 8; }
+    const VAR = { fight: [['smash', 'Sky Brawl'], ['duel', 'Duel · 1v1'], ['tag', 'Tag · 2v2']], coop: [['raid', 'Gloom Raid'], ['fort', 'Fort · 8 waves'], ['fortE', 'Fort · Endless']], team: [['gems', 'Gem Grab'], ['zones', 'Zone Control'], ['ball', 'Toy Ball'], ['train', 'Push the Train']] }[cat];
+    if (VAR) { const curK = host.mode === 'fort' && host.fortEndless ? 'fortE' : host.mode, i = Math.max(0, VAR.findIndex(v => v[0] === curK)), nx = VAR[(i + 1) % VAR.length][0];
+      toyButton(sx + 2, 294, 196, 44, '◀ ' + VAR[i][1] + ' ▶', true, () => { const m = nx === 'fortE' ? 'fort' : nx; if (cat === 'coop') { host.fortEndless = nx === 'fortE'; lsSet('cc_fort_endless', host.fortEndless ? '1' : ''); host.lastCoop = m; } if (cat === 'team') host.lastTeam = m; if (cat === 'fight') host.lastFight = m; host.lastMore = m; setMode(m); }, TOY.grape, { px: 18, id: 'variant' }); }
+  }
+  const ctlToggle = cat === 'arena' || cat === 'fight';
+  if (ctlToggle) toyButton(232, 616, 156, 56, host.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons', host.controls === 'gestures', () => { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.pop(); broadcastPhase(); }, TOY.grape, { px: 19, id: 'ctl' });
 
   // player cards: two rows of five seats
   const cw = 230, chh = 108, gap = 12, cx0 = (W - (cw * 5 + gap * 4)) / 2, spare = freeChars(), botSeats = Math.max(0, botTarget(host.mode) - active().length);
@@ -7395,9 +7397,10 @@ function drawLobby() {
   const b = host.buttons[host.buttons.length - 1]; b.x = 1130 - 110; b.y = 644 - 34; b.w = 220; b.h = 68;
   ctx.restore();
   const audioHint = !audioOn();
-  rr(232, 624, 744, 40, 20); ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fill();
-  toyText(audioHint ? '🔈 Click or press OK once for sound  ·  Pick your character on your phone' : 'Pick your character on your phone  ·  👑 Leader runs the menu  ·  Keys: SPACE / R-SHIFT join',
-    604, 645, 17, audioHint ? TOY.coral : TOY.navy, 'center', null);
+  const hx = (cat === 'arena' || cat === 'fight') ? 398 : 232, hw = 976 - hx;
+  rr(hx, 624, hw, 40, 20); ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fill();
+  toyText(audioHint ? '🔈 Click or press OK once for sound  ·  Pick your character on your phone' : hw < 700 ? 'Pick your character on your phone  ·  👑 Leader runs the menu' : 'Pick your character on your phone  ·  👑 Leader runs the menu  ·  Keys: SPACE / R-SHIFT join',
+    hx + hw / 2, 645, hw < 700 ? 15 : 17, audioHint ? TOY.coral : TOY.navy, 'center', null);
 }
 function drawIntro() {
   const G = currentGameDef(), age = 5 - host.timer, pop = Math.min(1, age * 3), sc0 = 0.85 + 0.15 * (1 - Math.pow(1 - pop, 3)) + Math.sin(Math.min(1, age * 2) * Math.PI) * 0.03;
@@ -10590,7 +10593,7 @@ const ODD_PAIRS = [['Cat', 'Dog'], ['Coffee', 'Tea'], ['Beach', 'Pool'], ['Pizza
   ['Hospital', 'Pharmacy'], ['Penguin', 'Seal'], ['Laptop', 'Tablet'], ['Castle', 'Palace'], ['Fireworks', 'Bonfire'], ['Bee', 'Wasp'], ['Lipstick', 'Nail polish'], ['Island', 'Desert']];
 const PHONE_CSS_HINT = 'Phones only';
 const OddOneOut = {
-  title: 'Odd One Out', accent: '#b48cff', phones: true, minPhones: 3, noBots: true, panelGame: true,
+  title: 'Odd One Out', accent: '#b48cff', phones: true, minPhones: 3, botsOk: true, practiceBots: true, panelGame: true,
   how: 'Everyone gets a secret word on their phone, but one player has a slightly different word, and they don\'t know it! Take turns saying ONE clue out loud, then vote on your phone for who you think is the odd one out.',
   create(players) {
     const g = { t: 0, done: false, panelGame: true, ps: [], state: 'deal', stateT: 4, turn: -1, order: [], round: 1, votes: {}, reveal: null, winner: null, endT: 0, log: '' };
@@ -10599,7 +10602,7 @@ const OddOneOut = {
     players.forEach((p, i) => g.ps.push({ p, odd: idx.includes(i), word: idx.includes(i) ? oddW : civW, out: false, spoke: false, votesGot: 0 }));
     const alive = () => g.ps.filter(o => !o.out), find = p => g.ps.find(o => o.p === p);
     function refresh() { broadcastPhase(); }
-    function startClues() { g.state = 'clue'; g.order = alive().map(o => o); const s = Math.floor(Math.random() * g.order.length); g.order = g.order.slice(s).concat(g.order.slice(0, s)); g.turn = 0; g.stateT = 25; g.ps.forEach(o => o.spoke = false); SFX.go(); refresh(); }
+    function startClues() { g.state = 'clue'; g.order = alive().map(o => o); const s = Math.floor(Math.random() * g.order.length); g.order = g.order.slice(s).concat(g.order.slice(0, s)); g.turn = 0; g.stateT = 25; g.ps.forEach(o => { o.spoke = false; o.clue = ''; }); SFX.go(); refresh(); }
     function nextSpeaker() { const cur = g.order[g.turn]; if (cur) cur.spoke = true; g.turn++; if (g.turn >= g.order.length) { g.state = 'vote'; g.votes = {}; g.stateT = 40; SFX.beep(); } else { g.stateT = 25; SFX.click(); } refresh(); }
     function tally() {
       const counts = new Map(); for (const k in g.votes) { const o = g.votes[k]; counts.set(o, (counts.get(o) || 0) + 1); }
@@ -10617,7 +10620,10 @@ const OddOneOut = {
       g.stateT -= dt;
       if (g.state === 'deal' && g.stateT <= 0) startClues();
       else if (g.state === 'clue' && g.stateT <= 0) nextSpeaker();
+      else if (g.state === 'clue' && g.order[g.turn] && g.order[g.turn].p.kind === 'bot' && g.stateT < 21) { const o = g.order[g.turn], w = o.word; // practice bots give a letter clue on screen
+        o.clue = Math.random() < 0.5 ? `Starts with "${w[0]}"` : `${w.replace(/ /g, '').length} letters`; nextSpeaker(); }
       else if (g.state === 'vote' && (g.stateT <= 0 || alive().every(o => g.votes[o.p.slot]))) tally();
+      else if (g.state === 'vote') for (const o of alive()) if (o.p.kind === 'bot' && !g.votes[o.p.slot] && Math.random() < dt * 0.4) { const opts = alive().filter(x => x !== o); g.votes[o.p.slot] = opts[Math.floor(Math.random() * opts.length)]; refresh(); }
       else if (g.state === 'reveal' && g.stateT <= 0) { const w = checkEnd(); if (w) { g.winner = w; g.state = 'end'; SFX.win(); SFX.cheer(); refresh(); } else { g.round++; startClues(); } }
     };
     g.onPick = (p, v) => { const me = find(p); if (!me || me.out) return;
@@ -10646,6 +10652,7 @@ const OddOneOut = {
       headline('ODD ONE OUT', W / 2, 62, 50, '#fff', '#8a5cff');
       const sub = g.state === 'deal' ? 'Check your phone for your secret word 🤫' : g.state === 'clue' ? `Round ${g.round} · say ONE clue out loud` : g.state === 'vote' ? 'Vote on your phone! Who has the different word?' : g.state === 'reveal' ? 'The votes are in…' : '';
       toyText(sub, W / 2, 110, 24, '#fff', 'center', TOY.navy);
+      if (list.some(o => o.p.kind === 'bot')) toyText('🤖 Practice mode: bots give a letter clue. It\'s best with 3+ people!', W / 2, H - 22, 18, '#fff', 'center', TOY.navy);
       list.forEach((o, i) => { const r = Math.floor(i / 5), inRow = Math.min(5, list.length - r * 5), x = W / 2 - (inRow * (cw + 16) - 16) / 2 + (i % 5) * (cw + 16), y = 150 + r * (chh + 16) + (rows === 1 ? 70 : 0);
         const speaking = g.state === 'clue' && g.order[g.turn] === o, voted = g.state === 'vote' && g.votes[o.p.slot];
         ctx.save(); if (o.out) ctx.globalAlpha = 0.45;
@@ -10654,6 +10661,7 @@ const OddOneOut = {
         toyText(o.p.name, x + cw / 2, y + 120, 22, o.p.color, 'center', TOY.navy);
         if (speaking) { toyText('🎤 ' + Math.ceil(g.stateT), x + cw - 30, y + 24, 20, TOY.coral, 'center', TOY.navy); }
         if (o.spoke && g.state === 'clue') toyText('✓', x + 24, y + 24, 24, TOY.mint, 'center', TOY.navy);
+        if (o.clue && (g.state === 'clue' || g.state === 'vote')) { rr(x + 10, y + chh - 4, cw - 20, 30, 15); ctx.fillStyle = TOY.navy; ctx.fill(); toyText('💬 ' + o.clue, x + cw / 2, y + chh + 11, 15, '#fff', 'center', null); }
         if (voted) toyText('🗳', x + 24, y + 24, 22, '#fff', 'center', null);
         if (g.state === 'reveal' && o.votesGot) { rr(x + cw - 50, y + 8, 42, 30, 15); ctx.fillStyle = TOY.coral; ctx.fill(); toyText(o.votesGot, x + cw - 29, y + 24, 20, '#fff', 'center', TOY.navy); }
         if (o.out) toyText(o.odd ? '🕵 ODD!' : 'Group', x + cw / 2, y + 144, 16, o.odd ? TOY.coral : '#6a76b8', 'center', null);
@@ -10679,7 +10687,7 @@ function ccCardHTML(c, i, playable) {
   return `<button class="ccard${playable ? '' : ' dim'}" data-c="pp" data-v="c${i}" style="background:${bg}"${playable ? '' : ' disabled'}><span>${CC_LABEL[c.v] || c.v}</span></button>`;
 }
 const ColourClash = {
-  title: 'Colour Clash', accent: '#ff5a6e', phones: true, minPhones: 2, botsOk: true, panelGame: true,
+  title: 'Colour Clash', accent: '#ff5a6e', phones: true, minPhones: 1, botsOk: true, panelGame: true,
   how: 'Your hand is on your phone. Play a card that matches the colour or symbol on the pile. ⊘ skips, ⇄ reverses, +2 makes the next player draw. ★ cards change the colour. First to empty their hand wins!',
   create(players) {
     const deck = [], g = { t: 0, done: false, panelGame: true, hands: [], pile: [], col: 0, turn: 0, dir: 1, turnT: 30, wildFor: null, drew: null, winner: null, endT: 0, msg: 'Match the colour or symbol!', msgT: 3, flash: 0 };
@@ -10904,9 +10912,9 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader · pick your character</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['cup', '🎉 Party'], ['odd', '📱 Phones'], ['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>
+        <div class="row">${[['cup', '🎉 Party', 'party'], ['cards', '🃏 Cards', 'cards'], ['odd', '🕵 Interactive', 'social'], ['arena', '➕ More games', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        ${!['party', 'cards', 'social'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
-        ${MODE_CAT[d.mode] === 'phone' ? `<div class="row">${[['odd', '🕵 Odd One Out'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'fight' ? `<div class="row">${[['smash', 'Sky Brawl · FFA'], ['duel', 'Duel · 1v1'], ['tag', 'Tag · 2v2']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
