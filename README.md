@@ -11,6 +11,6 @@ Free arcade party games for 2–4 players. The TV is the console, phones are the
 
 Games: Goal Guard, Ice Sumo, Tile Takeover, or the 3-game Cup. Keyboard players: WASD + Space, Arrows + Right Shift.
 
-Characters: Rumble, Nova, Zip and Glorp (art in `assets/`, see `assets/README.md`).
+Characters: Rumble, Nova, Zip and Glorp. Pick yours on your phone in the lobby (keyboard players: ◀ ▶). The roster lives in `ROSTER` in index.html; art in `assets/`.
 
 Connections use PeerJS (WebRTC); game data goes straight between devices.

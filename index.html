@@ -58,6 +58,13 @@ button{font-family:inherit;cursor:pointer;border:0}
 .pbtn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
 .pbtn.big{display:block;width:100%;margin-top:12px;padding:14px;font-size:20px;font-weight:700}
 .pbtn.go{background:#56e07a;color:#14112b}
+.picker{display:flex;gap:8px;justify-content:center;margin:10px 0 4px;flex-wrap:wrap}
+.pick{width:78px;padding:6px 4px 6px;border-radius:14px;background:rgba(255,255,255,.08);color:#fff;border:3px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.pick img{width:56px;height:56px;object-fit:contain}
+.pick span{font-weight:700;font-size:14px;color:var(--c)}
+.pick small{font-size:10px;opacity:.7;max-width:70px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pick.mine{border-color:var(--c);background:rgba(255,255,255,.18)}
+.pick.taken{opacity:.35}
 #pauseBtn{width:46px;height:40px;border-radius:12px;background:rgba(255,255,255,.16);color:#fff;font-size:20px;flex:none;box-shadow:0 3px 0 rgba(0,0,0,.3)}
 #rotate{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:13px;opacity:.5;pointer-events:none}
 @media (orientation:landscape){#rotate{display:none}}
@@ -2419,12 +2426,26 @@ var qrcode = function() {
    ===================================================================== */
 const $ = s => document.querySelector(s);
 const W = 1280, H = 720;
-const COLORS = ['#ff5a6e', '#38c6ff', '#ffcc33', '#56e07a'];
-const DARKS  = ['#b8283c', '#1386b8', '#c99200', '#249a47'];
-const CRITTER_NAMES = ['Rumble', 'Nova', 'Zip', 'Glorp'];
-const BOT_NAMES = ['Rumble', 'Nova', 'Zip', 'Glorp'];
-const CATCHPHRASES = ['"Out of my way."', '"Already won."', '"Wheee!"', '"Glorp?"'];
-const ART_URL = i => 'assets/critter-' + i + '.webp';
+/* ROSTER: every playable character. Add a new entry (plus assets/<art>) to grow the lineup.
+   stats/ability are stored for a future ability-based game mode; the current games ignore them. */
+const ROSTER = [
+  { id: 'rumble', name: 'Rumble', art: 'critter-0.webp', color: '#ff5a6e', dark: '#b8283c', light: '#ffb3bd', fallback: 0, role: 'Heavy',
+    bio: 'Robot rhino-beetle brawler', catchphrase: '"Out of my way."', stats: { speed: 2, power: 5, weight: 5 },
+    ability: { name: 'Horn Charge', desc: 'Unstoppable charge that bowls rivals over.' } },
+  { id: 'nova', name: 'Nova', art: 'critter-1.webp', color: '#38c6ff', dark: '#1386b8', light: '#b5ecff', fallback: 1, role: 'Tricky',
+    bio: 'Lanky alien space pilot', catchphrase: '"Already won."', stats: { speed: 4, power: 2, weight: 2 },
+    ability: { name: 'Warp Step', desc: 'Short-range teleport through trouble.' } },
+  { id: 'zip', name: 'Zip', art: 'critter-2.webp', color: '#ffcc33', dark: '#c99200', light: '#fff0b3', fallback: 2, role: 'Speedster',
+    bio: 'Tiny jetpack space monkey', catchphrase: '"Wheee!"', stats: { speed: 5, power: 2, weight: 1 },
+    ability: { name: 'Jet Burst', desc: 'Rocket boost with a short hover.' } },
+  { id: 'glorp', name: 'Glorp', art: 'critter-3.webp', color: '#56e07a', dark: '#249a47', light: '#c4f7d0', fallback: 3, role: 'Wildcard',
+    bio: 'One-eyed swamp alien', catchphrase: '"Glorp?"', stats: { speed: 3, power: 3, weight: 4 },
+    ability: { name: 'Goo Trap', desc: 'Drops sticky goo that slows rivals.' } },
+];
+const COLORS = ROSTER.map(c => c.color), DARKS = ROSTER.map(c => c.dark);
+const CRITTER_NAMES = ROSTER.map(c => c.name), CATCHPHRASES = ROSTER.map(c => c.catchphrase);
+const BOT_NAMES = CRITTER_NAMES;
+const ART_URL = i => 'assets/' + ROSTER[i].art;
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -2667,6 +2688,7 @@ function hostCmd(p, c, v) {
   const inGame = host.phase === 'play' || host.phase === 'intro';
   if (c === 'pause') { if (inGame) setPaused(true, p); return; }
   if (c === 'resume') { setPaused(false, p); return; }
+  if (c === 'pick') { if (pickChar(p, +v)) broadcastPhase(); else sendPhase(p); return; }
   if (leader() !== p) return;
   switch (c) {
     case 'start': if (host.phase === 'lobby') startMatch(); return;
@@ -2691,10 +2713,19 @@ function setPaused(on, p) {
 function cleanName(n) { return String(n || '').replace(/[^\p{L}\p{N} _\-!.']/gu, '').trim().slice(0, 10); }
 
 function makePlayer(slot, kind, name) {
-  return { slot, kind, name, color: COLORS[slot], dark: DARKS[slot], pid: '', conn: null, connected: true,
+  const ci = freeChars()[0] ?? 0;
+  return { slot, kind, name, char: ci, color: ROSTER[ci].color, dark: ROSTER[ci].dark, pid: '', conn: null, connected: true,
     input: { x: 0, y: 0, a: false }, prevA: false, aDown: false, aUp: false, cupPts: 0, keyset: null };
 }
 const humans = () => host.players.filter(p => p && p.kind !== 'bot');
+function freeChars() { const used = new Set(host.players.filter(Boolean).map(p => p.char)); return ROSTER.map((_, i) => i).filter(i => !used.has(i)); }
+function setChar(p, ci) { p.char = ci; p.color = ROSTER[ci].color; p.dark = ROSTER[ci].dark; }
+function pickChar(p, ci) {
+  if (host.phase !== 'lobby' || !(ci >= 0 && ci < ROSTER.length) || p.char === ci) return false;
+  if (host.players.some(q => q && q !== p && q.char === ci)) return false;
+  const was = p.name; setChar(p, ci); if (p.kind === 'key') p.name = ROSTER[ci].name;
+  SFX.join(); toast((p.kind === 'key' ? 'Keyboard ' + was : p.name) + ' picked ' + ROSTER[ci].name + '!'); return true;
+}
 const active = () => host.players.filter(Boolean);
 function leader() { return host.players.find(p => p && p.kind === 'phone' && p.connected) || null; }
 function toast(m) { host.toast = m; host.toastT = 2.2; }
@@ -2706,7 +2737,11 @@ function phaseInfo(p) {
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; }
   const l = leader();
   Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music,
-    leaderName: l ? l.name : '', count: humans().length });
+    leaderName: l ? l.name : '', count: humans().length, char: p.char });
+  if (host.phase === 'lobby') msg.roster = ROSTER.map((c, i) => {
+    const owner = host.players.find(q => q && q.char === i);
+    return { name: c.name, color: c.color, role: c.role, bio: c.bio, art: c.art, taken: owner && owner !== p ? owner.name : '' };
+  });
   return msg;
 }
 function sendPhase(p) { if (p.kind === 'phone') send(p.conn, phaseInfo(p)); }
@@ -2717,12 +2752,18 @@ function onKeyPress(code) {
   if (code === 'KeyP' || code === 'Escape') { if (host.phase === 'play' || host.phase === 'intro') setPaused(!host.paused); return; }
   if (host.phase !== 'lobby') return;
   for (const ks of KEYSETS) {
+    const kp = host.players.find(p => p && p.keyset === ks);
+    if (kp && (code === ks.left || code === ks.right)) {
+      const dir = code === ks.right ? 1 : -1, n = ROSTER.length;
+      for (let k = 1; k < n; k++) { const ci = (kp.char + dir * k + n * 2) % n; if (pickChar(kp, ci)) { broadcastPhase(); break; } }
+      return;
+    }
     if (code !== ks.a) continue;
     const existing = host.players.find(p => p && p.keyset === ks);
     if (existing) { startMatch(); return; }
     const slot = host.players.findIndex(q => !q);
     if (slot < 0) return;
-    const p = makePlayer(slot, 'key', CRITTER_NAMES[slot]); p.keyset = ks; p.prevA = true;
+    const p = makePlayer(slot, 'key', 'Player ' + (slot + 1)); p.name = CRITTER_NAMES[p.char]; p.keyset = ks; p.prevA = true;
     host.players[slot] = p; SFX.join(); toast(p.name + ' joined (' + ks.label + ')');
     broadcastPhase();
   }
@@ -2744,7 +2785,7 @@ function startMatch() {
   const n = humans().length;
   for (let i = 0; i < 4; i++) {
     if (!host.players[i] && (host.botsFill || n < 2)) {
-      const b = makePlayer(i, 'bot', BOT_NAMES[i]); b.prevA = false; host.players[i] = b;
+      const b = makePlayer(i, 'bot', ''); b.name = ROSTER[b.char].name; b.prevA = false; host.players[i] = b;
     }
   }
   active().forEach(p => p.cupPts = 0);
@@ -2863,7 +2904,7 @@ function uiButton(x, y, w, h, label, on, fn, color = '#ffcc33') {
 }
 
 /* ---------- art helpers ---------- */
-const LIGHTS = ['#ffb3bd', '#b5ecff', '#fff0b3', '#c4f7d0'];
+const LIGHTS = ROSTER.map(c => c.light);
 const INK = '#1d1238';
 function seeded(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 /* Render static art once into an offscreen canvas at screen resolution. */
@@ -2878,20 +2919,20 @@ function makeLayer(draw) {
 const CRIT_IMG = [];
 function loadCritterArt() {
   if (!location.protocol.startsWith('http')) return;
-  for (let i = 0; i < 4; i++) { const im = new Image(); im.onerror = () => { im.bad = true; }; im.src = ART_URL(i); CRIT_IMG[i] = im; }
+  for (let i = 0; i < ROSTER.length; i++) { const im = new Image(); im.onerror = () => { im.bad = true; }; im.src = ART_URL(i); CRIT_IMG[i] = im; }
 }
 
 /* A critter: outlined cartoon blob with feet, shading, blinking eyes, expressions and a slot accessory.
    o: fx, fy (facing), squash, alpha, noShadow, walk (phase), dizzy, ouch, happy, fierce */
-function drawCritter(x, y, r, slot, o = {}) {
-  const col = COLORS[slot], dark = DARKS[slot], light = LIGHTS[slot];
+function drawCritter(x, y, r, ci, o = {}) {
+  const C = ROSTER[ci] || ROSTER[0], slot = C.fallback, col = C.color, dark = C.dark, light = C.light;
   const fx = clamp(o.fx || 0, -1, 1), fy = clamp(o.fy || 0, -1, 1);
   ctx.save();
   ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
   if (!o.noShadow) { ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y + r * 0.98, r * 0.92, r * 0.3, 0, 0, 7); ctx.fill(); }
   ctx.translate(x, y);
   const sq = o.squash || 0; ctx.scale(1 + sq, 1 - sq);
-  const img = CRIT_IMG[slot];
+  const img = CRIT_IMG[ci];
   if (img && img.complete && img.naturalWidth && !img.bad) {
     // Character art: feet anchored at the bottom of the hit circle, animated with bob / lean / wobble / hop.
     const t = host.t, s = r * 2.75;
@@ -3005,7 +3046,7 @@ function timerBadge(rem, x = W / 2) {
 function hudPanel(x, y, p, out, n, max, prefix = '', flash = 0) {
   rr(x, y - 28, 260, 56, 28); ctx.fillStyle = flash > 0 ? 'rgba(255,90,110,' + (0.35 + 0.4 * Math.abs(Math.sin(flash * 20))) + ')' : 'rgba(10,6,30,.7)'; ctx.fill();
   ctx.lineWidth = 3; ctx.strokeStyle = p.color; rr(x, y - 28, 260, 56, 28); ctx.stroke();
-  drawCritter(x + 30, y + 3, 18, p.slot, { noShadow: true, alpha: out ? 0.3 : 1 });
+  drawCritter(x + 30, y + 3, 18, p.char, { noShadow: true, alpha: out ? 0.3 : 1 });
   text(prefix + p.name, x + 58, y - 8, 18, p.color, 'left');
   if (out) text('OUT', x + 58, y + 14, 17, '#ff5a6e', 'left');
   else hearts(x + 66, y + 14, n, max, '#ff5a6e', 'left', max > 4 ? 12 : 14);
@@ -3101,22 +3142,23 @@ function drawLobby() {
     uiButton(px + pw / 2 - 90, py + 240, 180, 52, 'Retry', true, () => startHostNet());
   }
 
-  // player cards
-  const cw = 270, cy0 = 392, chh = 170, gap = 20, cx0 = (W - (cw * 4 + gap * 3)) / 2;
+  // player cards (empty seats preview the character a bot would take)
+  const cw = 270, cy0 = 392, chh = 170, gap = 20, cx0 = (W - (cw * 4 + gap * 3)) / 2, spare = freeChars();
+  let sp = 0;
   for (let i = 0; i < 4; i++) {
-    const p = host.players[i], x = cx0 + i * (cw + gap);
+    const p = host.players[i], x = cx0 + i * (cw + gap), ci = p ? p.char : spare[sp++] ?? 0, col = ROSTER[ci].color;
     rr(x, cy0, cw, chh, 22); ctx.fillStyle = p ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = p ? COLORS[i] : 'rgba(255,255,255,.12)'; ctx.setLineDash(p ? [] : [10, 8]); rr(x, cy0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineWidth = 4; ctx.strokeStyle = p ? col : 'rgba(255,255,255,.12)'; ctx.setLineDash(p ? [] : [10, 8]); rr(x, cy0, cw, chh, 22); ctx.stroke(); ctx.setLineDash([]);
     const bob = p ? Math.sin(host.t * 4 + i) * 4 : 0;
-    drawCritter(x + 64, cy0 + 88 + bob, 40, i, { alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
+    drawCritter(x + 64, cy0 + 88 + bob, 40, ci, { alpha: p ? 1 : 0.25, fx: Math.sin(host.t + i) * 0.5, happy: !!p && (host.t + i) % 5 < 0.6 });
     if (p) {
-      text(p.name, x + 120, cy0 + 58, 28, COLORS[i], 'left');
-      text('as ' + CRITTER_NAMES[i], x + 120, cy0 + 86, 15, 'rgba(255,255,255,.55)', 'left', 600);
+      text(p.name, x + 120, cy0 + 58, 28, col, 'left');
+      text('as ' + ROSTER[ci].name + ' · ' + ROSTER[ci].role, x + 120, cy0 + 86, 15, 'rgba(255,255,255,.55)', 'left', 600);
       const dev = p.kind === 'phone' ? (p.connected ? '📱 Phone' : '📵 Reconnecting') : '⌨ ' + p.keyset.label;
       text(dev, x + 120, cy0 + 114, 17, 'rgba(255,255,255,.7)', 'left', 500);
       if (leader() === p) text('👑 Leader', x + 120, cy0 + 138, 16, '#ffcc33', 'left', 600);
     } else {
-      text(CRITTER_NAMES[i], x + 120, cy0 + 72, 24, 'rgba(255,255,255,.45)', 'left');
+      text(host.botsFill ? ROSTER[ci].name : 'Empty', x + 120, cy0 + 72, 24, 'rgba(255,255,255,.45)', 'left');
       text(host.botsFill ? '🤖 Bot will play' : 'Join to play', x + 120, cy0 + 108, 17, 'rgba(255,255,255,.4)', 'left', 500);
     }
   }
@@ -3134,7 +3176,7 @@ function drawLobby() {
   // translate the registered button back into logical coordinates
   const b = host.buttons[host.buttons.length - 1]; b.x = 1120 - 100; b.y = by - 6; b.w = 200; b.h = 60;
   ctx.restore();
-  text('👑 The leader\'s phone controls everything · Keyboard: SPACE (WASD) or RIGHT SHIFT (arrows) to join', W / 2, 686, 17, 'rgba(255,255,255,.5)', 'center', 500);
+  text('Pick your character on your phone · 👑 Leader controls the menu · Keyboard: SPACE / RIGHT SHIFT to join, ◀ ▶ to change character', W / 2, 686, 16, 'rgba(255,255,255,.5)', 'center', 500);
   if (!audioOn()) {
     const a = 0.6 + Math.sin(host.t * 4) * 0.3; ctx.globalAlpha = a;
     rr(60, 250, 360, 40, 20); ctx.fillStyle = 'rgba(255,204,51,.18)'; ctx.fill();
@@ -3168,7 +3210,7 @@ function drawResults() {
     ctx.globalAlpha = appear;
     rr(x, y, 660, 92, 22); ctx.fillStyle = i === 0 ? 'rgba(255,204,51,.18)' : 'rgba(255,255,255,.08)'; ctx.fill();
     text(medals[i], x + 50, y + 48, 40);
-    drawCritter(x + 140, y + 50, 30, r.slot, { noShadow: true, happy: i === 0, ouch: i === host.results.length - 1 && i > 0, squash: i === 0 ? Math.sin(host.t * 8) * 0.06 : 0 });
+    drawCritter(x + 140, y + 50, 30, host.players[r.slot].char, { noShadow: true, happy: i === 0, ouch: i === host.results.length - 1 && i > 0, squash: i === 0 ? Math.sin(host.t * 8) * 0.06 : 0 });
     text(p.name, x + 190, y + 47, 32, p.color, 'left');
     text('+' + r.add, x + 520, y + 47, 34, '#56e07a');
     text(p.cupPts + ' pts', x + 620, y + 47, 22, 'rgba(255,255,255,.7)');
@@ -3192,15 +3234,15 @@ function drawPodium() {
     rr(s.x - 110, top, 220, s.h + 100, 16); ctx.fillStyle = i === 0 ? '#ffcc33' : 'rgba(255,255,255,.18)'; ctx.fill();
     text(String(i + 1), s.x, top + 46, 48, i === 0 ? '#14112b' : '#fff');
     const r = i === 0 ? 62 : 46;
-    drawCritter(s.x, top - r - 10 + (i === 0 ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.slot, { fx: 0, fy: 0.2, happy: i === 0 });
+    drawCritter(s.x, top - r - 10 + (i === 0 ? Math.abs(Math.sin(host.t * 4)) * -18 : 0), r, p.char, { fx: 0, fy: 0.2, happy: i === 0 });
     if (i === 0) { // crown
-      const art = CRIT_IMG[p.slot] && CRIT_IMG[p.slot].naturalWidth && !CRIT_IMG[p.slot].bad;
+      const art = CRIT_IMG[p.char] && CRIT_IMG[p.char].naturalWidth && !CRIT_IMG[p.char].bad;
       const cy = (art ? top - r - 10 + r * 0.95 - r * 2.75 - 6 : top - r * 2 - 30) + Math.abs(Math.sin(host.t * (art ? 7 : 4))) * (art ? -r * 0.35 : -18);
       ctx.fillStyle = '#ffcc33'; ctx.beginPath(); ctx.moveTo(s.x - 34, cy + 20); ctx.lineTo(s.x - 34, cy - 10); ctx.lineTo(s.x - 17, cy + 5);
       ctx.lineTo(s.x, cy - 18); ctx.lineTo(s.x + 17, cy + 5); ctx.lineTo(s.x + 34, cy - 10); ctx.lineTo(s.x + 34, cy + 20); ctx.fill();
     }
     nameTag(p, s.x, top + 86);
-    if (i === 0) outlined(CATCHPHRASES[p.slot], s.x + 250, 200, 30, '#fff');
+    if (i === 0) outlined(CATCHPHRASES[p.char], s.x + 250, 200, 30, '#fff');
     text(p.cupPts + ' pts', s.x, top + 118, 22, i === 0 ? '#14112b' : '#fff');
   });
   text('Back to lobby in ' + Math.ceil(host.timer), W / 2, 130, 20, 'rgba(255,255,255,.6)');
@@ -3419,7 +3461,7 @@ const GoalGuard = {
       }
       // balls
       for (const b of g.balls) {
-        const col = b.last >= 0 ? COLORS[b.last] : '#ffffff';
+        const col = b.last >= 0 && host.players[b.last] ? host.players[b.last].color : '#ffffff';
         if (b.born > 0) {
           const s = 1 - b.born / 0.7; ctx.globalAlpha = 0.4 + s * 0.6;
           ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y, 30 * (1 - s) + 12, 0, 7); ctx.stroke();
@@ -3437,7 +3479,7 @@ const GoalGuard = {
         if (q.out) continue;
         const [px, py] = padPos(q), [ix, iy] = inward(q.side), [ax, ay] = axis(q.side);
         const mv = q.side < 2 ? q.p.input.x : q.p.input.y;
-        drawCritter(px - ix * 36, py - iy * 36, 27, q.p.slot, { fx: ix, fy: iy, squash: q.hitT > 0 ? 0.1 : 0, ouch: q.flash > 0.3, fierce: q.lunge > 0, walk: Math.abs(mv) > 0.15 ? host.t * 16 : 0, noShadow: true });
+        drawCritter(px - ix * 36, py - iy * 36, 27, q.p.char, { fx: ix, fy: iy, squash: q.hitT > 0 ? 0.1 : 0, ouch: q.flash > 0.3, fierce: q.lunge > 0, walk: Math.abs(mv) > 0.15 ? host.t * 16 : 0, noShadow: true });
         const x1 = px - ax * PAD, y1 = py - ay * PAD, x2 = px + ax * PAD, y2 = py + ay * PAD;
         const seg = (w, c, ox = 0, oy = 0) => { ctx.lineCap = 'round'; ctx.lineWidth = w; ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x1 + ox, y1 + oy); ctx.lineTo(x2 + ox, y2 + oy); ctx.stroke(); };
         seg(31, INK); seg(24, q.p.dark); seg(17, q.lunge > 0 ? '#ffffff' : q.p.color, 0, 0);
@@ -3623,7 +3665,7 @@ const IceSumo = {
       const order = g.qs.slice().sort((a, b) => a.y - b.y);
       for (const q of order) {
         if (q.out || q.respawn > 0) continue;
-        if (q.fall > 0) { const s = q.fall / 0.75; drawCritter(q.x, q.y + (1 - s) * 34, q.r * s, q.p.slot, { alpha: s, ouch: true, noShadow: true }); continue; }
+        if (q.fall > 0) { const s = q.fall / 0.75; drawCritter(q.x, q.y + (1 - s) * 34, q.r * s, q.p.char, { alpha: s, ouch: true, noShadow: true }); continue; }
         if (q.inv > 0 && Math.floor(q.inv * 12) % 2) continue;
         if (q.charging) {
           ctx.strokeStyle = INK; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(q.x, q.y, q.r + 13, -Math.PI / 2, -Math.PI / 2 + q.charge * Math.PI * 2); ctx.stroke();
@@ -3632,9 +3674,9 @@ const IceSumo = {
           ctx.fillStyle = q.p.color; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath();
           ctx.moveTo(ax, ay); ctx.lineTo(ax - q.fx * 18 - q.fy * 11, ay - q.fy * 18 + q.fx * 11); ctx.lineTo(ax - q.fx * 18 + q.fy * 11, ay - q.fy * 18 - q.fx * 11); ctx.closePath(); ctx.fill(); ctx.stroke();
         }
-        if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.vx * 0.025 * k, q.y - q.vy * 0.025 * k, q.r, q.p.slot, { noShadow: true, alpha: 0.18 });
+        if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.vx * 0.025 * k, q.y - q.vy * 0.025 * k, q.r, q.p.char, { noShadow: true, alpha: 0.18 });
         const sq = q.charging ? q.charge * 0.15 : q.hitT > 0 ? -0.12 : 0, moving = hyp(q.vx, q.vy) > 50;
-        drawCritter(q.x + (q.charging ? (Math.random() - 0.5) * q.charge * 4 : 0), q.y, q.r, q.p.slot,
+        drawCritter(q.x + (q.charging ? (Math.random() - 0.5) * q.charge * 4 : 0), q.y, q.r, q.p.char,
           { fx: q.fx, fy: q.fy, squash: sq, ouch: q.hitT > 0, fierce: q.charging || q.dashT > 0, walk: moving ? host.t * 14 : 0 });
       }
       ctx.fillStyle = 'rgba(255,255,255,.75)';
@@ -3770,8 +3812,9 @@ const TileTakeover = {
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
         const i = r * COLS + c, o = g.tiles[i], x = OX + c * TS, y = OY + r * TS;
         if (o >= 0) {
-          ctx.fillStyle = DARKS[o]; ctx.fillRect(x + 2, y + 2, TS - 4, TS - 4);
-          ctx.fillStyle = COLORS[o]; ctx.fillRect(x + 4, y + 4, TS - 8, TS - 12);
+          const op = host.players[o];
+          ctx.fillStyle = op ? op.dark : '#555'; ctx.fillRect(x + 2, y + 2, TS - 4, TS - 4);
+          ctx.fillStyle = op ? op.color : '#888'; ctx.fillRect(x + 4, y + 4, TS - 8, TS - 12);
           ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(x + 8, y + 7, TS - 16, 5);
         } else {
           ctx.fillStyle = (r + c) % 2 ? '#2d265c' : '#262051'; ctx.fillRect(x + 2, y + 2, TS - 4, TS - 4);
@@ -3802,9 +3845,9 @@ const TileTakeover = {
       }
       const order = g.qs.slice().sort((a, b) => a.y - b.y);
       for (const q of order) {
-        if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.vx * 0.022 * k, q.y - q.vy * 0.022 * k, q.r, q.p.slot, { alpha: 0.18, noShadow: true });
+        if (q.dashT > 0) for (let k = 1; k <= 3; k++) drawCritter(q.x - q.vx * 0.022 * k, q.y - q.vy * 0.022 * k, q.r, q.p.char, { alpha: 0.18, noShadow: true });
         const moving = hyp(q.vx, q.vy) > 30;
-        drawCritter(q.x, q.y, q.r, q.p.slot, { fx: q.fx, fy: q.fy, walk: moving ? host.t * 18 : 0, dizzy: q.stun > 0, ouch: q.stun > 0, fierce: q.dashT > 0 });
+        drawCritter(q.x, q.y, q.r, q.p.char, { fx: q.fx, fy: q.fy, walk: moving ? host.t * 18 : 0, dizzy: q.stun > 0, ouch: q.stun > 0, fierce: q.dashT > 0 });
         if (q.frozen > 0) { rr(q.x - 30, q.y - 34, 60, 64, 10); ctx.fillStyle = 'rgba(180,235,255,.55)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(q.x - 22, q.y - 26, 8, 30); }
         if (q.rush > 0) { ctx.strokeStyle = '#ffcc33'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(q.x, q.y, q.r + 10 + Math.sin(g.t * 20) * 2, 0, 7); ctx.stroke(); }
       }
@@ -3896,10 +3939,14 @@ const MODE_NAMES = { cup: '🏆 Full Cup', goal: 'Goal Guard', sumo: 'Ice Sumo',
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = d.name; $('#pname').style.color = d.color;
-  const ci = $('#chipImg'), artSrc = location.protocol.startsWith('http') ? ART_URL(d.slot) : '';
-  if (artSrc && ci.dataset.slot !== String(d.slot)) { ci.dataset.slot = d.slot; ci.onload = () => { ci.style.display = 'block'; }; ci.onerror = () => { ci.style.display = 'none'; }; ci.src = artSrc; }
+  const ch = d.char ?? 0, ci = $('#chipImg'), artSrc = location.protocol.startsWith('http') ? ART_URL(ch) : '';
+  if (artSrc && ci.dataset.char !== String(ch)) { ci.dataset.char = ch; ci.onload = () => { ci.style.display = 'block'; }; ci.onerror = () => { ci.style.display = 'none'; }; ci.src = artSrc; }
   const portrait = artSrc ? `<img class="portrait" src="${artSrc}" alt="" onerror="this.remove()">` : '';
-  const who = CRITTER_NAMES[d.slot] || '';
+  const who = CRITTER_NAMES[ch] || '';
+  const http = location.protocol.startsWith('http');
+  const picker = !d.roster ? '' : `<div class="picker">${d.roster.map((c, i) => `<button class="pick${i === ch ? ' mine' : ''}${c.taken ? ' taken' : ''}" data-c="pick" data-v="${i}" style="--c:${c.color}"${c.taken ? ' disabled' : ''}>` +
+      (http ? `<img src="assets/${esc(c.art)}" alt="" onerror="this.remove()">` : '') + `<span>${esc(c.name)}</span><small>${c.taken ? esc(c.taken) : esc(c.role)}</small></button>`).join('')}</div>` +
+      `<div class="small">${esc(d.roster[ch] ? d.roster[ch].bio : '')}</div>`;
   $('#pad').style.background = `linear-gradient(160deg, ${d.color}33, #1b1838 55%)`;
   $('#aBtn').style.background = d.color;
   $('#aBtn').innerHTML = 'A<small>' + esc(d.button || 'ACTION') + '</small>';
@@ -3915,13 +3962,13 @@ function renderPad() {
   } else if (d.phase === 'lobby') {
     hint = 'Lobby';
     if (d.leader) {
-      html = `${portrait}<b>👑 You're ${esc(who)} · the leader</b><div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
+      html = `<b>👑 You're the leader · pick your character</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
         <div class="row">${Object.keys(MODE_NAMES).map(m => B('mode', MODE_NAMES[m], m, d.mode === m)).join('')}</div>
         <div class="row">${B('bots', '🤖 Bots ' + (d.bots ? 'ON' : 'OFF'), null, d.bots)}${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}</div>
         <div class="row fit"><span class="small">TV screen size</span>${B('fit', '−', -1)}<span class="val">${Math.round(d.fit * 100)}%</span>${B('fit', '+', 1)}</div>
         ${B('start', 'START ▶', null, true, 'big go')}`;
     } else {
-      html = `${portrait}<b>You're ${esc(who)}! 🎉</b>Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
+      html = `<b>Pick your character</b>${picker}Waiting for ${esc(d.leaderName || 'the leader')} to start.<div class="small">Game: ${esc(MODE_NAMES[d.mode] || '')}</div>`;
     }
   } else if (d.phase === 'intro') { hint = d.title; inter = false; html = `<b>${esc(d.title)}</b>${esc(d.how)}`; }
   else if (d.phase === 'play') { hint = d.title + ' · Go!'; inter = false; }
