@@ -215,9 +215,9 @@ html,body{background:var(--sky1)}
 #padMsg .ccard span{background:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font:24px "Lilita One",system-ui;color:#1b1f5e}
 #padMsg .ccard.dim{opacity:.35;transform:scale(.92)}
 #padMsg .ccdot{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid #fff;vertical-align:middle}
-#padMsg .pcard{width:46px;height:66px;border-radius:9px;background:#fff;border:3px solid #1b1f5e;box-shadow:0 4px 0 #1b1f5e;color:#1b1f5e;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;padding:0;transition:transform .12s}
-#padMsg .pcard b{display:block;font:22px "Lilita One",system-ui;margin:0}#padMsg .pcard i{font-style:normal;font-size:20px}
-#padMsg .pcard.red{color:#e8384f}#padMsg .pcard.dim{opacity:.4}#padMsg .pcard.sm{width:40px;height:56px}
+#padMsg .pcard{width:62px;height:88px;border-radius:9px;background:#fff;border:3px solid #1b1f5e;box-shadow:0 4px 0 #1b1f5e;color:#1b1f5e;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;padding:0;transition:transform .12s}
+#padMsg .pcard b{display:block;font:30px "Lilita One",system-ui;margin:0}#padMsg .pcard i{font-style:normal;font-size:26px}
+#padMsg .pcard.red{color:#e8384f}#padMsg .pcard.dim{opacity:.4}#padMsg .pcard.sm{width:50px;height:70px}.pcard.sm b{font-size:24px}.pcard.sm i{font-size:20px}
 #padMsg .pcard.sel{transform:translateY(-12px);background:#fff6c8;border-color:#ffc61a;box-shadow:0 4px 0 #c99200}
 #padMsg .pcard.back{background:#e8384f;color:#fff;border-color:#fff;outline:3px solid #1b1f5e}
 
@@ -249,6 +249,7 @@ html,body{background:var(--sky1)}
 #padMsg .rmap span{aspect-ratio:1;background:#3a4170;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;position:relative}
 #padMsg .rmap span.w{background:#8a93b8}#padMsg .rmap span.p{background:#000}#padMsg .rmap span.g{background:#5b64a8}#padMsg .rmap span b{font-size:10px;color:#ffd23f;margin:0;display:inline}
 #padMsg .rmap i{width:84%;height:84%;border-radius:4px;font-style:normal;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid #fff}#padMsg .rmap i.gh{opacity:.75;border-style:dashed}#padMsg .rmap .me i{outline:2px solid #ffd23f}
+.rxrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}.rxb{font-size:24px;line-height:1;padding:8px 9px;border-radius:14px;border:2px solid #c9cfee;background:#eef1ff;box-shadow:0 3px 0 #c9cfee}.rxb:active{transform:scale(.9)}
 </style>
 </head>
 <body>
@@ -6527,7 +6528,7 @@ function musicTick() {
    ===================================================================== */
 const canvas = $('#tv'); let ctx = canvas.getContext('2d');
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 };
-const host = { session: {}, sessionGames: {}, sessionLast: {},
+const host = { session: {}, sessionGames: {}, sessionLast: {}, shTimer: 35, fourColour: false,
   started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'robo',
   cup: [], cupIndex: 0, game: null, timer: 0, results: null, pending: [], buttons: [], t: 0, shake: 0,
   net: { status: 'off', code: '', err: '', url: '', qr: null }, toast: '', toastT: 0,
@@ -6542,7 +6543,7 @@ const KEYSETS = [
 ];
 
 function startHost() {
-  if (host.started) return; host.started = true;
+  if (host.started) return; host.started = true; loadSession();
   $('#menu').classList.add('hidden'); $('#pad').classList.add('hidden'); canvas.classList.remove('hidden');
   addEventListener('resize', resize); if (window.visualViewport) visualViewport.addEventListener('resize', resize);
   resize(); loadCritterArt(); setSong('lobby');
@@ -6669,6 +6670,8 @@ function hostCmd(p, c, v) {
     case 'start': if (host.phase === 'lobby') startMatch(); return;
     case 'skip': if (host.phase === 'results' || host.phase === 'podium') host.timer = 0; return;
     case 'mode': if (host.phase === 'lobby' && MODES.includes(v)) { host.mode = v; SFX.click(); } break;
+    case 'cardopt': if (host.phase === 'lobby' && (v === 'timer' || v === 'four')) { cardOpt(v); return; } break;
+    case 'newnight': if (host.phase === 'lobby') { resetSession(); return; } break;
     case 'bots': if (host.phase === 'lobby') { host.botsFill = !host.botsFill; SFX.click(); } break;
     case 'controls': if (host.phase === 'lobby') { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.click(); toast('Arena controls: ' + host.controls); } break;
     case 'fit': host.fit = clamp(Math.round((host.fit + (+v > 0 ? 0.02 : -0.02)) * 100) / 100, 0.8, 1); lsSet('cc_fit', host.fit); resize(); toast('TV screen size ' + Math.round(host.fit * 100) + '%'); break;
@@ -6716,7 +6719,7 @@ function phaseInfo(p) {
   if (host.game && host.game.panel && host.phase === 'play') { try { msg.panel = host.game.panel(p); } catch (e) { msg.panel = ''; } }
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; msg.buttonB = G.buttonB ? ROSTER[p.char].ability.name : ''; msg.ability = G.buttonB ? ROSTER[p.char].ability : null; }
   const l = leader();
-  Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music, audioLocked: !audioOn(), session: !!(G && G.session),
+  Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music, audioLocked: !audioOn(), session: !!(G && G.session), shTimer: host.shTimer, fourColour: host.fourColour, hasNight: !!(host.session.shit && Object.keys(host.session.shit).length),
     leaderName: l ? l.name : '', count: humans().length, char: p.char, controls: host.controls, fight: !!(G && G.fighter),
     role: host.game && (host.phase === 'play' || host.phase === 'intro') ? (host.inGame && !host.inGame.has(p.slot) ? 'spectator' : host.game.roleOf ? host.game.roleOf(p.slot) : 'fighter') : 'fighter', gestures: !!(G && G.gestures && host.controls === 'gestures' && p.kind === 'phone'), race: !!(G && G.race) });
   if (host.phase === 'lobby') msg.roster = ROSTER.map((c, i) => {
@@ -6798,10 +6801,15 @@ function finishGame() {
   host.phase = 'results'; host.timer = 7;
   const G = currentGameDef(), mode = host.cup[host.cupIndex];
   if (G && G.session) { const S = (host.session[mode] = host.session[mode] || {}), n = order.length; host.sessionGames[mode] = (host.sessionGames[mode] || 0) + 1;
-    order.forEach((slot, i) => { const p = host.players[slot], r = S[p.name] = S[p.name] || { g: 0, w: 0, s: 0, pts: 0 }; r.g++; r.pts += n - 1 - i; if (i === 0) r.w++; if (i === n - 1) r.s++; r.last = i; });
+    order.forEach((slot, i) => { const p = host.players[slot], r = S[p.name] = S[p.name] || { g: 0, w: 0, s: 0, pts: 0 }; r.g++; r.pts += n - 1 - i; if (i === 0) r.w++; if (i === n - 1) r.s++; r.last = i;
+      r.streak = i === 0 ? (r.streak || 0) + 1 : 0; r.best = Math.max(r.best || 0, r.streak); const x = host.game.sessionExtra ? host.game.sessionExtra(p) : null; if (x) { r.bombs = (r.bombs || 0) + (x.bombs || 0); r.maxPick = Math.max(r.maxPick || 0, x.maxPick || 0); } });
     host.sessionLast[mode] = host.players[order[n - 1]].name; host.timer = 16; }
-  SFX.win(); SFX.cheer(); broadcastPhase();
+  SFX.win(); SFX.cheer(); broadcastPhase(); saveSession();
 }
+const sessionKey = () => 'cc_night_' + new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10); // a night runs until 6am
+function saveSession() { try { localStorage.setItem(sessionKey(), JSON.stringify({ s: host.session, g: host.sessionGames, l: host.sessionLast })); } catch (e) {} }
+function loadSession() { try { const j = JSON.parse(localStorage.getItem(sessionKey()) || 'null'); if (j) { host.session = j.s || {}; host.sessionGames = j.g || {}; host.sessionLast = j.l || {}; } } catch (e) {} }
+function resetSession() { host.session = {}; host.sessionGames = {}; host.sessionLast = {}; saveSession(); toast('Tonight\'s scores cleared'); broadcastPhase(); }
 function backToLobby() {
   host.inGame = null;
   for (let i = 0; i < MAXP; i++) {
@@ -7416,7 +7424,9 @@ function drawLobby() {
   for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 16 }); bx += w + 6; }
   const pill = (x, w, t) => { rr(x, 294, w, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(t, x + 18, 317, 19, TOY.navy, 'left', null); };
   if (top === 'party') { let sx = 40; for (const [m, label, w] of [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastParty = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
-  else if (top === 'cards') { let sx = 40; for (const [m, label, w] of [['shit', '💩 Shithead', 170], ['big2', '🂡 Big 2', 130], ['cards', '🃏 Colour Clash', 200]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastCards = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
+  else if (top === 'cards') { let sx = 40; for (const [m, label, w] of [['shit', '💩 Shithead', 170], ['big2', '🂡 Big 2', 130], ['cards', '🃏 Colour Clash', 200]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastCards = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; }
+    if (host.mode === 'shit') { sx += 14; toyButton(sx, 294, 128, 44, '⏱ ' + host.shTimer + 's turns', true, () => cardOpt('timer'), TOY.sun, { px: 17, id: 'shtimer' }); sx += 138; toyButton(sx, 294, 128, 44, host.fourColour ? '4-colour ON' : '4-colour', host.fourColour, () => cardOpt('four'), TOY.grape, { px: 17, id: 'fourcol' }); sx += 138;
+      if (host.session.shit && Object.keys(host.session.shit).length) toyButton(sx, 294, 120, 44, 'New night', false, () => resetSession(), TOY.coral, { px: 17, id: 'newnight' }); } }
   else if (top === 'strat') { let sx = 40; for (const [m, label, w] of [['robo', '🤖 Robo Rumble', 170], ['arms', '💥 Arms Race', 152], ['dice', "🎲 Liar's Dice", 156], ['turf', '🗺 Turf Wars', 146]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastStrat = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'active') { let sx = 40; for (const [m, label, w] of [['qdraw', '🤠 Quick Draw', 160], ['shake', '📳 Shake Race', 160], ['head', '🤪 Forehead', 144], ['says', '📱 Phone Says', 160]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastActive = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'talk') { let sx = 40; for (const [m, label, w] of [['whosaid', '🕵 Who Said It?', 156], ['likely', '👉 Most Likely', 146], ['hot', '🌶 Hot Takes', 130], ['meld', '🧠 Mind Meld', 134], ['lie', '🤥 2 Truths 1 Lie', 156]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastTalk = m; setMode(m); }, TOY.aqua, { px: 17, id: 'sub-' + m }); sx += w + 6; } }
@@ -7523,6 +7533,12 @@ function introCount(y, ch) {
   headline(label, 0, 0, n > 3 ? 46 : 96, n > 3 ? TOY.sun : ['#7cf5c4', TOY.sun, TOY.orange, TOY.coral][n] || TOY.sun, n > 3 ? TOY.orange : TOY.coral);
   ctx.restore();
 }
+function sessionTitles(S) { const E = Object.entries(S || {}), out = [], cut = n => n.length > 9 ? n.slice(0, 8) + '…' : n; if (!E.length) return out;
+  const last = host.sessionLast.shit; if (last) out.push(['Reigning Shithead', cut(last)]);
+  const st = E.filter(e => (e[1].streak || 0) >= 2).sort((a, b) => b[1].streak - a[1].streak)[0]; if (st) out.push(['On a streak', cut(st[0]) + ' · ' + st[1].streak]);
+  const pk = E.filter(e => e[1].maxPick).sort((a, b) => b[1].maxPick - a[1].maxPick)[0]; if (pk) out.push(['Biggest pickup', cut(pk[0]) + ' · ' + pk[1].maxPick]);
+  const bm = E.filter(e => e[1].bombs).sort((a, b) => b[1].bombs - a[1].bombs)[0]; if (bm) out.push(['Most bombs', cut(bm[0]) + ' · ' + bm[1].bombs]);
+  return out; }
 function drawSessionResults(G) {
   const mode = host.cup[host.cupIndex], S = host.session[mode] || {}, age = 16 - host.timer;
   { const gr = ctx.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, 720); gr.addColorStop(0, '#3fbf74'); gr.addColorStop(1, '#145c36'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); } ctx.fillStyle = 'rgba(20,24,60,.55)'; ctx.fillRect(0, 0, W, H);
@@ -7546,6 +7562,7 @@ function drawSessionResults(G) {
     if (p) drawAvatar(X + 56, cy, Math.min(15, rh * 0.33), p, {}); font(19, 700); ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(nm.length > 14 ? nm.slice(0, 13) + '…' : nm, X + 80, cy);
     font(19, 700); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillText(String(r.g), X + 330, cy); ctx.fillText(String(r.w), X + 410, cy); ctx.fillStyle = r.s ? '#ffc9a3' : 'rgba(255,255,255,.35)'; ctx.fillText(String(r.s), X + 495, cy);
     font(22, 800); ctx.fillStyle = '#e9c46a'; ctx.fillText(String(r.pts), X + 566, cy); ctx.restore(); });
+  sessionTitles(S).forEach(([lab, val], k) => { const tx = 70 + (k % 2) * 270, ty = H - 170 + Math.floor(k / 2) * 34; rr(tx, ty - 14, 256, 28, 14); ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fill(); font(14, 700); ctx.textAlign = 'left'; ctx.fillStyle = '#e9c46a'; ctx.fillText(lab, tx + 12, ty); ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.fillText(val, tx + 244, ty); });
   font(13, 600); ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillText('Points each game: one for every player you finish ahead of.', X, H - 92);
   const f = clamp(host.timer / 16, 0, 1); rr(W / 2 - 250, H - 66, 500, 46, 23); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
   ctx.save(); rr(W / 2 - 250, H - 66, 500, 46, 23); ctx.clip(); ctx.fillStyle = 'rgba(233,196,106,.45)'; ctx.fillRect(W / 2 - 250, H - 66, 500 * (1 - f), 46); ctx.restore();
@@ -10919,14 +10936,15 @@ const ColourClash = {
 
 /* ---------- Playing-card games: Shithead (house rules) and Big 2 ---------- */
 const SUITS = ['♦', '♣', '♥', '♠'], RANKN = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+const SUITCOL4 = ['#1e6fd9', '#1b9a4b', '#e8384f', '#1b1f5e'], suitCol = c => host.fourColour ? SUITCOL4[c.s] : (c.s === 0 || c.s === 2) ? '#e8384f' : '#1b1f5e';
 const rankName = r => RANKN[r] || String(r), isRed = c => c.s === 0 || c.s === 2, cardName = c => rankName(c.r) + SUITS[c.s];
 function makeDeck(n = 1) { const d = []; for (let k = 0; k < n; k++) for (let s = 0; s < 4; s++) for (let r = 2; r <= 14; r++) d.push({ r, s, id: k * 100 + s * 20 + r }); for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d; }
-function pcardHTML(c, v, on, sel, small) { return `<button class="pcard${isRed(c) ? ' red' : ''}${on ? '' : ' dim'}${sel ? ' sel' : ''}${small ? ' sm' : ''}" data-c="pp" data-v="${v}"${on ? '' : ' disabled'}><b>${rankName(c.r)}</b><i>${SUITS[c.s]}</i></button>`; }
+function pcardHTML(c, v, on, sel, small) { return `<button class="pcard${isRed(c) ? ' red' : ''}${on ? '' : ' dim'}${sel ? ' sel' : ''}${small ? ' sm' : ''}" data-c="pp" data-v="${v}"${on ? '' : ' disabled'}${host.fourColour ? ` style="color:${SUITCOL4[c.s]}"` : ''}><b>${rankName(c.r)}</b><i>${SUITS[c.s]}</i></button>`; }
 function pbackHTML(v, on) { return `<button class="pcard back${on ? '' : ' dim'}" data-c="pp" data-v="${v}"${on ? '' : ' disabled'}><i>★</i></button>`; }
 function drawPCard(x, y, c, s = 1, rot = 0, hl) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
   ctx.fillStyle = 'rgba(10,30,20,.3)'; rr(-38, -50, 80, 112, 10); ctx.fill();
   rr(-42, -56, 84, 112, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = hl ? 6 : 3; ctx.strokeStyle = hl ? TOY.sun : TOY.navy; ctx.stroke();
-  const col = isRed(c) ? '#e8384f' : '#1b1f5e';
+  const col = suitCol(c);
   toyText(rankName(c.r), -26, -36, 22, col, 'center', null); toyText(SUITS[c.s], -26, -14, 18, col, 'center', null);
   toyText(SUITS[c.s], 4, 10, 46, col, 'center', null); ctx.restore(); }
 function drawPBack(x, y, s = 1, rot = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); rr(-42, -56, 84, 112, 10); ctx.fillStyle = '#e8384f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke(); rr(-32, -46, 64, 92, 7); ctx.strokeStyle = '#ffd0d8'; ctx.lineWidth = 2; ctx.stroke(); toyText('★', 0, 2, 34, '#fff', 'center', null); ctx.restore(); }
@@ -10960,15 +10978,17 @@ const Shithead = {
   introT: 11, session: true, rules: [[2, 'Reset: anything can be played on a 2.'], [7, 'Mirror: a 7 copies the card underneath it.'], [10, 'Burn: a 10, or four of a kind, clears the pile.'], ['pair', 'Play equal or higher. Same-rank cards can go down together.'], ['swap', 'Before play starts, swap hand cards with your face-up cards.'], ['pick', 'Can\'t play, or don\'t want to? Pick up the pile.'], ['blind', 'Hand first, then face-up, then 4 blind cards. Last one holding cards is the Shithead.']],
   how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. At the start you get time to swap hand cards with your face-up cards. Play several cards of the same rank at once. You can pick up the pile any time on your turn. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead! Up to 10 players: big groups play with 2 or 3 decks shuffled together, and you top your hand back up to 4 from the draw pile.',
   create(players) {
-    const nDecks = players.length <= 3 ? 1 : players.length <= 6 ? 2 : 3, deck = makeDeck(nDecks), g = { t: 0, nDecks, reigning: host.sessionLast && host.sessionLast.shit, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
+    const nDecks = players.length <= 3 ? 1 : players.length <= 6 ? 2 : 3, deck = makeDeck(nDecks), g = { t: 0, turnLen: host.shTimer || 35, rx: [], flags: {}, mile: 0, nDecks, reigning: host.sessionLast && host.sessionLast.shit, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: host.shTimer || 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
     players.forEach(p => g.ps.push({ p, hand: deck.splice(0, 4), up: deck.splice(0, 4), down: deck.splice(0, 4), done: false }));
     g.turn = Math.floor(Math.random() * g.ps.length);
     const byR = (a, b) => a.r - b.r, cur = () => g.ps[g.turn];
     g.ps.forEach(o => o.hand.sort(byR));
     const fx = cardFX(), PILE = [W / 2 + 30, H / 2 + 4], DECK = [W / 2 - 250, H / 2 + 4], seat = o => seatXY(g.ps.indexOf(o), g.ps.length); g.fx = fx;
     const face = c => (x, y, s2, r, front) => front ? drawPCard(x, y, c, s2, r) : drawPBack(x, y, s2, r), back = (x, y, s2, r) => drawPBack(x, y, s2, r);
-    g.dealT = 0.6 + g.ps.length * 6 * 0.035 + 0.3; // deal animation: cards fly from the deck to each seat
-    g.ps.forEach((o, i) => { for (let k = 0; k < 6; k++) fx.fly(back, DECK, seatXY(i, g.ps.length), { delay: 0.3 + (k * g.ps.length + i) * 0.035, dur: 0.32, s0: 1, s1: 0.45, arc: 40, onStart: () => tone(500 + Math.random() * 200, 300, 0.04, 'triangle', 0.03) }); });
+    g.dealT = 0.6 + g.ps.length * 6 * 0.045 + 0.35; // deal animation: cards fly from the deck to each seat
+    const big = g.ps.length > 6 ? 0.5 : 0.62, gap = g.ps.length > 6 ? 42 : 54; g.tab = { big, gap };
+    const slotXY = (i, k) => { const [x, y] = seatXY(i, g.ps.length); return [x + (k - 1.5) * gap, y + (y > H / 2 ? -96 : 96)]; };
+    g.ps.forEach((o, i) => { for (let k = 0; k < 6; k++) fx.fly(back, DECK, k < 4 ? slotXY(i, k) : seatXY(i, g.ps.length), { delay: 0.3 + (k * g.ps.length + i) * 0.045, dur: 0.34, s0: 1, s1: k < 4 ? big : 0.4, arc: 46, spin: (Math.random() - 0.5) * 3, onStart: () => { noise(0.035, 0.07, 3500); tone(900 + Math.random() * 300, 500, 0.03, 'triangle', 0.03); } }); });
     const effTop = () => { for (let i = g.pile.length - 1; i >= 0; i--) if (g.pile[i].r !== 7) return g.pile[i]; return null; };
     const canPlay = c => { if (c.r === 2 || c.r === 10 || c.r === 7) return true; const t = effTop(); return !t || t.r === 2 || c.r >= t.r; };
     const src = o => o.hand.length ? 'hand' : o.up.length ? 'up' : o.down.length ? 'down' : null;
@@ -10981,7 +11001,7 @@ const Shithead = {
     function say(m) { g.msg = m; g.msgT = 3; }
     function call(title, sub, card, col, t = 2.2) { g.fxs.call = { title, sub, card, col, t, max: t }; }
     function refresh() { broadcastPhase(); }
-    function nextTurn() { if (g.winner) return; const n = g.ps.length; for (let k = 1; k <= n; k++) { const j = (g.turn + k) % n; if (!g.ps[j].done) { g.turn = j; break; } } g.turnT = 35; refresh(); }
+    function nextTurn() { if (g.winner) return; const n = g.ps.length; for (let k = 1; k <= n; k++) { const j = (g.turn + k) % n; if (!g.ps[j].done) { g.turn = j; break; } } g.turnT = g.turnLen; refresh(); }
     function finishCheck(o) { if (!o.done && !o.hand.length && !o.up.length && !o.down.length) { o.done = true; g.out.push(o); call(o.p.name + ' is out', ordinal(g.out.length) + ' place', null, '#2ecc71'); SFX.cheer();
         const left = g.ps.filter(x => !x.done); if (left.length <= 1) { g.winner = g.out[0]; g.loser = left[0] || null; if (g.loser) g.out.push(g.loser); SFX.win(); refresh(); return true; } } return false; }
     // suspense: the card shakes face-down in the middle, then flips for everyone (blind flips and a player's last card)
@@ -10996,22 +11016,26 @@ const Shithead = {
       while (o.hand.length < 4 && deck.length && from === 'hand') o.hand.push(deck.pop()); o.hand.sort(byR);
       const top4 = g.pile.slice(-4), four = top4.length === 4 && top4.every(x => x.r === top4[0].r);
       if (c.r === 10 || four) { const blown = g.pile.slice(-10); blown.forEach((b, k) => { const a = Math.random() * Math.PI * 2; fx.fly(face(b), PILE, [PILE[0] + Math.cos(a) * 900, PILE[1] + Math.sin(a) * 600], { delay: 0.28 + k * 0.02, dur: 0.9, s0: 1.25, s1: 0.9, arc: -80, spin: (Math.random() - 0.5) * 16 }); });
-        const burned = g.pile.length; g.pile = []; g.boom = 1.5; shake(0.3 + Math.min(0.5, burned / 30)); SFX.boom(); burnSnd(burned); burst(PILE[0], PILE[1], '#ffb067', 40, 420, 7, 0.9); burst(PILE[0], PILE[1], '#fff3c4', 20, 300, 5, 0.6); burst(PILE[0], PILE[1], '#ff5a3a', 24, 360, 6, 0.8); say((c.r === 10 ? 'Bomb! ' : 'Four of a kind! ') + o.p.name + ' goes again');
-        if (finishCheck(o)) return; if (o.done) { nextTurn(); return; } g.turnT = 35; refresh(); return; }
+        const burned = g.pile.length; o.bombs = (o.bombs || 0) + 1; g.pile = []; g.boom = 1.5; shake(0.3 + Math.min(0.5, burned / 30)); SFX.boom(); burnSnd(burned); burst(PILE[0], PILE[1], '#ffb067', 40, 420, 7, 0.9); burst(PILE[0], PILE[1], '#fff3c4', 20, 300, 5, 0.6); burst(PILE[0], PILE[1], '#ff5a3a', 24, 360, 6, 0.8); say((c.r === 10 ? 'Bomb! ' : 'Four of a kind! ') + o.p.name + ' goes again');
+        if (finishCheck(o)) return; if (o.done) { nextTurn(); return; } g.turnT = g.turnLen; refresh(); return; }
       if (c.r === 2) call('Reset', 'Anything can be played next', c, '#3ad7b5'); else if (c.r === 7) { const t = effTop(); call('Mirror', t ? 'Copies the ' + rankName(t.r) + ' underneath: beat it' : 'Nothing underneath: anything goes', c, '#b48cff'); }
       if (finishCheck(o)) return; nextTurn();
     }
     function pickUp(o, extra, delay = 0) { const n = g.pile.length + (extra ? 1 : 0), to = seat(o);
-      g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); pickSnd(n); buzz(o.p, 150 + Math.min(400, n * 20)); g.fxs.hits.set(o, { t: 0.9, n }); say(o.p.name + ' picks up ' + n + ' card' + (n === 1 ? '' : 's')); g.sel[o.p.slot] = []; nextTurn(); }
+      g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); pickSnd(n); buzz(o.p, 150 + Math.min(400, n * 20)); g.fxs.hits.set(o, { t: 0.9, n }); o.maxPick = Math.max(o.maxPick || 0, n);
+      const L = n < 4 ? ['Just a nibble.', 'Barely a scratch.', 'Tidy.'] : n < 9 ? ['Ouch.', 'That\'ll sting.', 'Hands getting full.', 'Bold strategy.'] : n < 16 ? ['Someone\'s having a night.', 'That\'s a lot of cards.', 'Hold that, champ.', 'Need a bigger hand?'] : ['Absolute carnage.', 'Get this person a table.', 'Shithead energy.', 'Is that the whole deck?'];
+      say(o.p.name + ' picks up ' + n + '. ' + L[Math.floor(Math.random() * L.length)]); g.sel[o.p.slot] = []; nextTurn(); }
     function blind(o, i, shown) { const c = o.down[i]; if (!c) return; if (!shown) { reveal(o, c, canPlay(c), () => blind(o, i, true)); return; } if (canPlay(c)) { call('Blind flip', o.p.name + ' turns over ' + cardName(c) + ' and it works', c, '#7fd3ff'); play(o, c, 'down', true); } else { o.down.splice(i, 1); call('Blind flip', o.p.name + ' turns over ' + cardName(c) + '. No luck', c, '#ff6b7a'); fx.fly(face(c), g.revealAt || seat(o), seat(o), { dur: 0.5, s0: 1.4, s1: 0.45 }); g.revealAt = null; pickUp(o, c, 0.3); } }
     function autoMove(o) { const s = src(o); if (!s) { nextTurn(); return; } if (s === 'down') return blind(o, Math.floor(Math.random() * o.down.length));
       const opts = o[s].filter(canPlay); if (!opts.length) return pickUp(o);
       const normal = opts.filter(c => c.r !== 2 && c.r !== 10 && c.r !== 7).sort(byR); const pick = normal[0] || opts.find(c => c.r === 7) || opts.find(c => c.r === 2) || opts[0];
       play(o, pick.r === 10 ? [pick] : o[s].filter(c => c.r === pick.r), s); }
+    g.sessionExtra = p => { const o = g.ps.find(x => x.p === p); return o ? { bombs: o.bombs || 0, maxPick: o.maxPick || 0 } : null; };
+    const RX = ['😂', '🔥', '💀', '🫡', '👏', '🤡', '😱', '🙏'];
     const keep = c => c.r === 2 || c.r === 10 || c.r === 7 ? 20 + c.r : c.r; // how much a bot wants a card face-up
     function botSwap(o) { const all = o.hand.concat(o.up).sort((a, b) => keep(b) - keep(a)); o.up = all.slice(0, 4); o.hand = all.slice(4).sort(byR); o.ready = true; }
-    function startPlay() { g.phase = 'play'; g.turnT = 35; for (const o of g.ps) o.hand.sort(byR); say(cur().p.name + ' starts'); SFX.go(); refresh(); }
-    g.update = dt => { g.t += dt; if (g.msgT > 0) g.msgT -= dt; g.boom = Math.max(0, g.boom - dt); fx.update(dt); const F = g.fxs; F.land = Math.max(0, F.land - dt * 3); if (F.call) F.call.t -= dt; for (const [o, h] of F.hits) { h.t -= dt; if (h.t <= 0) F.hits.delete(o); }
+    function startPlay() { g.phase = 'play'; g.turnT = g.turnLen; for (const o of g.ps) o.hand.sort(byR); say(cur().p.name + ' starts'); SFX.go(); refresh(); }
+    g.update = dt => { g.t += dt; for (let i = g.rx.length - 1; i >= 0; i--) { g.rx[i].t += dt; if (g.rx[i].t > 2.2) g.rx.splice(i, 1); } if (g.msgT > 0) g.msgT -= dt; g.boom = Math.max(0, g.boom - dt); fx.update(dt); const F = g.fxs; F.land = Math.max(0, F.land - dt * 3); if (F.call) F.call.t -= dt; for (const [o, h] of F.hits) { h.t -= dt; if (h.t <= 0) F.hits.delete(o); }
       if (g.winner) { g.endT += dt; if (g.endT > 6) g.done = true; return; }
       if (g.dealT > 0) { g.dealT -= dt; if (g.dealT <= 0) refresh(); return; }
       if (g.phase === 'swap') { const before = Math.ceil(g.swapT); g.swapT -= dt; if (Math.ceil(g.swapT) !== before && Math.ceil(g.swapT) % 5 === 0) refresh(); for (const o of g.ps) if (o.p.kind === 'bot' && !o.ready && g.swapT < 18.5) botSwap(o); if (g.swapT <= 0 || g.ps.every(o => o.ready)) startPlay(); return; }
@@ -11020,11 +11044,15 @@ const Shithead = {
         else if (!r.flipped) { r.flipped = true; tone(300, 1200, 0.2, 'square', 0.07); noise(0.5, 0.12, 4000); if (r.ok) { tone(523, 523, 0.1, 'triangle', 0.1, 0.18); tone(784, 784, 0.25, 'triangle', 0.12, 0.28); } else tone(220, 110, 0.4, 'sawtooth', 0.1, 0.18); burst(W / 2, H / 2 - 20, r.ok ? '#ffe08a' : '#ff6b7a', 26, 320, 6, 0.6); shake(0.15); }
         if (r.t >= r.dur) { g.reveal = null; g.revealAt = [W / 2, H / 2 - 20]; r.then(); }
         return; }
+      for (const q of g.ps) { const left = q.hand.length + q.up.length + q.down.length; if (!q.done && left === 1 && !q.lastWarn && !deck.length) { q.lastWarn = true; call('Last card', q.p.name + ' is one card from safety', null, '#ff8a3d'); tone(880, 880, 0.08, 'square', 0.06); tone(880, 880, 0.08, 'square', 0.06, 0.16); tone(1175, 1175, 0.2, 'square', 0.07, 0.32); } if (left > 1) q.lastWarn = false; }
+      { const alive = g.ps.filter(q => !q.done); if (g.ps.length > 2 && alive.length === 2 && !g.flags.final) { g.flags.final = true; call('Final two', alive[0].p.name + ' vs ' + alive[1].p.name + '. Loser is the Shithead', null, '#c4402a', 3); tone(110, 110, 0.5, 'sawtooth', 0.1); tone(98, 98, 0.8, 'sawtooth', 0.1, 0.5); noise(0.9, 0.08, 300, 0.1); } }
+      { const m = g.pile.length >= 20 ? 3 : g.pile.length >= 15 ? 2 : g.pile.length >= 10 ? 1 : 0; if (m > g.mile) { g.milePulse = 1; say(['', 'Pile hits 10. Things are heating up', 'Pile hits 15. Nobody wants this', 'Pile hits 20. Someone is going to cry'][m]); tone(300 + m * 120, 600 + m * 200, 0.3, 'triangle', 0.08); } g.mile = m; g.milePulse = Math.max(0, (g.milePulse || 0) - dt * 1.5); }
       if (g.pile.length >= 6 && !g.boom) { g.beatT -= dt; if (g.beatT <= 0) { const h = heat(); g.beatT = 1.3 - h * 0.85; tone(68, 46, 0.13, 'sine', 0.12 + h * 0.18); tone(60, 40, 0.11, 'sine', 0.08 + h * 0.14, 0.17); if (h > 0.7) tone(1300, 1300, 0.03, 'square', 0.03, 0.08); } }
       const o = cur(); g.turnT -= dt;
-      if (o.p.kind === 'bot' && g.turnT < 33.6) return autoMove(o);
+      if (o.p.kind === 'bot' && g.turnT < g.turnLen - 1.4) return autoMove(o);
       if (g.turnT <= 0) autoMove(o); };
-    g.onPick = (p, v) => { if (g.winner || g.reveal || typeof v !== 'string') return;
+    g.onPick = (p, v) => { if (typeof v === 'string' && v.startsWith('rx')) { const o = g.ps.find(x => x.p === p), e = RX[+v.slice(2)]; if (o && e && !(o.rxT > g.t)) { o.rxT = g.t + 0.8; g.rx.push({ o, e, t: 0 }); tone(700 + Math.random() * 300, 1200, 0.06, 'triangle', 0.05); } return; }
+      if (g.winner || g.reveal || typeof v !== 'string') return;
       if (g.phase === 'swap') { const me = g.ps.find(x => x.p === p); if (!me || g.dealT > 0) return;
         if (v === 'ready') { me.ready = true; SFX.pop(); refresh(); return; } me.ready = false;
         const k = v[0], i = +v.slice(1), pk = me.pick; if (k !== 'h' && k !== 'u') return;
@@ -11043,7 +11071,7 @@ const Shithead = {
       else if (k === 'd' && s === 'down') blind(o, i); };
     g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
       if (g.winner) return o === g.loser ? '<b>💩 You\'re the Shithead!</b>Better luck next round.' : `<b>${o === g.winner ? '🏆 You went out first!' : '🎉 You\'re safe!'}</b>${g.loser ? esc(g.loser.p.name) + ' is the Shithead 💩' : ''}`;
-      if (o.done) return '<b>🎉 You\'re out!</b>Watch who ends up the Shithead.';
+      if (o.done) return '<b>🎉 You\'re out!</b>Watch who ends up the Shithead.' + rxRow();
       if (g.phase === 'swap') { if (g.dealT > 0) return '<b>🃏 Dealing…</b>';
         const pk = o.pick, hand = o.hand.map((c, i) => pcardHTML(c, 'h' + i, true, pk && pk.k === 'h' && pk.i === i)).join(''), up = o.up.map((c, i) => pcardHTML(c, 'u' + i, true, pk && pk.k === 'u' && pk.i === i)).join('');
         return `<b>🔄 Swap time · ${Math.ceil(g.swapT)}s</b><div class="small" style="opacity:1">Tap a hand card, then a face-up card to swap them. Put your best cards (2s, 7s, 10s, Aces) face-up!</div><div class="small">Hand</div><div class="hand">${hand}</div><div class="small">Face-up</div><div class="hand">${up}</div><div class="small">Secret</div><div class="hand">${o.down.map(() => pbackHTML('x', false)).join('')}</div>` +
@@ -11057,7 +11085,8 @@ const Shithead = {
       return `<b>${mine ? (s === 'down' ? '🙈 Flip a secret card!' : '⭐ Your turn!') : 'Waiting for ' + esc(cur().p.name)}</b><div class="small" style="opacity:1">${beat} · deck ${deck.length}</div>` +
         (o.hand.length ? `<div class="hand">${hand}</div>` : '') + `<div class="small">Face-up</div><div class="hand">${up || '<span class="small">none</span>'}</div><div class="small">Secret</div><div class="hand">${down || '<span class="small">none</span>'}</div>` +
         (mine && selCs.length ? `<button class="pbtn big go" data-c="pp" data-v="go">Play ${selCs.length} × ${rankName(selCs[0].r)}</button><div class="small">Tap more ${rankName(selCs[0].r)}s to add them</div>` : mine && s !== 'down' && !stuck ? '<div class="small">Tap a card to play it. Got doubles? Tap each one, then Play.</div>' : '') +
-        (mine && g.pile.length ? `<button class="pbtn big" data-c="pp" data-v="up!"${stuck ? '' : ' style="opacity:.75"'}>${stuck ? 'Pick up the pile 😬' : 'Pick up the pile anyway (' + g.pile.length + ')'}</button>` : ''); };
+        (mine && g.pile.length ? `<button class="pbtn big" data-c="pp" data-v="up!"${stuck ? '' : ' style="opacity:.75"'}>${stuck ? 'Pick up the pile 😬' : 'Pick up the pile anyway (' + g.pile.length + ')'}</button>` : '') + rxRow(); };
+    const rxRow = () => `<div class="rxrow">${RX.map((e, i) => `<button class="rxb" data-c="pp" data-v="rx${i}">${e}</button>`).join('')}</div>`;
     g.ranking = () => g.out.concat(g.ps.filter(o => !g.out.includes(o))).map(o => o.p.slot);
     Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => i === g.ps.length - 1 ? 0 : Math.max(1, 3 - i)) });
     g.resultLine = () => g.loser ? '💩 ' + g.loser.p.name + ' is the Shithead!' : '';
@@ -11075,9 +11104,11 @@ const Shithead = {
     function sessionPanel() { const S = host.session && host.session.shit; if (!S) return; const rows = Object.entries(S).sort((a, b) => b[1].pts - a[1].pts || a[1].s - b[1].s).slice(0, 5); if (!rows.length) return;
       const w = 230, x = W - w - 14, y = 12, h = 44 + rows.length * 26; rr(x, y + 4, w, h, 18); ctx.fillStyle = 'rgba(10,40,25,.3)'; ctx.fill(); rr(x, y, w, h, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
       toyText('TONIGHT', x + 16, y + 21, 16, '#c4402a', 'left', null); toyText('WINS', x + w - 62, y + 21, 12, '#6a76b8', 'center', null); toyText('💩', x + w - 22, y + 21, 14, '#6a76b8', 'center', null);
+      const T2 = sessionTitles(S); if (T2.length) { const ty = y + h + 8, th = 14 + T2.length * 22; rr(x, ty, w, th, 14); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); T2.forEach(([lab, val], k) => { toyText(lab, x + 14, ty + 18 + k * 22, 13, '#6a76b8', 'left', null); toyText(val, x + w - 14, ty + 18 + k * 22, 13, TOY.navy, 'right', null); }); }
       rows.forEach(([nm, r], k) => { const yy = y + 46 + k * 26; toyText((k + 1) + '. ' + (nm.length > 10 ? nm.slice(0, 9) + '…' : nm), x + 16, yy, 16, TOY.navy, 'left', null); toyText(String(r.w), x + w - 62, yy, 16, k === 0 ? '#c4402a' : TOY.navy, 'center', null); toyText(String(r.s), x + w - 22, yy, 16, r.s ? '#8a5a3a' : '#9aa3c6', 'center', null); }); }
     g.draw = () => { const F = g.fxs, n = g.ps.length;
       feltTable('SHITHEAD', '#c4402a');
+      if (g.mile > 0 || g.milePulse > 0) { const h = Math.min(1, g.pile.length / 22), pul = (g.milePulse || 0), vg = ctx.createRadialGradient(W / 2, H / 2, 260, W / 2, H / 2, 760); vg.addColorStop(0, 'rgba(255,90,40,0)'); vg.addColorStop(1, `rgba(255,${120 - h * 80},40,${0.18 + h * 0.3 + pul * 0.3 + Math.sin(g.t * (2 + h * 6)) * 0.05})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H); }
       // pile: last few cards, the newest bounces as it lands with a ring
       const show = g.pile.filter(c => !c.fly).slice(-5); show.forEach((c, i) => { const top = i === show.length - 1, bounce = top ? Math.sin(Math.min(1, F.land) * Math.PI) * 0.14 : 0;
         drawPCard(W / 2 + 30 + (i - show.length + 1) * 34, H / 2 + 4 + (top ? Math.sin(g.t * 2.4) * 3 - bounce * 30 : 0), c, 1.25 + bounce, ((c.id * 7) % 9 - 4) * 0.03, top); });
@@ -11087,9 +11118,9 @@ const Shithead = {
       if (deck.length) { for (let k = 0; k < Math.min(5, Math.ceil(deck.length / 6)); k++) drawPBack(DECK[0] - k * 2, DECK[1] - k * 2, 1.05); toyText(deck.length + ' left', DECK[0], H / 2 + 90, 18, '#fff', 'center', TOY.navy); }
       if (g.phase === 'play' && !g.winner) { const t = effTop(); toyText(!t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+', W / 2 + 30, H / 2 - 104, 24, '#fff', 'center', TOY.navy); }
       g.ps.forEach((o, i) => { const [x0, y] = seatXY(i, n), act = cur() === o && !g.winner && g.phase === 'play' && g.dealT <= 0, hit = F.hits.get(o), x = x0 + (hit ? Math.sin(hit.t * 50) * hit.t * 14 : 0);
-        const badge = act ? ['⏱ ' + Math.ceil(g.turnT), g.turnT < 10 ? TOY.coral : '#ff8a3d'] : g.loser === o ? ['💩', '#8a5a3a'] : o.done ? [ordinal(g.out.indexOf(o) + 1), TOY.mint] : (g.reigning === o.p.name && !g.winner ? ['💩 last', '#8a5a3a'] : null);
+        const badge = act ? ['⏱ ' + Math.ceil(g.turnT), g.turnT < Math.min(10, g.turnLen / 3) ? TOY.coral : '#ff8a3d'] : g.loser === o ? ['💩', '#8a5a3a'] : o.done ? [ordinal(g.out.indexOf(o) + 1), TOY.mint] : (g.reigning === o.p.name && !g.winner ? ['💩 last', '#8a5a3a'] : null);
         seatCard(x, y, o.p, act, o.done ? 'OUT ✓' : '✋ ' + o.hand.length + '  ·  🙈 ' + o.down.length, badge);
-        if (g.dealT <= 0.2) { const yy = y + (y > H / 2 ? -84 : 84); for (let k = 0; k < 4; k++) { const cx0 = x0 - 60 + k * 40; if (o.down[k]) drawPBack(cx0 - 4, yy - 5, 0.45, -0.05); if (o.up[k]) drawPCard(cx0 + 3, yy + 3, o.up[k], 0.45, 0.04); } }
+        if (g.dealT <= 0.2) { const yy = y + (y > H / 2 ? -96 : 96), B0 = g.tab.big, GP = g.tab.gap; for (let k = 0; k < 4; k++) { const cx0 = x0 + (k - 1.5) * GP; if (o.down[k]) drawPBack(cx0 - 4, yy - 6, B0, -0.05); if (o.up[k]) drawPCard(cx0 + 3, yy + 4, o.up[k], B0, 0.04); } }
         if (g.phase === 'swap' && g.dealT <= 0.2 && !g.winner) toyText(o.ready ? '✅' : '⏳', x0 + 86, y - 40, 22, '#fff', 'center', null);
         if (hit && hit.n) { ctx.globalAlpha = Math.min(1, hit.t * 2); headline('+' + hit.n, x0, y - 70 - (0.9 - hit.t) * 50, 40, TOY.coral, '#fff'); ctx.globalAlpha = 1; } });
       fx.draw();
@@ -11105,6 +11136,8 @@ const Shithead = {
         if (t < 1.325) drawPBack(0, 0, sc, 0); else drawPCard(0, 0, r.c, sc, 0, true); ctx.restore();
         toyText(r.o.p.name + (t < 1.2 ? (r.o.down.includes(r.c) ? ' flips a blind card…' : "'s last card…") : ''), W / 2, H / 2 - 150, 30, '#fff', 'center', TOY.navy);
         if (t > 1.45) headline(r.ok ? (r.o.down.includes(r.c) ? 'IT WORKS!' : 'OUT!') : 'NOPE!', W / 2, H / 2 + 120, 54, r.ok ? TOY.sun : TOY.coral, TOY.navy); }
+      for (const r of g.rx) { const i = g.ps.indexOf(r.o), [rx, ry] = seatXY(i, g.ps.length), k = r.t / 2.2, up = ry < H / 2 + 10 ? 1 : -1, pop = Math.min(1, r.t * 6);
+        ctx.save(); ctx.globalAlpha = Math.min(1, (1 - k) * 3); ctx.translate(rx + 70 + Math.sin(r.t * 6 + i) * 8, ry - 30 - k * 70); ctx.scale(pop * (1 + Math.sin(Math.min(1, r.t * 3) * Math.PI) * 0.3), pop); toyText(r.e, 0, 0, 46, '#fff', 'center', null); ctx.restore(); }
       callout();
       sessionPanel();
       if (g.msgT > 0 && !(F.call && F.call.t > 0)) { ctx.globalAlpha = Math.min(1, g.msgT * 2); toyText(g.msg, W / 2, H / 2 + 150, 28, '#fff', 'center', TOY.navy); ctx.globalAlpha = 1; }
@@ -11455,6 +11488,7 @@ const MISSIONS = ['Get {p} to say "mate"', 'Get {p} to high-five you', 'Get {p} 
   'Get {p} to say the name of a footy team', 'Get {p} to tell you what they had for lunch', 'Get two people to argue about pineapple on pizza', 'Get everyone to cheers', 'Get {p} to say "yes" without you asking a question', 'Get {p} to fist-bump you',
   'Get {p} to say "Couch Clash"', 'Get {p} to name their favourite movie', 'Get {p} to pick the next game', 'Get {p} to say "legend"'];
 function missionFor(p) { const others = active().filter(q => q !== p && q.kind !== 'bot'); const t = MISSIONS[Math.floor(Math.random() * MISSIONS.length)]; const o = others.length ? others[Math.floor(Math.random() * others.length)].name : 'someone'; return t.replace('{p}', o); }
+function cardOpt(k) { if (k === 'timer') { host.shTimer = host.shTimer === 35 ? 60 : host.shTimer === 60 ? 15 : 35; toast(host.shTimer === 15 ? 'Fast turns: 15 seconds' : host.shTimer === 60 ? 'Relaxed turns: 60 seconds' : 'Normal turns: 35 seconds'); } if (k === 'four') { host.fourColour = !host.fourColour; toast(host.fourColour ? '4-colour deck: diamonds blue, clubs green' : 'Classic red and black deck'); } SFX.pop(); broadcastPhase(); }
 function ensureMissions() { if (!host.missionsOn) return; let added = false; for (const p of active()) if (p.kind === 'phone') { p.missions = p.missions || []; while (p.missions.length < 2) { p.missions.push(missionFor(p)); added = true; } p.missionPts = p.missionPts || 0; } if (added) broadcastPhase(); }
 function claimMission(p, i) { if (!host.missionsOn || !p.missions || !p.missions[i]) return; const m = p.missions.splice(i, 1)[0]; p.missionPts = (p.missionPts || 0) + 1; toast('🎯 ' + p.name + ' completed a secret mission: ' + m); SFX.cheer(); ensureMissions(); broadcastPhase(); }
 
@@ -12764,7 +12798,7 @@ function renderPad() {
         ${MODE_CAT[d.mode] === 'active' ? `<div class="row">${[['qdraw', '🤠 Quick Draw'], ['shake', '📳 Shake Race'], ['head', '🤪 Forehead'], ['says', '📱 Phone Says']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'talk' ? `<div class="row">${[['whosaid', '🕵 Who Said It?'], ['likely', '👉 Most Likely'], ['hot', '🌶 Hot Takes'], ['meld', '🧠 Mind Meld'], ['lie', '🤥 2 Truths 1 Lie']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'social' ? `<div class="row">${[['bomb', '💣 Bomb Squad'], ['draw', '🎨 Draw & Pass'], ['heist', '💰 Heist'], ['odd', '🕵 Odd One Out']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
-        ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
+        ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` + (d.mode === 'shit' ? `<div class="row">${B('cardopt', '⏱ ' + d.shTimer + 's turns', 'timer')}${B('cardopt', d.fourColour ? '4-colour ON' : '4-colour', 'four', d.fourColour)}${d.hasNight ? B('newnight', 'New night') : ''}</div>` : '') : ''}
         ${!['party', 'cards', 'social', 'talk', 'active', 'strat'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
