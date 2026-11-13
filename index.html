@@ -12127,7 +12127,7 @@ const LiarsDice = { title: "Liar's Dice", accent: '#c4402a', phones: true, minPh
     g.ranking = () => g.ps.slice().sort((a, b) => b.n - a.n).map(o => o.p.slot);
     g.resultLine = () => { const w = g.ps.find(o => o.n > 0); return w ? '🎲 ' + w.p.name + ' is the last liar standing' : ''; };
     // ---------- 3D tavern table ----------
-    const K = stage3D(g, { bg: '#140b07', cam: [0, 112, 46], look: [0, 0, 3], fov: 34, shadow: [60, 40], sky: '#ffe2b8', ground: '#3a1e10', hemiI: 0.5, sunI: 0.8, sunPos: [-20, 110, 30], sunCol: '#ffe6c0', ramp: [100, 180, 255] });
+    const K = !host.cards3D ? null : stage3D(g, { bg: '#140b07', cam: [0, 112, 46], look: [0, 0, 3], fov: 34, shadow: [60, 40], sky: '#ffe2b8', ground: '#3a1e10', hemiI: 0.5, sunI: 0.8, sunPos: [-20, 110, 30], sunCol: '#ffe6c0', ramp: [100, 180, 255] });
     if (K) (() => { const { T, toon, rbox, G, glow, wx, wz, scene, canvTex } = K, CY = H / 2 + 10;
       // floor, table, rim
       const floorTex = canvTex(256, 256, (c, w) => { for (let y = 0; y < w; y += 32) { c.fillStyle = (y / 32) % 2 ? '#5a3420' : '#4c2b1a'; c.fillRect(0, y, w, 30); c.fillStyle = '#2a160c'; c.fillRect(0, y + 30, w, 2); for (let i = 0; i < 20; i++) { c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(Math.random() * w, y + Math.random() * 28, 30 + Math.random() * 60, 1.5); } } }, true); floorTex.repeat.set(8, 8);
