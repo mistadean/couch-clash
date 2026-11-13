@@ -10984,9 +10984,14 @@ const Shithead = {
     function nextTurn() { if (g.winner) return; const n = g.ps.length; for (let k = 1; k <= n; k++) { const j = (g.turn + k) % n; if (!g.ps[j].done) { g.turn = j; break; } } g.turnT = 35; refresh(); }
     function finishCheck(o) { if (!o.done && !o.hand.length && !o.up.length && !o.down.length) { o.done = true; g.out.push(o); call(o.p.name + ' is out', ordinal(g.out.length) + ' place', null, '#2ecc71'); SFX.cheer();
         const left = g.ps.filter(x => !x.done); if (left.length <= 1) { g.winner = g.out[0]; g.loser = left[0] || null; if (g.loser) g.out.push(g.loser); SFX.win(); refresh(); return true; } } return false; }
-    function play(o, cs, from) { if (!Array.isArray(cs)) cs = [cs]; const c = cs[cs.length - 1]; g.sel[o.p.slot] = [];
+    // suspense: the card shakes face-down in the middle, then flips for everyone (blind flips and a player's last card)
+    function reveal(o, c, ok, then) { g.reveal = { o, c, ok, then, t: 0, dur: 2.1, from: seat(o) }; g.revealTick = 0; refresh(); }
+    function play(o, cs, from, shown) { if (!Array.isArray(cs)) cs = [cs]; const c = cs[cs.length - 1];
+      const last = cs.length === o[from].length && (from === 'up' ? !o.down.length : from === 'hand' ? !o.up.length && !o.down.length && !deck.length : false);
+      if (last && !shown && !g.reveal) { reveal(o, c, true, () => play(o, cs, from, true)); return; }
+      g.sel[o.p.slot] = []; const origin = g.revealAt || seat(o); g.revealAt = null;
       cs.forEach((cc, k) => { const arr = o[from], i = arr.indexOf(cc); arr.splice(i, 1); g.pile.push(cc); cc.fly = true;
-        fx.fly(face(cc), seat(o), PILE, { delay: k * 0.14, dur: 0.3, s0: 0.55, s1: 1.25, arc: 50, flip: from === 'down', done: () => { cc.fly = false; landSnd(); g.fxs.land = 1; burst(PILE[0], PILE[1], isRed(cc) ? '#ff9aab' : '#e8ecff', 10, 200, 4, 0.35); } }); });
+        fx.fly(face(cc), origin, PILE, { delay: k * 0.14, dur: 0.3, s0: 0.55, s1: 1.25, arc: 50, flip: from === 'down', done: () => { cc.fly = false; landSnd(); g.fxs.land = 1; burst(PILE[0], PILE[1], isRed(cc) ? '#ff9aab' : '#e8ecff', 10, 200, 4, 0.35); } }); });
       g.last = c; if (cs.length > 1 && c.r !== 10) call(['', '', 'Pair', 'Three', 'Four'][Math.min(4, cs.length)] + ' of ' + rankName(c.r) + 's', o.p.name + ' drops ' + cs.length + ' at once', c, '#ffe08a');
       while (o.hand.length < 4 && deck.length && from === 'hand') o.hand.push(deck.pop()); o.hand.sort(byR);
       const top4 = g.pile.slice(-4), four = top4.length === 4 && top4.every(x => x.r === top4[0].r);
@@ -10998,7 +11003,7 @@ const Shithead = {
     }
     function pickUp(o, extra, delay = 0) { const n = g.pile.length + (extra ? 1 : 0), to = seat(o);
       g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); pickSnd(n); buzz(o.p, 150 + Math.min(400, n * 20)); g.fxs.hits.set(o, { t: 0.9, n }); say(o.p.name + ' picks up ' + n + ' card' + (n === 1 ? '' : 's')); g.sel[o.p.slot] = []; nextTurn(); }
-    function blind(o, i) { const c = o.down[i]; if (!c) return; if (canPlay(c)) { call('Blind flip', o.p.name + ' turns over ' + cardName(c) + ' and it works', c, '#7fd3ff'); play(o, c, 'down'); } else { o.down.splice(i, 1); call('Blind flip', o.p.name + ' turns over ' + cardName(c) + '. No luck', c, '#ff6b7a'); fx.fly(face(c), seat(o), PILE, { dur: 0.45, s0: 0.6, s1: 1.25, flip: true }); pickUp(o, c, 0.6); } }
+    function blind(o, i, shown) { const c = o.down[i]; if (!c) return; if (!shown) { reveal(o, c, canPlay(c), () => blind(o, i, true)); return; } if (canPlay(c)) { call('Blind flip', o.p.name + ' turns over ' + cardName(c) + ' and it works', c, '#7fd3ff'); play(o, c, 'down', true); } else { o.down.splice(i, 1); call('Blind flip', o.p.name + ' turns over ' + cardName(c) + '. No luck', c, '#ff6b7a'); fx.fly(face(c), g.revealAt || seat(o), seat(o), { dur: 0.5, s0: 1.4, s1: 0.45 }); g.revealAt = null; pickUp(o, c, 0.3); } }
     function autoMove(o) { const s = src(o); if (!s) { nextTurn(); return; } if (s === 'down') return blind(o, Math.floor(Math.random() * o.down.length));
       const opts = o[s].filter(canPlay); if (!opts.length) return pickUp(o);
       const normal = opts.filter(c => c.r !== 2 && c.r !== 10 && c.r !== 7).sort(byR); const pick = normal[0] || opts.find(c => c.r === 7) || opts.find(c => c.r === 2) || opts[0];
@@ -11010,11 +11015,16 @@ const Shithead = {
       if (g.winner) { g.endT += dt; if (g.endT > 6) g.done = true; return; }
       if (g.dealT > 0) { g.dealT -= dt; if (g.dealT <= 0) refresh(); return; }
       if (g.phase === 'swap') { const before = Math.ceil(g.swapT); g.swapT -= dt; if (Math.ceil(g.swapT) !== before && Math.ceil(g.swapT) % 5 === 0) refresh(); for (const o of g.ps) if (o.p.kind === 'bot' && !o.ready && g.swapT < 18.5) botSwap(o); if (g.swapT <= 0 || g.ps.every(o => o.ready)) startPlay(); return; }
+      if (g.reveal) { const r = g.reveal; r.t += dt;
+        if (r.t < 1.2) { g.revealTick -= dt; if (g.revealTick <= 0) { const k = r.t / 1.2; g.revealTick = 0.11 - k * 0.07; noise(0.03, 0.05 + k * 0.1, 1200 + k * 1500); tone(90 + k * 60, 70, 0.05, 'sine', 0.05 + k * 0.08); } }
+        else if (!r.flipped) { r.flipped = true; tone(300, 1200, 0.2, 'square', 0.07); noise(0.5, 0.12, 4000); if (r.ok) { tone(523, 523, 0.1, 'triangle', 0.1, 0.18); tone(784, 784, 0.25, 'triangle', 0.12, 0.28); } else tone(220, 110, 0.4, 'sawtooth', 0.1, 0.18); burst(W / 2, H / 2 - 20, r.ok ? '#ffe08a' : '#ff6b7a', 26, 320, 6, 0.6); shake(0.15); }
+        if (r.t >= r.dur) { g.reveal = null; g.revealAt = [W / 2, H / 2 - 20]; r.then(); }
+        return; }
       if (g.pile.length >= 6 && !g.boom) { g.beatT -= dt; if (g.beatT <= 0) { const h = heat(); g.beatT = 1.3 - h * 0.85; tone(68, 46, 0.13, 'sine', 0.12 + h * 0.18); tone(60, 40, 0.11, 'sine', 0.08 + h * 0.14, 0.17); if (h > 0.7) tone(1300, 1300, 0.03, 'square', 0.03, 0.08); } }
       const o = cur(); g.turnT -= dt;
       if (o.p.kind === 'bot' && g.turnT < 33.6) return autoMove(o);
       if (g.turnT <= 0) autoMove(o); };
-    g.onPick = (p, v) => { if (g.winner || typeof v !== 'string') return;
+    g.onPick = (p, v) => { if (g.winner || g.reveal || typeof v !== 'string') return;
       if (g.phase === 'swap') { const me = g.ps.find(x => x.p === p); if (!me || g.dealT > 0) return;
         if (v === 'ready') { me.ready = true; SFX.pop(); refresh(); return; } me.ready = false;
         const k = v[0], i = +v.slice(1), pk = me.pick; if (k !== 'h' && k !== 'u') return;
@@ -11087,6 +11097,14 @@ const Shithead = {
       if (g.boom > 0 && g.boom < 1.5) { const k = 1.5 - g.boom; if (k < 0.1) { ctx.fillStyle = `rgba(255,245,210,${0.55 - k * 5})`; ctx.fillRect(0, 0, W, H); }
         ctx.save(); ctx.globalAlpha = Math.min(1, g.boom * 2); ctx.strokeStyle = '#ffb067'; ctx.lineWidth = 30 * g.boom; ctx.beginPath(); ctx.arc(W / 2 + 30, H / 2 + 4, 40 + k * 520, 0, 7); ctx.stroke(); ctx.strokeStyle = '#fff3a0'; ctx.lineWidth = 12 * g.boom; ctx.beginPath(); ctx.arc(W / 2 + 30, H / 2 + 4, 30 + k * 380, 0, 7); ctx.stroke(); ctx.restore();
         ctx.globalAlpha = Math.min(1, g.boom * 2); headline('BOOM!', W / 2, H / 2 - 150 - Math.min(1, k) * 20, 90 * (0.9 + Math.min(1, k) * 0.15), TOY.sun, TOY.coral); ctx.globalAlpha = 1; }
+      if (g.reveal) { const r = g.reveal, t = r.t, grow = Math.min(1, t * 3), e = 1 - Math.pow(1 - grow, 3), x0 = r.from[0] + (W / 2 - r.from[0]) * e, y0 = r.from[1] + (H / 2 - 20 - r.from[1]) * e;
+        ctx.fillStyle = `rgba(20,24,60,${0.35 * e})`; ctx.fillRect(0, 0, W, H);
+        const sk = t < 1.2 ? Math.pow(t / 1.2, 2) : 0, jx = (Math.random() - 0.5) * 22 * sk, jr = Math.sin(t * 60) * 0.12 * sk, sc = 0.6 + e * 1.1 + (t > 1.2 && t < 1.6 ? Math.sin((t - 1.2) / 0.4 * Math.PI) * 0.25 : 0);
+        if (t > 1.2) { ctx.save(); ctx.globalAlpha = 0.5 * Math.max(0, 1 - (t - 1.2) * 1.2); ctx.fillStyle = r.ok ? '#ffe08a' : '#ff6b7a'; ctx.beginPath(); ctx.arc(W / 2, H / 2 - 20, 100 + (t - 1.2) * 260, 0, 7); ctx.fill(); ctx.restore(); }
+        ctx.save(); ctx.translate(x0 + jx, y0); ctx.rotate(jr); const fl = t < 1.2 ? 1 : t < 1.45 ? Math.abs(Math.cos((t - 1.2) / 0.25 * Math.PI)) : 1; ctx.scale(Math.max(0.03, fl), 1);
+        if (t < 1.325) drawPBack(0, 0, sc, 0); else drawPCard(0, 0, r.c, sc, 0, true); ctx.restore();
+        toyText(r.o.p.name + (t < 1.2 ? (r.o.down.includes(r.c) ? ' flips a blind card…' : "'s last card…") : ''), W / 2, H / 2 - 150, 30, '#fff', 'center', TOY.navy);
+        if (t > 1.45) headline(r.ok ? (r.o.down.includes(r.c) ? 'IT WORKS!' : 'OUT!') : 'NOPE!', W / 2, H / 2 + 120, 54, r.ok ? TOY.sun : TOY.coral, TOY.navy); }
       callout();
       sessionPanel();
       if (g.msgT > 0 && !(F.call && F.call.t > 0)) { ctx.globalAlpha = Math.min(1, g.msgT * 2); toyText(g.msg, W / 2, H / 2 + 150, 28, '#fff', 'center', TOY.navy); ctx.globalAlpha = 1; }
