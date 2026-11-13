@@ -217,7 +217,7 @@ html,body{background:var(--sky1)}
 #padMsg .ccdot{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid #fff;vertical-align:middle}
 #padMsg .pcard{width:62px;height:88px;border-radius:9px;background:#fff;border:3px solid #1b1f5e;box-shadow:0 4px 0 #1b1f5e;color:#1b1f5e;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;padding:0;transition:transform .12s}
 #padMsg .pcard b{display:block;font:30px "Lilita One",system-ui;margin:0}#padMsg .pcard i{font-style:normal;font-size:26px}
-#padMsg .pcard.red{color:#e8384f}#padMsg .pcard.dim{opacity:.4}#padMsg .pcard.sm{width:50px;height:70px}.pcard.sm b{font-size:24px}.pcard.sm i{font-size:20px}
+#padMsg .pcard.red{color:#e8384f}#padMsg .pcard.dim{opacity:.4}#padMsg .pcard.sm{width:50px;height:70px}.pcard.sm b{font-size:24px}.pcard.sm i{font-size:20px}#padMsg .pcard.xs{width:42px;height:60px;border-width:2.5px}#padMsg .pcard.xs b{font-size:20px}#padMsg .pcard.xs i{font-size:17px}#padMsg .pcard.sm b{font-size:24px}#padMsg .pcard.sm i{font-size:20px}#padMsg .hand.tight{gap:0;row-gap:8px}#padMsg .hand.tight .pcard{margin-left:-10px}#padMsg .hand.tight .pcard:first-child{margin-left:0}#padMsg .pcard.sel{position:relative;z-index:2}.chip{display:inline-block;padding:5px 12px;border-radius:12px;background:#eef1ff;font-size:14px;margin:4px}
 #padMsg .pcard.sel{transform:translateY(-12px);background:#fff6c8;border-color:#ffc61a;box-shadow:0 4px 0 #c99200}
 #padMsg .pcard.back{background:#e8384f;color:#fff;border-color:#fff;outline:3px solid #1b1f5e}
 
@@ -10939,7 +10939,7 @@ const SUITS = ['♦', '♣', '♥', '♠'], RANKN = { 11: 'J', 12: 'Q', 13: 'K',
 const SUITCOL4 = ['#1e6fd9', '#1b9a4b', '#e8384f', '#1b1f5e'], suitCol = c => host.fourColour ? SUITCOL4[c.s] : (c.s === 0 || c.s === 2) ? '#e8384f' : '#1b1f5e';
 const rankName = r => RANKN[r] || String(r), isRed = c => c.s === 0 || c.s === 2, cardName = c => rankName(c.r) + SUITS[c.s];
 function makeDeck(n = 1) { const d = []; for (let k = 0; k < n; k++) for (let s = 0; s < 4; s++) for (let r = 2; r <= 14; r++) d.push({ r, s, id: k * 100 + s * 20 + r }); for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d; }
-function pcardHTML(c, v, on, sel, small) { return `<button class="pcard${isRed(c) ? ' red' : ''}${on ? '' : ' dim'}${sel ? ' sel' : ''}${small ? ' sm' : ''}" data-c="pp" data-v="${v}"${on ? '' : ' disabled'}${host.fourColour ? ` style="color:${SUITCOL4[c.s]}"` : ''}><b>${rankName(c.r)}</b><i>${SUITS[c.s]}</i></button>`; }
+function pcardHTML(c, v, on, sel, small) { return `<button class="pcard${isRed(c) ? ' red' : ''}${on ? '' : ' dim'}${sel ? ' sel' : ''}${small ? ' ' + (small === true ? 'sm' : small) : ''}" data-c="pp" data-v="${v}"${on ? '' : ' disabled'}${host.fourColour ? ` style="color:${SUITCOL4[c.s]}"` : ''}><b>${rankName(c.r)}</b><i>${SUITS[c.s]}</i></button>`; }
 function pbackHTML(v, on) { return `<button class="pcard back${on ? '' : ' dim'}" data-c="pp" data-v="${v}"${on ? '' : ' disabled'}><i>★</i></button>`; }
 function drawPCard(x, y, c, s = 1, rot = 0, hl) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
   ctx.fillStyle = 'rgba(10,30,20,.3)'; rr(-38, -50, 80, 112, 10); ctx.fill();
@@ -11078,13 +11078,15 @@ const Shithead = {
           (o.ready ? '<div class="small" style="opacity:1">✅ Ready. Waiting for the others… (tap a card to keep swapping)</div>' : '<button class="pbtn big go" data-c="pp" data-v="ready">Ready ▶</button>'); }
       const mine = cur() === o, s = src(o), t = effTop(), beat = !t || t.r === 2 ? 'Anything goes' : 'Beat: ' + rankName(t.r) + ' or higher';
       const sel = mine ? (g.sel[p.slot] || []) : [];
-      const hand = o.hand.map((c, i) => pcardHTML(c, 'h' + i, mine && s === 'hand' && canPlay(c), s === 'hand' && sel.includes(i))).join('');
-      const up = o.up.map((c, i) => pcardHTML(c, 'u' + i, mine && s === 'up' && canPlay(c), s === 'up' && sel.includes(i), true)).join('');
+      // size cards so the whole hand fits on one screen: big for small hands, smaller and overlapped for big ones
+      const hn = o.hand.length, hsz = hn <= 8 ? false : hn <= 12 ? 'sm' : 'xs', tight = hn > 10, usz = s === 'up' ? (hn ? 'sm' : false) : 'xs';
+      const hand = o.hand.map((c, i) => pcardHTML(c, 'h' + i, mine && s === 'hand' && canPlay(c), s === 'hand' && sel.includes(i), hsz)).join('');
+      const up = o.up.map((c, i) => pcardHTML(c, 'u' + i, mine && s === 'up' && canPlay(c), s === 'up' && sel.includes(i), usz)).join('');
       const down = o.down.map((_, i) => pbackHTML('d' + i, mine && s === 'down')).join('');
       const stuck = mine && s !== 'down' && !o[s].some(canPlay), selCs = sel.map(j => s && o[s] ? o[s][j] : null).filter(Boolean);
       return `<b>${mine ? (s === 'down' ? '🙈 Flip a secret card!' : '⭐ Your turn!') : 'Waiting for ' + esc(cur().p.name)}</b><div class="small" style="opacity:1">${beat} · deck ${deck.length}</div>` +
-        (o.hand.length ? `<div class="hand">${hand}</div>` : '') + `<div class="small">Face-up</div><div class="hand">${up || '<span class="small">none</span>'}</div><div class="small">Secret</div><div class="hand">${down || '<span class="small">none</span>'}</div>` +
-        (mine && selCs.length ? `<button class="pbtn big go" data-c="pp" data-v="go">Play ${selCs.length} × ${rankName(selCs[0].r)}</button><div class="small">Tap more ${rankName(selCs[0].r)}s to add them</div>` : mine && s !== 'down' && !stuck ? '<div class="small">Tap a card to play it. Got doubles? Tap each one, then Play.</div>' : '') +
+        (o.hand.length ? `<div class="hand${tight ? ' tight' : ''}">${hand}</div>` : '') + (s === 'down' ? `<div class="small">Secret: pick one</div><div class="hand">${down}</div>` : `<div class="small">Face-up${o.down.length ? ' · ' + o.down.length + ' secret underneath' : ''}</div><div class="hand">${up || '<span class="small">none</span>'}</div>`) +
+        (mine && selCs.length ? `<button class="pbtn big go" data-c="pp" data-v="go">Play ${selCs.length} × ${rankName(selCs[0].r)}</button><div class="small">Tap more ${rankName(selCs[0].r)}s to add them</div>` : mine && s !== 'down' && !stuck && hn <= 8 ? '<div class="small">Tap a card to play it. Got doubles? Tap each one, then Play.</div>' : '') +
         (mine && g.pile.length ? `<button class="pbtn big" data-c="pp" data-v="up!"${stuck ? '' : ' style="opacity:.75"'}>${stuck ? 'Pick up the pile 😬' : 'Pick up the pile anyway (' + g.pile.length + ')'}</button>` : '') + rxRow(); };
     const rxRow = () => `<div class="rxrow">${RX.map((e, i) => `<button class="rxb" data-c="pp" data-v="rx${i}">${e}</button>`).join('')}</div>`;
     g.ranking = () => g.out.concat(g.ps.filter(o => !g.out.includes(o))).map(o => o.p.slot);
