@@ -6553,6 +6553,9 @@ function startHost() {
   });
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
+  const wasLocked = () => !audioOn(), anyGesture = () => { const was = wasLocked(); unlockAudio(); if (was) setTimeout(() => { if (audioOn()) { setSong(''); setSong(host.phase === 'lobby' || host.phase === 'podium' ? 'lobby' : 'game'); SFX.join(); broadcastPhase(); } }, 150); };
+  for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) document.addEventListener(ev, anyGesture, { capture: true, passive: true });
+  try { unlockAudio(); } catch (e) {} // works straight away if this browser already allows sound for the site
   canvas.addEventListener('pointerdown', e => {
     unlockAudio();
     const x = (e.clientX * view.dpr - view.ox) / view.s, y = (e.clientY * view.dpr - view.oy) / view.s;
@@ -6713,7 +6716,7 @@ function phaseInfo(p) {
   if (host.game && host.game.panel && host.phase === 'play') { try { msg.panel = host.game.panel(p); } catch (e) { msg.panel = ''; } }
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; msg.buttonB = G.buttonB ? ROSTER[p.char].ability.name : ''; msg.ability = G.buttonB ? ROSTER[p.char].ability : null; }
   const l = leader();
-  Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music,
+  Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music, audioLocked: !audioOn(),
     leaderName: l ? l.name : '', count: humans().length, char: p.char, controls: host.controls, fight: !!(G && G.fighter),
     role: host.game && (host.phase === 'play' || host.phase === 'intro') ? (host.inGame && !host.inGame.has(p.slot) ? 'spectator' : host.game.roleOf ? host.game.roleOf(p.slot) : 'fighter') : 'fighter', gestures: !!(G && G.gestures && host.controls === 'gestures' && p.kind === 'phone'), race: !!(G && G.race) });
   if (host.phase === 'lobby') msg.roster = ROSTER.map((c, i) => {
@@ -7310,6 +7313,13 @@ function hostDraw() {
     if (host.phase === 'podium') drawPodium();
     if (host.phase !== 'podium') drawDisconnects();
     if (host.paused) drawPaused();
+  }
+  if (!audioOn() && (audioState.sound || audioState.music)) { // browsers keep sound off until someone touches the TV page itself
+    const msg = '🔇 Sound is off: click or tap this screen (or press OK on the remote) to turn it on', pul = 0.85 + Math.sin(host.t * 4) * 0.15;
+    dfont(20); const w = ctx.measureText(msg).width + 56; ctx.globalAlpha = pul;
+    rr(W / 2 - w / 2, 10, w, 42, 21); ctx.fillStyle = '#ffd23f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+    toyText(msg, W / 2, 32, 20, TOY.navy, 'center', null); ctx.globalAlpha = 1;
+    host.buttons.push({ x: W / 2 - w / 2, y: 10, w, h: 42, fn: () => { unlockAudio(); setTimeout(() => { if (audioOn()) { SFX.join(); toast('🔊 Sound on!'); broadcastPhase(); } }, 150); } });
   }
   if (host.toastT > 0) {
     ctx.globalAlpha = clamp(host.toastT, 0, 1);
@@ -12593,7 +12603,7 @@ function renderPad() {
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'fight' ? `<div class="row">${[['smash', 'Sky Brawl · FFA'], ['duel', 'Duel · 1v1'], ['tag', 'Tag · 2v2']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
-        <div class="row">${B('bots', '🤖 Bots ' + (d.bots ? 'ON' : 'OFF'), null, d.bots)}${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}</div>
+        <div class="row">${B('bots', '🤖 Bots ' + (d.bots ? 'ON' : 'OFF'), null, d.bots)}${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}</div>${d.audioLocked ? '<div class="small" style="opacity:1">🔇 The TV is blocking sound until someone clicks or taps the TV screen once (or presses OK on the TV remote).</div>' : ''}
         <div class="row">${B('controls', '⚔ Arena: ' + (d.controls === 'gestures' ? '✋ Gestures' : '🔘 Buttons'), null, d.controls === 'gestures')}</div>
         <div class="row fit"><span class="small">TV screen size</span>${B('fit', '−', -1)}<span class="val">${Math.round(d.fit * 100)}%</span>${B('fit', '+', 1)}</div>
         ${B('start', 'START ▶', null, true, 'big go')}`;
