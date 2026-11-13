@@ -10983,11 +10983,13 @@ const Shithead = {
     g.turn = Math.floor(Math.random() * g.ps.length);
     const byR = (a, b) => a.r - b.r, cur = () => g.ps[g.turn];
     g.ps.forEach(o => o.hand.sort(byR));
-    const fx = cardFX(), PILE = [W / 2 + 30, H / 2 + 4], DECK = [W / 2 - 250, H / 2 + 4], seat = o => seatXY(g.ps.indexOf(o), g.ps.length); g.fx = fx;
+    const fx = cardFX(), BIGT = players.length > 6, PILE = [W / 2 + (BIGT ? 80 : 30), H / 2 + 4], DECK = [W / 2 - (BIGT ? 150 : 250), H / 2 + 4], DECKS = BIGT ? 0.85 : 1.05, seat = o => seatXY(g.ps.indexOf(o), g.ps.length); g.fx = fx;
     const face = c => (x, y, s2, r, front) => front ? drawPCard(x, y, c, s2, r) : drawPBack(x, y, s2, r), back = (x, y, s2, r) => drawPBack(x, y, s2, r);
     g.dealT = 0.6 + g.ps.length * 6 * 0.045 + 0.35; // deal animation: cards fly from the deck to each seat
-    const big = g.ps.length > 6 ? 0.5 : 0.62, gap = g.ps.length > 6 ? 42 : 54; g.tab = { big, gap };
-    const slotXY = (i, k) => { const [x, y] = seatXY(i, g.ps.length); return [x + (k - 1.5) * gap, y + (y > H / 2 ? -96 : 96)]; };
+    const NP = g.ps.length, big = NP <= 4 ? 0.7 : NP <= 6 ? 0.6 : 0.42, gap = NP <= 4 ? 61 : NP <= 6 ? 52 : 36, off = NP <= 4 ? 100 : NP <= 6 ? 92 : 58; g.tab = { big, gap, off };
+    const tabX = x => clamp(x, gap * 1.5 + 46 * big + 26, W - gap * 1.5 - 46 * big - 26);
+    const tabAt = (x, y) => NP > 6 && Math.abs(y - (H / 2 + 10)) < 110 ? [x + (x < W / 2 ? 206 : -206), y] : [tabX(x), y + (y > H / 2 ? -off : off)]; g.tabAt = tabAt;
+    const slotXY = (i, k) => { const [x, y] = seatXY(i, g.ps.length); const [tx, ty] = tabAt(x, y); return [tx + (k - 1.5) * gap, ty]; };
     g.ps.forEach((o, i) => { for (let k = 0; k < 6; k++) fx.fly(back, DECK, k < 4 ? slotXY(i, k) : seatXY(i, g.ps.length), { delay: 0.3 + (k * g.ps.length + i) * 0.045, dur: 0.34, s0: 1, s1: k < 4 ? big : 0.4, arc: 46, spin: (Math.random() - 0.5) * 3, onStart: () => { noise(0.035, 0.07, 3500); tone(900 + Math.random() * 300, 500, 0.03, 'triangle', 0.03); } }); });
     const effTop = () => { for (let i = g.pile.length - 1; i >= 0; i--) if (g.pile[i].r !== 7) return g.pile[i]; return null; };
     const canPlay = c => { if (c.r === 2 || c.r === 10 || c.r === 7) return true; const t = effTop(); return !t || t.r === 2 || c.r >= t.r; };
@@ -11097,38 +11099,41 @@ const Shithead = {
     g.fxs = { land: 0, call: null, hits: new Map() };
     const ordinal = k => k + (k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th');
     function callout() { const c = g.fxs.call; if (!c || c.t <= 0) return; const a = Math.min(1, c.t * 3), age = c.max - c.t, pop = Math.min(1, age * 5), sc = 0.7 + 0.3 * (1 - Math.pow(1 - pop, 3)) + Math.sin(Math.min(1, age * 3) * Math.PI) * 0.06;
-      ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, H / 2 + 130); ctx.scale(sc, sc);
-      dfont(32); const tw = ctx.measureText(c.title).width; font(18, 600); const sw = ctx.measureText(c.sub || '').width, w = Math.max(tw, sw) + (c.card ? 120 : 70), h = 76;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, H / 2 + 120); ctx.scale(sc, sc);
+      dfont(30); const tw = ctx.measureText(c.title).width; font(18, 600); const sw = ctx.measureText(c.sub || '').width, w = Math.max(tw, sw) + (c.card ? 116 : 70), h = 66;
       rr(-w / 2, -h / 2 + 6, w, h, 28); ctx.fillStyle = 'rgba(20,24,60,.35)'; ctx.fill(); rr(-w / 2, -h / 2, w, h, 28); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
       ctx.save(); rr(-w / 2, -h / 2, w, h, 28); ctx.clip(); ctx.fillStyle = c.col; ctx.fillRect(-w / 2, -h / 2, 14, h); ctx.restore();
-      const tx = c.card ? -w / 2 + 96 : -w / 2 + 34; if (c.card) drawPCard(-w / 2 + 56, 2, c.card, 0.5, -0.14 + Math.sin(host.t * 3) * 0.04);
-      headline(c.title, tx, -12, 32, c.col, TOY.navy, 'left'); toyText(c.sub || '', tx, 20, 17, TOY.navy, 'left', null); ctx.restore(); }
-    function sessionPanel() { const S = host.session && host.session.shit; if (!S) return; const rows = Object.entries(S).sort((a, b) => b[1].pts - a[1].pts || a[1].s - b[1].s).slice(0, 5); if (!rows.length) return;
-      const w = 230, x = W - w - 14, y = 12, h = 44 + rows.length * 26; rr(x, y + 4, w, h, 18); ctx.fillStyle = 'rgba(10,40,25,.3)'; ctx.fill(); rr(x, y, w, h, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
-      toyText('TONIGHT', x + 16, y + 21, 16, '#c4402a', 'left', null); toyText('WINS', x + w - 62, y + 21, 12, '#6a76b8', 'center', null); toyText('💩', x + w - 22, y + 21, 14, '#6a76b8', 'center', null);
-      const T2 = sessionTitles(S); if (T2.length) { const ty = y + h + 8, th = 14 + T2.length * 22; rr(x, ty, w, th, 14); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); T2.forEach(([lab, val], k) => { toyText(lab, x + 14, ty + 18 + k * 22, 13, '#6a76b8', 'left', null); toyText(val, x + w - 14, ty + 18 + k * 22, 13, TOY.navy, 'right', null); }); }
-      rows.forEach(([nm, r], k) => { const yy = y + 46 + k * 26; toyText((k + 1) + '. ' + (nm.length > 10 ? nm.slice(0, 9) + '…' : nm), x + 16, yy, 16, TOY.navy, 'left', null); toyText(String(r.w), x + w - 62, yy, 16, k === 0 ? '#c4402a' : TOY.navy, 'center', null); toyText(String(r.s), x + w - 22, yy, 16, r.s ? '#8a5a3a' : '#9aa3c6', 'center', null); }); }
+      const tx = c.card ? -w / 2 + 96 : -w / 2 + 34; if (c.card) drawPCard(-w / 2 + 56, 2, c.card, 0.44, -0.14 + Math.sin(host.t * 3) * 0.04);
+      headline(c.title, tx, -11, 30, c.col, TOY.navy, 'left'); toyText(c.sub || '', tx, 18, 16, TOY.navy, 'left', null); ctx.restore(); }
+    function sessionPanel() { const S = host.session && host.session.shit; if (!S) return false; const all = Object.entries(S).sort((a, b) => b[1].pts - a[1].pts || a[1].s - b[1].s), rows = all.slice(0, 4); if (!rows.length) return false;
+      // compact, top-left, clear of every seat; titles take turns on one line
+      const T2 = sessionTitles(S), w = 222, x = 14, y = 10, h = 40 + rows.length * 25 + (T2.length ? 30 : 0);
+      rr(x, y + 4, w, h, 18); ctx.fillStyle = 'rgba(10,40,25,.3)'; ctx.fill(); rr(x, y, w, h, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText('TONIGHT', x + 14, y + 20, 15, '#c4402a', 'left', null); toyText('WINS', x + w - 60, y + 20, 11, '#6a76b8', 'center', null); toyText('💩', x + w - 22, y + 20, 13, '#6a76b8', 'center', null);
+      rows.forEach(([nm, r], k) => { const yy = y + 44 + k * 25; toyText((k + 1) + '. ' + (nm.length > 11 ? nm.slice(0, 10) + '…' : nm), x + 14, yy, 15, TOY.navy, 'left', null); toyText(String(r.w), x + w - 60, yy, 15, k === 0 ? '#c4402a' : TOY.navy, 'center', null); toyText(String(r.s), x + w - 22, yy, 15, r.s ? '#8a5a3a' : '#9aa3c6', 'center', null); });
+      if (T2.length) { const k = Math.floor(host.t / 4) % T2.length, [lab, val] = T2[k], ty = y + h - 17, fade = Math.min(1, (host.t % 4) * 3, (4 - host.t % 4) * 3); ctx.fillStyle = '#eef1ff'; ctx.fillRect(x + 4, ty - 13, w - 8, 1.5); ctx.globalAlpha = fade; toyText(lab, x + 14, ty + 2, 12, '#6a76b8', 'left', null); toyText(val, x + w - 14, ty + 2, 12, TOY.navy, 'right', null); ctx.globalAlpha = 1; }
+      return true; }
     g.draw = () => { const F = g.fxs, n = g.ps.length;
-      feltTable('SHITHEAD', '#c4402a');
+      feltTable(host.session && host.session.shit && Object.keys(host.session.shit).length ? '' : 'SHITHEAD', '#c4402a');
       if (g.mile > 0 || g.milePulse > 0) { const h = Math.min(1, g.pile.length / 22), pul = (g.milePulse || 0), vg = ctx.createRadialGradient(W / 2, H / 2, 260, W / 2, H / 2, 760); vg.addColorStop(0, 'rgba(255,90,40,0)'); vg.addColorStop(1, `rgba(255,${120 - h * 80},40,${0.18 + h * 0.3 + pul * 0.3 + Math.sin(g.t * (2 + h * 6)) * 0.05})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H); }
       // pile: last few cards, the newest bounces as it lands with a ring
       const show = g.pile.filter(c => !c.fly).slice(-5); show.forEach((c, i) => { const top = i === show.length - 1, bounce = top ? Math.sin(Math.min(1, F.land) * Math.PI) * 0.14 : 0;
-        drawPCard(W / 2 + 30 + (i - show.length + 1) * 34, H / 2 + 4 + (top ? Math.sin(g.t * 2.4) * 3 - bounce * 30 : 0), c, 1.25 + bounce, ((c.id * 7) % 9 - 4) * 0.03, top); });
-      if (F.land > 0) { ctx.save(); ctx.globalAlpha = F.land; ctx.strokeStyle = '#fff'; ctx.lineWidth = 5 * F.land; ctx.beginPath(); ctx.ellipse(W / 2 + 30, H / 2 + 40, 60 + (1 - F.land) * 90, 22 + (1 - F.land) * 32, 0, 0, 7); ctx.stroke(); ctx.restore(); }
+        drawPCard(PILE[0] + (i - show.length + 1) * 34, H / 2 + 4 + (top ? Math.sin(g.t * 2.4) * 3 - bounce * 30 : 0), c, 1.25 + bounce, ((c.id * 7) % 9 - 4) * 0.03, top); });
+      if (F.land > 0) { ctx.save(); ctx.globalAlpha = F.land; ctx.strokeStyle = '#fff'; ctx.lineWidth = 5 * F.land; ctx.beginPath(); ctx.ellipse(PILE[0], H / 2 + 40, 60 + (1 - F.land) * 90, 22 + (1 - F.land) * 32, 0, 0, 7); ctx.stroke(); ctx.restore(); }
       if (!g.pile.length) { ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.setLineDash([10, 8]); ctx.lineWidth = 3; rr(W / 2 - 22, H / 2 - 66, 104, 140, 12); ctx.stroke(); ctx.setLineDash([]); }
       else if (g.pile.length > 4) { rr(W / 2 + 74, H / 2 + 54, 50, 30, 15); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(String(g.pile.length), W / 2 + 99, H / 2 + 69, 16, TOY.navy, 'center', null); }
-      if (deck.length) { for (let k = 0; k < Math.min(5, Math.ceil(deck.length / 6)); k++) drawPBack(DECK[0] - k * 2, DECK[1] - k * 2, 1.05); toyText(deck.length + ' left', DECK[0], H / 2 + 90, 18, '#fff', 'center', TOY.navy); }
-      if (g.phase === 'play' && !g.winner) { const t = effTop(); toyText(!t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+', W / 2 + 30, H / 2 - 104, 24, '#fff', 'center', TOY.navy); }
+      if (deck.length) { for (let k = 0; k < Math.min(5, Math.ceil(deck.length / 6)); k++) drawPBack(DECK[0] - k * 2, DECK[1] - k * 2, DECKS); toyText(deck.length + ' left', DECK[0], DECK[1] + 86 * DECKS, 18, '#fff', 'center', TOY.navy); }
+      if (g.phase === 'play' && !g.winner) { const t = effTop(); toyText(!t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+', PILE[0], H / 2 - 104, 24, '#fff', 'center', TOY.navy); }
       g.ps.forEach((o, i) => { const [x0, y] = seatXY(i, n), act = cur() === o && !g.winner && g.phase === 'play' && g.dealT <= 0, hit = F.hits.get(o), x = x0 + (hit ? Math.sin(hit.t * 50) * hit.t * 14 : 0);
         const badge = act ? ['⏱ ' + Math.ceil(g.turnT), g.turnT < Math.min(10, g.turnLen / 3) ? TOY.coral : '#ff8a3d'] : g.loser === o ? ['💩', '#8a5a3a'] : o.done ? [ordinal(g.out.indexOf(o) + 1), TOY.mint] : (g.reigning === o.p.name && !g.winner ? ['💩 last', '#8a5a3a'] : null);
         seatCard(x, y, o.p, act, o.done ? 'OUT ✓' : '✋ ' + o.hand.length + '  ·  🙈 ' + o.down.length, badge);
-        if (g.dealT <= 0.2) { const yy = y + (y > H / 2 ? -96 : 96), B0 = g.tab.big, GP = g.tab.gap; for (let k = 0; k < 4; k++) { const cx0 = x0 + (k - 1.5) * GP; if (o.down[k]) drawPBack(cx0 - 4, yy - 6, B0, -0.05); if (o.up[k]) drawPCard(cx0 + 3, yy + 4, o.up[k], B0, 0.04); } }
+        if (g.dealT <= 0.2) { const [tx0, yy] = g.tabAt(x0, y), B0 = g.tab.big, GP = g.tab.gap; for (let k = 0; k < 4; k++) { const cx0 = tx0 + (k - 1.5) * GP; if (o.down[k]) drawPBack(cx0 - 4, yy - 6, B0, -0.05); if (o.up[k]) drawPCard(cx0 + 3, yy + 4, o.up[k], B0, 0.04); } }
         if (g.phase === 'swap' && g.dealT <= 0.2 && !g.winner) toyText(o.ready ? '✅' : '⏳', x0 + 86, y - 40, 22, '#fff', 'center', null);
         if (hit && hit.n) { ctx.globalAlpha = Math.min(1, hit.t * 2); headline('+' + hit.n, x0, y - 70 - (0.9 - hit.t) * 50, 40, TOY.coral, '#fff'); ctx.globalAlpha = 1; } });
       fx.draw();
       if (g.phase === 'swap' && g.dealT <= 0) { headline('SWAP TIME', W / 2, H / 2 - 150, 54, TOY.sun, '#c4402a'); toyText('Swap hand cards with your face-up cards on your phone · ⏱ ' + Math.ceil(g.swapT), W / 2, H / 2 + 150, 24, '#fff', 'center', TOY.navy); }
       if (g.boom > 0 && g.boom < 1.5) { const k = 1.5 - g.boom; if (k < 0.1) { ctx.fillStyle = `rgba(255,245,210,${0.55 - k * 5})`; ctx.fillRect(0, 0, W, H); }
-        ctx.save(); ctx.globalAlpha = Math.min(1, g.boom * 2); ctx.strokeStyle = '#ffb067'; ctx.lineWidth = 30 * g.boom; ctx.beginPath(); ctx.arc(W / 2 + 30, H / 2 + 4, 40 + k * 520, 0, 7); ctx.stroke(); ctx.strokeStyle = '#fff3a0'; ctx.lineWidth = 12 * g.boom; ctx.beginPath(); ctx.arc(W / 2 + 30, H / 2 + 4, 30 + k * 380, 0, 7); ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.globalAlpha = Math.min(1, g.boom * 2); ctx.strokeStyle = '#ffb067'; ctx.lineWidth = 30 * g.boom; ctx.beginPath(); ctx.arc(PILE[0], H / 2 + 4, 40 + k * 520, 0, 7); ctx.stroke(); ctx.strokeStyle = '#fff3a0'; ctx.lineWidth = 12 * g.boom; ctx.beginPath(); ctx.arc(PILE[0], H / 2 + 4, 30 + k * 380, 0, 7); ctx.stroke(); ctx.restore();
         ctx.globalAlpha = Math.min(1, g.boom * 2); headline('BOOM!', W / 2, H / 2 - 150 - Math.min(1, k) * 20, 90 * (0.9 + Math.min(1, k) * 0.15), TOY.sun, TOY.coral); ctx.globalAlpha = 1; }
       if (g.reveal) { const r = g.reveal, t = r.t, grow = Math.min(1, t * 3), e = 1 - Math.pow(1 - grow, 3), x0 = r.from[0] + (W / 2 - r.from[0]) * e, y0 = r.from[1] + (H / 2 - 20 - r.from[1]) * e;
         ctx.fillStyle = `rgba(20,24,60,${0.35 * e})`; ctx.fillRect(0, 0, W, H);
