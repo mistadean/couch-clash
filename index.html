@@ -245,6 +245,10 @@ html,body{background:var(--sky1)}
 #padMsg .rc small{font-size:10px;font-weight:700;line-height:1.1}#padMsg .rc em{font-size:10px;font-style:normal;opacity:.6}#padMsg .rc.on{background:#fff6c8}#padMsg .rc.empty{opacity:.35;font:24px "Lilita One",system-ui;box-shadow:none;border-style:dashed}
 #padMsg .dice{display:flex;gap:6px;justify-content:center;font-size:52px;line-height:1;margin:6px 0;color:#1b1f5e}#padMsg .dice .wild{color:#e8384f}#padMsg .bidq{font:34px "Lilita One",system-ui;min-width:90px;display:inline-block;text-align:center}#padMsg .pbtn.die{font-size:32px;padding:6px 10px}
 #padMsg .mis .row .pbtn{padding:8px 9px;font-size:14px;margin:2px}#padMsg .shopi small{display:block;font-size:12px;opacity:.75}#padMsg .pbtn small{display:block;font-size:12px;opacity:.75}
+#padMsg .rmap{display:grid;grid-template-columns:repeat(14,1fr);gap:1px;background:#1b1f5e;border:3px solid #1b1f5e;border-radius:8px;overflow:hidden;margin:8px 0}
+#padMsg .rmap span{aspect-ratio:1;background:#3a4170;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;position:relative}
+#padMsg .rmap span.w{background:#8a93b8}#padMsg .rmap span.p{background:#000}#padMsg .rmap span.g{background:#5b64a8}#padMsg .rmap span b{font-size:10px;color:#ffd23f;margin:0;display:inline}
+#padMsg .rmap i{width:84%;height:84%;border-radius:4px;font-style:normal;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid #fff}#padMsg .rmap i.gh{opacity:.75;border-style:dashed}#padMsg .rmap .me i{outline:2px solid #ffd23f}
 </style>
 </head>
 <body>
@@ -11733,6 +11737,21 @@ const RoboRumble = { title: 'Robo Rumble', accent: '#7fd3ff', phones: true, minP
       else if (v[0] === 's') { o.prog.splice(+v.slice(1), 1); SFX.click(); }
       else if (v === 'lock' && o.prog.length === 5) { o.locked = true; SFX.pop(); broadcastPhase(); return; }
       sendPhase(p); };
+    function ghost(o) { // where my program takes me, ignoring other robots
+      let x = o.x, y = o.y, d = o.d; const path = [];
+      for (const c of o.prog) { const n = { m1: 1, m2: 2, m3: 3 }[c.k];
+        if (n || c.k === 'bk') { const dd = c.k === 'bk' ? (d + 2) % 4 : d; for (let i = 0; i < (n || 1); i++) { const tx = x + DIRS[dd][0], ty = y + DIRS[dd][1], t = tile(tx, ty); if (t === '#' || t === 'X') break; x = tx; y = ty; if (t === 'o') { path.push({ x, y, d, k: c.k, dead: true }); return path; } } }
+        else if (c.k === 'tl') d = (d + 3) % 4; else if (c.k === 'tr') d = (d + 1) % 4; else if (c.k === 'ut') d = (d + 2) % 4;
+        path.push({ x, y, d, k: c.k }); }
+      return path; }
+    function miniMap(o) { const path = ghost(o), arrows = ['↑', '→', '↓', '←']; let h = '<div class="rmap">';
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) { const t = g.grid[y][x], r = g.ps.find(e => e.alive && e.x === x && e.y === y), steps = path.map((pp, i) => pp.x === x && pp.y === y ? i + 1 : 0).filter(Boolean), last = path.length && path[path.length - 1].x === x && path[path.length - 1].y === y;
+        let cls = t === '#' ? 'w' : t === 'o' ? 'p' : '', inner = '';
+        if (r) { inner = `<i style="background:${r.p.color}">${arrows[r.d]}</i>`; cls += r === o ? ' me' : ''; }
+        if (steps.length && !r) { cls += ' g'; inner = last ? `<i class="gh" style="background:${o.p.color}">${arrows[path[path.length - 1].d]}</i>` : `<b>${steps[steps.length - 1]}</b>`; }
+        if (last && path[path.length - 1].dead) inner = '💀';
+        h += `<span class="${cls}">${inner}</span>`; }
+      return h + '</div>'; }
     g.panel = p => { const o = g.find(p); if (!o) return '<b>👀 Watching</b>'; const col = o.p.color;
       if (g.state === 'end') return `<b>🏁 Match over</b>Round wins: ${o.wins} · score ${o.score}`;
       if (!o.alive) return '<b>💥 Your robot is scrap</b>Watch the rest of the round.';
@@ -11741,7 +11760,7 @@ const RoboRumble = { title: 'Robo Rumble', accent: '#7fd3ff', phones: true, minP
       if (o.locked) return `<b>🔒 Program locked</b>${head}<div class="prog">${o.prog.map(c => `<span class="rc">${ROBO_INFO[c.k].i}<small>${ROBO_INFO[c.k].n}</small></span>`).join('')}</div>`;
       const slots = Array.from({ length: 5 }, (_, i) => o.prog[i] ? `<button class="rc on" data-c="pp" data-v="s${i}">${ROBO_INFO[o.prog[i].k].i}<small>${i + 1}. ${ROBO_INFO[o.prog[i].k].n}</small></button>` : `<span class="rc empty">${i + 1}</span>`).join('');
       const hand = o.hand.map((c, i) => o.prog.includes(c) ? '' : `<button class="rc" data-c="pp" data-v="h${i}">${ROBO_INFO[c.k].i}<small>${ROBO_INFO[c.k].n}</small><em>${c.pr}</em></button>`).join('');
-      return `<b>🤖 Program 5 moves</b>${head}<div class="prog">${slots}</div><div class="small">Tap cards in order · higher number goes first in a tie</div><div class="hand">${hand}</div>${o.prog.length === 5 ? '<button class="pbtn big go" data-c="pp" data-v="lock">Lock in 🔒</button>' : ''}`; };
+      return `<b>🤖 Program 5 moves</b>${head}${miniMap(o)}<div class="small">Your planned path (other robots may shove you!)</div><div class="prog">${slots}</div><div class="small">Tap cards in order · higher number goes first in a tie</div><div class="hand">${hand}</div>${o.prog.length === 5 ? '<button class="pbtn big go" data-c="pp" data-v="lock">Lock in 🔒</button>' : ''}`; };
     g.ranking = () => g.ps.slice().sort((a, b) => b.wins - a.wins || b.score - a.score).map(o => o.p.slot);
     g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.wins - a.wins || b.score - a.score)[0]; return '🤖 ' + top.p.name + ' is the last robot standing'; };
     // ---------- TV ----------
@@ -11758,6 +11777,7 @@ const RoboRumble = { title: 'Robo Rumble', accent: '#7fd3ff', phones: true, minP
         ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.rotate(ang); if (o.shield && g.state === 'run') { ctx.strokeStyle = '#7fd3ff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.stroke(); }
         rr(-26, -24, 52, 50, 12); ctx.fillStyle = o.p.color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); rr(-8, -40, 16, 22, 4); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-9, -6, 7, 0, 7); ctx.arc(9, -6, 7, 0, 7); ctx.fill(); ctx.fillStyle = TOY.navy; ctx.beginPath(); ctx.arc(-9, -9, 3.5, 0, 7); ctx.arc(9, -9, 3.5, 0, 7); ctx.fill(); ctx.restore();
+        if (g.state === 'run' && o.alive && g.step > 0 && o.prog[g.step - 1]) { const ic = ROBO_INFO[o.prog[g.step - 1].k].i; rr(x + 16, y - 66, 40, 34, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = o.p.color; ctx.stroke(); toyText(ic, x + 36, y - 49, 20, '#fff', 'center', null); }
         toyText(o.p.name, x, y + 40, 14, '#fff', 'center', TOY.navy); toyText('❤️'.repeat(Math.max(0, o.hp)), x, y - 44, 12, '#fff', 'center', null); }
       if (g.lasers) for (const l of g.lasers) if (l.t < 0.45) { ctx.strokeStyle = l.o.p.color; ctx.lineWidth = 8 * (1 - l.t / 0.45) + 2; ctx.shadowColor = l.o.p.color; ctx.shadowBlur = 20; ctx.beginPath(); ctx.moveTo(cx(l.o.x), cy(l.o.y)); ctx.lineTo(cx(l.x), cy(l.y)); ctx.stroke(); ctx.shadowBlur = 0; }
       for (const f of g.fx) { const X = cx(f.x), Y = cy(f.y); if (f.k === 'boom') { ctx.globalAlpha = 1 - f.t; toyText('💥', X, Y, 60 + f.t * 60, '#fff', 'center', null); ctx.globalAlpha = 1; } if (f.k === 'hit') { ctx.globalAlpha = 1 - f.t; toyText('-1', X, Y - 30 - f.t * 30, 26, TOY.coral, 'center', '#fff'); ctx.globalAlpha = 1; } if (f.k === 'block') { ctx.globalAlpha = 1 - f.t; toyText('🛡', X, Y - 30, 30, '#fff', 'center', null); ctx.globalAlpha = 1; } }
@@ -11810,12 +11830,15 @@ const LiarsDice = { title: "Liar's Dice", accent: '#c4402a', phones: true, minPh
     g.resultLine = () => { const w = g.ps.find(o => o.n > 0); return w ? '🎲 ' + w.p.name + ' is the last liar standing' : ''; };
     g.draw = () => { feltTable("LIAR'S DICE", '#c4402a'); const n = g.ps.length;
       g.ps.forEach((o, i) => { const [x, y] = seatXY(i, n), act = g.state === 'bid' && cur() === o; seatCard(x, y, o.p, act, o.n > 0 ? '🎲 × ' + o.n : 'OUT', act ? ['⏱ ' + Math.ceil(g.stateT), TOY.coral] : null);
-        const dy = y > H / 2 ? -82 : 82; if (g.state === 'reveal') o.dice.forEach((d, k) => { const hit = d === g.rev.bid.f || d === 1; toyText(DICE[d], x - 60 + k * 30, y + dy, 34, hit ? TOY.sun : '#fff', 'center', hit ? TOY.navy : null); });
-        else for (let k = 0; k < o.n; k++) { rr(x - 70 + k * 30, y + dy - 14, 24, 28, 8); ctx.fillStyle = '#8a3020'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); } });
+        const dy = y > H / 2 ? -84 : 84;
+        if (g.state === 'reveal') { const age = 6 - g.stateT; o.dice.forEach((d, k) => { const hit = d === g.rev.bid.f || d === 1, pop = Math.min(1, Math.max(0, (age - 0.6 - i * 0.25 - k * 0.08) * 5)); if (pop <= 0) return; ctx.save(); ctx.translate(x - 60 + k * 30, y + dy); ctx.scale(pop * (hit ? 1.15 : 0.9), pop * (hit ? 1.15 : 0.9)); toyText(DICE[d], 0, 0, 34, hit ? TOY.sun : 'rgba(255,255,255,.55)', 'center', hit ? TOY.navy : null); ctx.restore(); }); }
+        else if (o.n > 0) { const sh = g.state === 'roll' ? Math.sin(g.t * 40 + i) * 6 : 0; ctx.save(); ctx.translate(x + sh, y + dy); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(4, 26, 46, 10, 0, 0, 7); ctx.fill();
+          ctx.fillStyle = '#8a3020'; ctx.beginPath(); ctx.moveTo(-34, 24); ctx.lineTo(-26, -22); ctx.lineTo(26, -22); ctx.lineTo(34, 24); ctx.closePath(); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); rr(-30, -28, 60, 12, 6); ctx.fillStyle = '#b8482e'; ctx.fill(); ctx.stroke(); toyText('×' + o.n, 0, 2, 18, '#fff', 'center', TOY.navy); ctx.restore(); } });
       if (g.bid && g.state === 'bid') { rr(W / 2 - 170, H / 2 - 70, 340, 140, 30); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(g.bid.q + ' × ' + DICE[g.bid.f], W / 2, H / 2 - 10, 70, TOY.navy, 'center', null); toyText('bid by ' + g.bidBy.p.name, W / 2, H / 2 + 46, 20, '#6a76b8', 'center', null); }
       if (!g.bid && g.state === 'bid') toyText(cur().p.name + ' opens the bidding', W / 2, H / 2, 32, '#fff', 'center', TOY.navy);
       if (g.state === 'roll') { const a = g.t * 12; for (let k = 0; k < 5; k++) toyText(DICE[1 + Math.floor((a + k * 3) % 6)], W / 2 - 120 + k * 60, H / 2, 60, '#fff', 'center', null); toyText('Rolling…', W / 2, H / 2 + 70, 26, '#fff', 'center', TOY.navy); }
-      if (g.log.length && g.state === 'bid') g.log.slice(1, 4).forEach((l, i) => toyText(l, W / 2, H / 2 + 100 + i * 24, 16, 'rgba(255,255,255,.7)', 'center', null));
+      if (g.log.length && (g.state === 'bid' || g.state === 'reveal')) { rr(24, 80, 230, 30 + Math.min(8, g.log.length) * 26, 16); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill(); toyText('Bids this round', 139, 98, 15, '#fff', 'center', null); g.log.slice(0, 8).forEach((l, i) => toyText(l, 139, 124 + i * 26, 15, i === 0 ? TOY.sun : 'rgba(255,255,255,.75)', 'center', null)); }
+      if (g.state === 'bid') toyText(total() + ' dice on the table · 1s are wild', W / 2, H / 2 + 110, 18, 'rgba(255,255,255,.8)', 'center', null);
       if (g.state === 'reveal') { const r = g.rev, age = 6 - g.stateT; headline((r.spot ? '🎯 SPOT ON?' : 'LIAR!') + '  ' + r.by.p.name, W / 2, H / 2 - 60, 46, TOY.sun, TOY.coral);
         if (age > 1) toyText('There were ' + Math.min(r.c, Math.floor((age - 1) * 6)) + ' × ' + DICE[r.bid.f] + '  (bid: ' + r.bid.q + ')', W / 2, H / 2 + 6, 34, '#fff', 'center', TOY.navy);
         if (age > 2.5) toyText(r.lose.map(o => o.p.name).join(', ') + ' lose' + (r.lose.length === 1 ? 's' : '') + ' a die', W / 2, H / 2 + 56, 30, '#ff9aab', 'center', TOY.navy); }
@@ -11827,21 +11850,24 @@ const AR_WEAPONS = { pistol: { n: 'Pistol', i: '🔫', cost: 0, cd: 0.34, dmg: 1
 const AR_ABIL = { dash: { n: 'Dash', i: '⚡', cost: 300, cd: 3.5 }, mine: { n: 'Mine', i: '💣', cost: 400, cd: 6 }, heal: { n: 'Med-kit', i: '➕', cost: 400, cd: 99 }, bubble: { n: 'Bubble', i: '🫧', cost: 550, cd: 10 } };
 const ArmsRace = { title: 'Arms Race', accent: '#ff5a6e', button: 'FIRE', buttonB: 'ABILITY', panelGame: false,
   how: 'Each round: secretly spend your cash on your phone (weapons, armour, boots, abilities), then FIGHT. Nobody sees your build until the round starts. Kills and wins earn more cash. The safe zone shrinks, so no hiding! Most points after 5 rounds wins.',
-  create(players) { const g = { t: 0, done: false, state: 'shop', stateT: 25, round: 1, rounds: 5, shots: [], mines: [], fx: [], zone: 1, endT: 0, revealT: 0 }; talkCommon(g, players);
+  create(players) { const g = { t: 0, done: false, state: 'shop', stateT: 25, round: 1, rounds: 5, shots: [], mines: [], fx: [], zone: 1, endT: 0, revealT: 0, packs: [], packT: 8, feed: [] }; talkCommon(g, players);
     const rects = [[300, 160, 70, 140], [910, 420, 70, 140], [560, 110, 160, 50], [560, 560, 160, 50], [180, 470, 120, 50], [980, 200, 120, 50], [610, 320, 60, 80]];
     g.ps.forEach(o => Object.assign(o, { cash: 800, weapon: 'pistol', armor: 0, boots: false, ability: null, kills: 0, wins: 0, ready: false }));
     const spawn = [[100, 100], [W - 100, H - 100], [W - 100, 100], [100, H - 100], [W / 2, 90], [W / 2, H - 90], [100, H / 2], [W - 100, H / 2], [400, 380], [880, 340]];
-    function startFight() { g.ps.forEach((o, i) => { const [x, y] = spawn[i % spawn.length]; Object.assign(o, { x, y, vx: 0, vy: 0, fx: 1, fy: 0, maxhp: 100 + o.armor * 40, hp: 100 + o.armor * 40, alive: true, cd: 0, acd: 0, healed: false, inv: 0, dashT: 0, hitT: 0 }); });
-      g.shots = []; g.mines = []; g.state = 'reveal'; g.stateT = 3.5; g.zone = 1; SFX.go(); broadcastPhase(); }
+    function startFight() { g.ps.forEach((o, i) => { const [x, y] = spawn[i % spawn.length]; Object.assign(o, { x, y, vx: 0, vy: 0, fx: 1, fy: 0, maxhp: 100 + o.armor * 40, hp: 100 + o.armor * 40, alive: true, cd: 0, acd: 0, healed: false, inv: 0, dashT: 0, hitT: 0, rk: 0, cash0: o.cash }); });
+      g.shots = []; g.mines = []; g.packs = []; g.packT = 8; g.feed = []; g.state = 'reveal'; g.stateT = 3.5; g.zone = 1; SFX.go(); broadcastPhase(); }
     function endRound() { const al = g.ps.filter(o => o.alive); let win = al.length === 1 ? al[0] : al.sort((a, b) => b.hp / b.maxhp - a.hp / a.maxhp)[0];
       if (win) { win.wins++; win.score += 2; win.cash += 600; } g.ps.forEach(o => { o.cash += 400 + (o.alive ? 200 : 0); o.ready = false; }); g.winner = win; g.state = 'roundEnd'; g.stateT = 4; SFX.win(); broadcastPhase(); }
     const solid = (x, y, r) => rects.some(([rx, ry, rw, rh]) => x + r > rx && x - r < rx + rw && y + r > ry && y - r < ry + rh);
-    function hurt(o, dmg, src) { if (!o.alive || o.inv > 0) return; o.hp -= dmg; o.hitT = 0.15; burst(o.x, o.y, o.p.color, 6, 160, 4, 0.3); SFX.hit();
-      if (o.hp <= 0) { o.alive = false; burst(o.x, o.y, '#ffb067', 30, 300, 7, 0.7); SFX.boom(); shake(0.3); if (src && src !== o) { src.kills++; src.score += 1; src.cash += 300; } } }
+    function hurt(o, dmg, src) { if (!o.alive || o.inv > 0) return; o.hp -= dmg; o.hitT = 0.15; burst(o.x, o.y, o.p.color, 6, 160, 4, 0.3); SFX.hit(); if (dmg >= 1) g.fx.push({ k: 'num', x: o.x + rand(-10, 10), y: o.y - 40, v: Math.round(dmg), t: 0 });
+      if (o.hp <= 0) { o.alive = false; burst(o.x, o.y, '#ffb067', 40, 340, 8, 0.8); burst(o.x, o.y, o.p.color, 20, 260, 6, 0.6); g.fx.push({ k: 'ring', x: o.x, y: o.y, r: 120, t: 0 }); SFX.boom(); shake(0.4); buzz(o.p, 300);
+        g.feed.unshift({ t: 0, txt: (src && src !== o ? src.p.name + '  ' + AR_WEAPONS[src.weapon].i + '  ' : '☠ ') + o.p.name }); g.feed.length = Math.min(5, g.feed.length);
+        if (src && src !== o) { src.kills++; src.rk++; src.score += 1; src.cash += 300; } } }
     function fire(o) { const W0 = AR_WEAPONS[o.weapon]; o.cd = W0.cd; let ax = o.fx, ay = o.fy, best = null, bd = W0.range;
       for (const e of g.ps) if (e !== o && e.alive) { const dx = e.x - o.x, dy = e.y - o.y, d = hyp(dx, dy); if (d < bd && (dx * o.fx + dy * o.fy) / (d || 1) > 0.45) { bd = d; best = e; } }
       if (best) { const d = hyp(best.x - o.x, best.y - o.y) || 1; ax = (best.x - o.x) / d; ay = (best.y - o.y) / d; }
-      const n = W0.pellets || 1; for (let i = 0; i < n; i++) { const a = Math.atan2(ay, ax) + (Math.random() - 0.5) * (W0.spread || 0.04); g.shots.push({ x: o.x + Math.cos(a) * 22, y: o.y + Math.sin(a) * 22, vx: Math.cos(a) * W0.spd, vy: Math.sin(a) * W0.spd, life: W0.range / W0.spd, dmg: W0.dmg, splash: W0.splash, by: o }); }
+      g.fx.push({ k: 'flash', x: o.x + ax * 26, y: o.y + ay * 26, t: 0, a: Math.atan2(ay, ax) }); o.vx -= ax * (o.weapon === 'shotgun' || o.weapon === 'rocket' ? 120 : 20); o.vy -= ay * (o.weapon === 'shotgun' || o.weapon === 'rocket' ? 120 : 20);
+      const n = W0.pellets || 1; for (let i = 0; i < n; i++) { const a = Math.atan2(ay, ax) + (Math.random() - 0.5) * (W0.spread || 0.04); g.shots.push({ px: o.x, py: o.y, x: o.x + Math.cos(a) * 22, y: o.y + Math.sin(a) * 22, vx: Math.cos(a) * W0.spd, vy: Math.sin(a) * W0.spd, life: W0.range / W0.spd, dmg: W0.dmg, splash: W0.splash, by: o }); }
       tone(o.weapon === 'rocket' ? 200 : 900, 300, 0.05, 'square', 0.03); }
     function ability(o) { const A = o.ability && AR_ABIL[o.ability]; if (!A || o.acd > 0) return; o.acd = A.cd;
       if (o.ability === 'dash') { o.dashT = 0.18; SFX.dash(); } else if (o.ability === 'mine') { g.mines.push({ x: o.x, y: o.y, by: o, arm: 0.6 }); SFX.click(); } else if (o.ability === 'heal') { if (!o.healed) { o.healed = true; o.hp = Math.min(o.maxhp, o.hp + 60); SFX.power(); } } else if (o.ability === 'bubble') { o.inv = 2; SFX.freeze(); } }
@@ -11860,7 +11886,10 @@ const ArmsRace = { title: 'Arms Race', accent: '#ff5a6e', button: 'FIRE', button
         const nx = clamp(o.x + o.vx * dt, 18, W - 18), ny = clamp(o.y + o.vy * dt, 18, H - 18); if (!solid(nx, o.y, 16)) o.x = nx; if (!solid(o.x, ny, 16)) o.y = ny;
         if ((o.p.aDown || inp.a) && o.cd <= 0) fire(o); if (o.p.bDown) ability(o);
         if (hyp(o.x - W / 2, o.y - H / 2) > zr) hurt(o, 9 * dt, null); }
-      for (const s2 of g.shots) { s2.life -= dt; s2.x += s2.vx * dt; s2.y += s2.vy * dt; if (solid(s2.x, s2.y, 2)) s2.life = 0;
+      g.packT -= dt; if (g.packT <= 0 && g.packs.length < 3) { g.packT = 12; for (let k = 0; k < 20; k++) { const x = rand(140, W - 140), y = rand(120, H - 120); if (!solid(x, y, 20) && hyp(x - W / 2, y - H / 2) < g.zone * 700) { g.packs.push({ x, y, t: 0 }); break; } } }
+      for (const pk of g.packs) { pk.t += dt; for (const o of g.ps) if (o.alive && !pk.got && hyp(o.x - pk.x, o.y - pk.y) < 28 && o.hp < o.maxhp) { pk.got = true; o.hp = Math.min(o.maxhp, o.hp + 35); SFX.power(); g.fx.push({ k: 'num', x: o.x, y: o.y - 40, v: '+35', t: 0, heal: true }); } } g.packs = g.packs.filter(pk => !pk.got);
+      for (const f of g.feed) f.t += dt; g.feed = g.feed.filter(f => f.t < 6);
+      for (const s2 of g.shots) { s2.px = s2.x; s2.py = s2.y; s2.life -= dt; s2.x += s2.vx * dt; s2.y += s2.vy * dt; if (solid(s2.x, s2.y, 2)) { s2.life = 0; burst(s2.x, s2.y, '#c9a070', 4, 120, 3, 0.2); }
         for (const o of g.ps) if (s2.life > 0 && o.alive && o !== s2.by && hyp(o.x - s2.x, o.y - s2.y) < 20) { s2.life = 0; hurt(o, s2.dmg, s2.by); }
         if (s2.life <= 0 && s2.splash) { g.fx.push({ k: 'ring', x: s2.x, y: s2.y, r: s2.splash, t: 0 }); for (const o of g.ps) if (o.alive && hyp(o.x - s2.x, o.y - s2.y) < s2.splash) hurt(o, s2.dmg * 0.6, s2.by); SFX.boom(); s2.splash = 0; } }
       g.shots = g.shots.filter(s2 => s2.life > 0);
@@ -11889,8 +11918,13 @@ const ArmsRace = { title: 'Arms Race', accent: '#ff5a6e', button: 'FIRE', button
       if (g.state === 'fight' || g.state === 'reveal') { const zr = g.zone * 760; ctx.save(); ctx.fillStyle = 'rgba(255,60,80,.18)'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(W / 2 + zr, H / 2); ctx.arc(W / 2, H / 2, zr, 0, Math.PI * 2, true); ctx.fill(); ctx.strokeStyle = '#ff5a6e'; ctx.lineWidth = 4; ctx.setLineDash([12, 10]); ctx.beginPath(); ctx.arc(W / 2, H / 2, zr, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
       for (const [x, y, w, h] of rects) { rr(x, y, w, h, 10); ctx.fillStyle = '#8a6a44'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke(); }
       for (const m of g.mines) { ctx.fillStyle = m.arm > 0 ? '#888' : (Math.floor(g.t * 6) % 2 ? '#ff5a6e' : '#8a2030'); ctx.beginPath(); ctx.arc(m.x, m.y, 9, 0, 7); ctx.fill(); }
-      for (const s2 of g.shots) { ctx.fillStyle = s2.splash ? '#ffb067' : '#fff6b0'; ctx.beginPath(); ctx.arc(s2.x, s2.y, s2.splash ? 7 : 4, 0, 7); ctx.fill(); }
-      for (const f of g.fx) if (f.t < 0.4) { ctx.strokeStyle = `rgba(255,176,103,${1 - f.t / 0.4})`; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.3 + f.t * 2), 0, 7); ctx.stroke(); }
+      for (const pk of g.packs) { const b = Math.sin(pk.t * 4) * 4; rr(pk.x - 16, pk.y - 16 + b, 32, 32, 8); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = '#ff5a6e'; ctx.fillRect(pk.x - 4, pk.y - 11 + b, 8, 22); ctx.fillRect(pk.x - 11, pk.y - 4 + b, 22, 8); }
+      for (const s2 of g.shots) { ctx.strokeStyle = s2.splash ? 'rgba(255,176,103,.6)' : 'rgba(255,246,176,.55)'; ctx.lineWidth = s2.splash ? 6 : 3; ctx.beginPath(); ctx.moveTo(s2.px - (s2.x - s2.px) * 2, s2.py - (s2.y - s2.py) * 2); ctx.lineTo(s2.x, s2.y); ctx.stroke(); ctx.fillStyle = s2.splash ? '#ffb067' : '#fff6b0'; ctx.beginPath(); ctx.arc(s2.x, s2.y, s2.splash ? 7 : 4, 0, 7); ctx.fill(); }
+      for (const f of g.fx) { if (f.k === 'ring' && f.t < 0.4) { ctx.strokeStyle = `rgba(255,176,103,${1 - f.t / 0.4})`; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.3 + f.t * 2), 0, 7); ctx.stroke(); }
+        if (f.k === 'flash' && f.t < 0.06) { ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.a); ctx.fillStyle = '#fff3a0'; ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(22, 0); ctx.lineTo(0, 7); ctx.closePath(); ctx.fill(); ctx.restore(); }
+        if (f.k === 'num' && f.t < 0.8) { ctx.globalAlpha = 1 - f.t / 0.8; toyText(String(f.v), f.x, f.y - f.t * 40, f.heal ? 20 : 18, f.heal ? TOY.mint : '#fff', 'center', f.heal ? TOY.navy : TOY.coral); ctx.globalAlpha = 1; } }
+      g.fx = g.fx.filter(f => f.t < 1);
+      g.feed.forEach((f, i) => { ctx.globalAlpha = Math.min(1, 6 - f.t); rr(W - 300, 46 + i * 30, 286, 26, 13); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill(); toyText(f.txt, W - 157, 59 + i * 30, 14, '#fff', 'center', null); ctx.globalAlpha = 1; });
       if (g.state === 'fight' || g.state === 'reveal' || g.state === 'roundEnd') for (const o of g.ps) { if (!o.alive) continue;
         if (o.inv > 0) { ctx.strokeStyle = '#7fd3ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(o.x, o.y, 30, 0, 7); ctx.stroke(); }
         drawCritter(o.x, o.y - 6, 22, o.p.char, { fx: o.fx, fy: o.fy, ouch: o.hitT > 0, walk: hyp(o.vx, o.vy) > 30 ? host.t * 16 : 0, anim: o.hitT > 0 ? 'hit' : hyp(o.vx, o.vy) > 30 ? 'run' : 'idle' });
@@ -11903,7 +11937,8 @@ const ArmsRace = { title: 'Arms Race', accent: '#ff5a6e', button: 'FIRE', button
       if (g.state === 'reveal') { ctx.fillStyle = 'rgba(20,24,40,.6)'; ctx.fillRect(0, 0, W, H); headline('LOADOUTS', W / 2, 140, 54, TOY.sun, TOY.coral);
         g.ps.forEach((o, i) => { const k = Math.min(1, Math.max(0, (3.5 - g.stateT) * 2 - i * 0.3)); if (k <= 0) return; const x = W / 2 + (i - (g.ps.length - 1) / 2) * Math.min(150, 1150 / g.ps.length); ctx.globalAlpha = k;
           toyPanel(x - 64, 220, 128, 200, 18, '#fff', 5); drawAvatar(x, 260, 26, o.p); toyText(o.p.name.slice(0, 9), x, 300, 15, o.p.color, 'center', TOY.navy); toyText(AR_WEAPONS[o.weapon].i, x, 340, 36, '#fff', 'center', null); toyText((o.ability ? AR_ABIL[o.ability].i : '·') + ' ' + '🛡'.repeat(o.armor) + (o.boots ? '👟' : ''), x, 390, 22, '#fff', 'center', null); ctx.globalAlpha = 1; }); }
-      if (g.state === 'roundEnd') headline(g.winner ? '🏆 ' + g.winner.p.name + ' takes round ' + g.round : 'Round over', W / 2, H / 2, 50, TOY.sun, TOY.coral);
+      if (g.state === 'roundEnd') { ctx.fillStyle = 'rgba(20,24,40,.6)'; ctx.fillRect(0, 0, W, H); headline(g.winner ? '🏆 ' + g.winner.p.name + ' takes round ' + g.round : 'Round over', W / 2, 200, 50, TOY.sun, TOY.coral);
+        g.ps.slice().sort((a, b) => b.score - a.score).forEach((o, i) => { const y = 280 + i * 40; drawAvatar(W / 2 - 230, y, 16, o.p); toyText(o.p.name, W / 2 - 200, y, 20, '#fff', 'left', TOY.navy); toyText('💀 ' + o.rk + '   +$' + (o.cash - o.cash0) + '   ' + o.score + ' pts', W / 2 + 230, y, 20, TOY.sun, 'right', TOY.navy); }); }
       if (g.state === 'end') { ctx.fillStyle = 'rgba(20,24,40,.7)'; ctx.fillRect(0, 0, W, H); headline(g.resultLine(), W / 2, H / 2, 40, TOY.sun, TOY.coral); confetti(40, 1); } };
     return g; } };
 
@@ -11914,32 +11949,38 @@ const TurfWars = { title: 'Turf Wars', accent: '#b48cff', phones: true, minPhone
   create(players) { const g = { t: 0, done: false, panelGame: true, state: 'play', stateT: 420, nodes: [], edges: [], moves: [], sel: {}, tick: 0, endT: 0, pushT: 0 }; talkCommon(g, players);
     // map: random points, connect nearest neighbours, keep it connected
     const N = Math.min(24, 10 + players.length * 2); const rnd = Math.random;
-    for (let tries = 0; g.nodes.length < N && tries < 4000; tries++) { const x = 110 + rnd() * (W - 220), y = 120 + rnd() * (H - 200); if (g.nodes.every(n => hyp(n.x - x, n.y - y) > 120)) g.nodes.push({ id: g.nodes.length, x, y, own: -1, tr: 4 + Math.floor(rnd() * 10), name: TURF_NAMES[g.nodes.length], adj: new Set() }); }
+    for (let tries = 0; g.nodes.length < N && tries < 4000; tries++) { const x = 110 + rnd() * (W - 220), y = 120 + rnd() * (H - 200); if (g.nodes.every(n => hyp(n.x - x, n.y - y) > 120)) g.nodes.push({ id: g.nodes.length, x, y, own: -1, tr: 4 + Math.floor(rnd() * 10), name: TURF_NAMES[g.nodes.length], adj: new Set(), type: ['fort', 'mine', 'farm', '', '', ''][Math.floor(rnd() * 6)], shieldT: 0 }); }
     const link = (a, b) => { if (a === b || a.adj.has(b.id)) return; a.adj.add(b.id); b.adj.add(a.id); g.edges.push([a.id, b.id]); };
     for (const a of g.nodes) g.nodes.filter(b => b !== a).sort((p, q) => hyp(p.x - a.x, p.y - a.y) - hyp(q.x - a.x, q.y - a.y)).slice(0, 3).forEach(b => { if (hyp(b.x - a.x, b.y - a.y) < 330) link(a, b); });
     const seen = new Set([0]), stack = [0]; while (stack.length) { const n = g.nodes[stack.pop()]; for (const m of n.adj) if (!seen.has(m)) { seen.add(m); stack.push(m); } }
     for (const n of g.nodes) if (!seen.has(n.id)) { const near = g.nodes.filter(m => seen.has(m.id)).sort((p, q) => hyp(p.x - n.x, p.y - n.y) - hyp(q.x - n.x, q.y - n.y))[0]; link(n, near); seen.add(n.id); for (const m of n.adj) seen.add(m); }
     // starting bases: spread out
     const taken = []; g.ps.forEach((o, i) => { let best = null, bs = -1; for (const n of g.nodes) { if (taken.includes(n)) continue; const d = taken.length ? Math.min(...taken.map(t => hyp(t.x - n.x, t.y - n.y))) : hyp(n.x - 100, n.y - 100); if (d > bs) { bs = d; best = n; } }
-      taken.push(best); best.own = i; best.tr = 20; best.cap = i; o.idx = i; const cand = g.nodes.filter(n => n.own === -1); o.secret = cand[Math.floor(Math.random() * cand.length)]; });
+      taken.push(best); best.own = i; best.tr = 20; best.cap = i; best.type = ''; o.idx = i; o.gold = 20; const cand = g.nodes.filter(n => n.own === -1); o.secret = cand[Math.floor(Math.random() * cand.length)]; });
     const R = () => broadcastPhase(), mine = o => g.nodes.filter(n => n.own === o.idx);
     function send(o, from, to, frac) { if (from.own !== o.idx || !from.adj.has(to.id)) return; const n = Math.floor(from.tr * frac); if (n < 1) return; from.tr -= n; g.moves.push({ from, to, n, own: o.idx, t: 0, d: hyp(to.x - from.x, to.y - from.y) }); SFX.click(); }
     g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 6) g.done = true; return; } g.stateT -= dt; g.tick += dt; g.pushT += dt;
-      if (g.tick >= 1.5) { g.tick -= 1.5; for (const n of g.nodes) if (n.own >= 0) { const o = g.ps[n.own]; n.tr = Math.min(150, n.tr + 1 + (n.cap === n.own ? 1 : 0) + (o.secret === n ? 1 : 0)); } }
-      for (const m of g.moves) { m.t += dt * 140; if (m.t >= m.d) { m.done = true; const to = m.to; if (to.own === m.own) to.tr += m.n; else { to.tr -= m.n; if (to.tr < 0) { const prev = to.own; to.own = m.own; to.tr = -to.tr; burst(to.x, to.y, g.ps[m.own].p.color, 16, 220, 5, 0.5); SFX.pop(); if (prev >= 0 && !g.nodes.some(n => n.own === prev)) { toast(g.ps[prev].p.name + ' has been wiped off the map!'); SFX.boom(); } } else SFX.hit(); } } }
+      if (g.tick >= 1.5) { g.tick -= 1.5; for (const o of g.ps) o.gold += 1; for (const n of g.nodes) { n.shieldT = Math.max(0, n.shieldT - 1.5); if (n.own >= 0) { const o = g.ps[n.own]; n.tr = Math.min(150, n.tr + 1 + (n.cap === n.own ? 1 : 0) + (o.secret === n ? 1 : 0) + (n.type === 'farm' ? 1 : 0)); if (n.type === 'mine') o.gold += 2; } } }
+      for (const m of g.moves) { m.t += dt * 140; if (m.t >= m.d) { m.done = true; const to = m.to; if (to.own === m.own) to.tr += m.n; else { const def = (to.type === 'fort' ? 1.5 : 1) * (to.shieldT > 0 ? 2 : 1); to.tr -= m.n / def; if (to.tr < 0) { to.tr = Math.ceil(-to.tr * def); to.tr = -to.tr; const prev = to.own; to.own = m.own; to.tr = Math.max(1, -to.tr); to.shieldT = 0; burst(to.x, to.y, g.ps[m.own].p.color, 16, 220, 5, 0.5); SFX.pop(); if (prev >= 0 && !g.nodes.some(n => n.own === prev)) { toast(g.ps[prev].p.name + ' has been wiped off the map!'); SFX.boom(); } } else { to.tr = Math.ceil(to.tr); SFX.hit(); } } } }
       g.moves = g.moves.filter(m => !m.done);
+      for (const o of g.ps) if (o.p.kind === 'bot' && o.gold >= 60 && Math.random() < dt * 0.2) { const my = mine(o); if (my.length) { const n = my.sort((a, b) => [...b.adj].filter(j => g.nodes[j].own !== o.idx).length - [...a.adj].filter(j => g.nodes[j].own !== o.idx).length)[0]; o.gold -= 40; n.tr += 15; } }
       for (const o of g.ps) if (o.p.kind === 'bot' && Math.random() < dt * 0.5) { const my = mine(o).filter(n => n.tr > 8); if (my.length) { const from = my[Math.floor(Math.random() * my.length)]; const targets = [...from.adj].map(i => g.nodes[i]).filter(n => n.own !== o.idx && n.tr + 2 < from.tr * 0.7); const tgt = targets.sort((a, b) => a.tr - b.tr)[0]; if (tgt) send(o, from, tgt, 0.7); else { const front = [...from.adj].map(i => g.nodes[i]).filter(n => n.own === o.idx && [...n.adj].some(j => g.nodes[j].own !== o.idx)); if (front.length && ![...from.adj].some(j => g.nodes[j].own !== o.idx)) send(o, from, front[0], 0.6); } } }
       if (g.pushT > 1) { g.pushT = 0; R(); }
       const alive = g.ps.filter(o => mine(o).length || g.moves.some(m => m.own === o.idx)); if (g.stateT <= 0 || (g.ps.length > 1 && alive.length <= 1)) { g.ps.forEach(o => o.score = mine(o).length * 10 + Math.round(mine(o).reduce((a, n) => a + n.tr, 0) / 10)); g.state = 'end'; SFX.win(); R(); } };
     g.onPick = (p, v) => { const o = g.find(p); if (!o || g.state !== 'play' || typeof v !== 'string') return; const sel = g.sel[p.slot];
       if (v[0] === 'n') { g.sel[p.slot] = +v.slice(1); SFX.click(); sendPhase(p); return; } if (v === 'back') { g.sel[p.slot] = null; sendPhase(p); return; }
-      if (v[0] === 'a' && sel != null) { const [to, f] = v.slice(1).split('_'); send(o, g.nodes[sel], g.nodes[+to], +f / 100); sendPhase(p); } };
+      if (v[0] === 'a' && sel != null) { const [to, f] = v.slice(1).split('_'); send(o, g.nodes[sel], g.nodes[+to], +f / 100); sendPhase(p); }
+      if (v === 'reinf' && sel != null && g.nodes[sel].own === o.idx && o.gold >= 40) { o.gold -= 40; g.nodes[sel].tr += 15; SFX.power(); burst(g.nodes[sel].x, g.nodes[sel].y, o.p.color, 14, 200, 5, 0.5); sendPhase(p); }
+      if (v === 'wall' && sel != null && g.nodes[sel].own === o.idx && o.gold >= 50) { o.gold -= 50; g.nodes[sel].shieldT = 30; SFX.freeze(); sendPhase(p); }
+      if (v.startsWith('sab') && sel != null && o.gold >= 70) { const t = g.nodes[+v.slice(3)]; if (t && g.nodes[sel].adj.has(t.id) && t.own !== o.idx) { o.gold -= 70; t.tr = Math.floor(t.tr / 2); SFX.boom(); shake(0.2); burst(t.x, t.y, '#ffb067', 24, 260, 6, 0.6); toast('🔥 ' + t.name + ' was sabotaged!'); sendPhase(p); } } };
     g.panel = p => { const o = g.find(p); if (!o) return '<b>👀 Watching</b>'; const my = mine(o);
       if (g.state === 'end') return `<b>🏁 Final: ${my.length} territories</b>`; if (!my.length) return '<b>💀 Wiped out</b>Plot your revenge for the rematch.';
-      const sec = `<div class="small" style="opacity:1">🤫 Secret bonus: <b style="display:inline;font-size:inherit">${esc(o.secret.name)}</b> ${o.secret.own === o.idx ? '(yours! +1/tick)' : '(capture it!)'}</div>`, sel = g.sel[p.slot] != null ? g.nodes[g.sel[p.slot]] : null;
-      if (!sel || sel.own !== o.idx) return `<b>🗺 Your turf (${my.length})</b>${sec}<div class="vgrid">${my.sort((a, b) => b.tr - a.tr).map(n => `<button class="pbtn" data-c="pp" data-v="n${n.id}" style="border-color:${o.p.color}">${esc(n.name)}<small>${n.tr} troops</small></button>`).join('')}</div><div class="small">Tap a territory to send troops from it</div>`;
+      const TI = { fort: '🏰', mine: '⛏', farm: '🌾', '': '' }, goldTxt = `<div class="small" style="opacity:1">💰 ${o.gold} gold</div>`;
+      const sec = goldTxt + `<div class="small" style="opacity:1">🤫 Secret bonus: <b style="display:inline;font-size:inherit">${esc(o.secret.name)}</b> ${o.secret.own === o.idx ? '(yours! +1/tick)' : '(capture it!)'}</div>`, sel = g.sel[p.slot] != null ? g.nodes[g.sel[p.slot]] : null;
+      if (!sel || sel.own !== o.idx) return `<b>🗺 Your turf (${my.length})</b>${sec}<div class="vgrid">${my.sort((a, b) => b.tr - a.tr).map(n => `<button class="pbtn" data-c="pp" data-v="n${n.id}" style="border-color:${o.p.color}">${TI[n.type]} ${esc(n.name)}<small>${Math.floor(n.tr)} troops${n.shieldT > 0 ? ' · 🛡' : ''}</small></button>`).join('')}</div><div class="small">Tap a territory to send troops from it</div>`;
       const adj = [...sel.adj].map(i => g.nodes[i]);
-      return `<b>From ${esc(sel.name)} · ${sel.tr} troops</b>${sec}${adj.map(n => { const ow = n.own >= 0 ? g.ps[n.own] : null, friendly = n.own === o.idx; return `<div class="mis"><span style="color:${ow ? ow.p.color : '#8a93b8'}">${friendly ? '🛡' : '⚔'} ${esc(n.name)} · ${n.tr} <small>${ow ? esc(ow.p.name) : 'neutral'}</small></span><span class="row" style="margin:0">${[25, 50, 100].map(f => `<button class="pbtn" data-c="pp" data-v="a${n.id}_${f}">${f}%</button>`).join('')}</span></div>`; }).join('')}<button class="pbtn" data-c="pp" data-v="back">◀ Back</button>`; };
+      return `<b>From ${TI[sel.type]} ${esc(sel.name)} · ${Math.floor(sel.tr)} troops</b>${sec}<div class="row"><button class="pbtn" data-c="pp" data-v="reinf"${o.gold < 40 ? ' disabled' : ''}>📯 +15 troops<small>40 gold</small></button><button class="pbtn" data-c="pp" data-v="wall"${o.gold < 50 || sel.shieldT > 0 ? ' disabled' : ''}>🛡 Walls 30s<small>50 gold</small></button></div>
+        ${adj.map(n => { const ow = n.own >= 0 ? g.ps[n.own] : null, friendly = n.own === o.idx; return `<div class="mis"><span style="color:${ow ? ow.p.color : '#8a93b8'}">${friendly ? '➡' : '⚔'} ${TI[n.type]} ${esc(n.name)} · ${Math.floor(n.tr)}${n.shieldT > 0 ? '🛡' : ''} <small>${ow ? esc(ow.p.name) : 'neutral'}</small></span><span class="row" style="margin:0">${[25, 50, 100].map(f => `<button class="pbtn" data-c="pp" data-v="a${n.id}_${f}">${f}%</button>`).join('')}${!friendly ? `<button class="pbtn" data-c="pp" data-v="sab${n.id}"${o.gold < 70 ? ' disabled' : ''}>🔥</button>` : ''}</span></div>`; }).join('')}<div class="small">🏰 forts defend ×1.5 · ⛏ mines pay gold · 🌾 farms grow faster · 🔥 sabotage halves troops (70g)</div><button class="pbtn" data-c="pp" data-v="back">◀ Back</button>`; };
     g.ranking = () => g.ps.slice().sort((a, b) => b.score - a.score).map(o => o.p.slot);
     g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; return '🗺 ' + top.p.name + ' rules the map'; };
     g.draw = () => { const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#2f6f8f'); gr.addColorStop(1, '#1d4a66'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
@@ -11948,10 +11989,11 @@ const TurfWars = { title: 'Turf Wars', accent: '#b48cff', phones: true, minPhone
       for (const m of g.moves) { const k = m.t / m.d, x = m.from.x + (m.to.x - m.from.x) * k, y = m.from.y + (m.to.y - m.from.y) * k, col = g.ps[m.own].p.color; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 10 + Math.min(10, m.n / 4), 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(m.n, x, y, 13, '#fff', 'center', TOY.navy); }
       for (const n of g.nodes) { const col = n.own >= 0 ? g.ps[n.own].p.color : '#c9cde6', r = 26 + Math.min(16, n.tr / 6);
         ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(n.x + 3, n.y + 5, r, 0, 7); ctx.fill(); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
-        if (n.cap != null) toyText('★', n.x, n.y - r - 8, 18, TOY.sun, 'center', TOY.navy); toyText(n.tr, n.x, n.y, 18, '#fff', 'center', TOY.navy); toyText(n.name, n.x, n.y + r + 12, 12, '#fff', 'center', TOY.navy); }
+        if (n.shieldT > 0) { ctx.strokeStyle = '#7fd3ff'; ctx.lineWidth = 5; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.arc(n.x, n.y, r + 8, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+        if (n.cap != null) toyText('★', n.x, n.y - r - 8, 18, TOY.sun, 'center', TOY.navy); else if (n.type) toyText({ fort: '🏰', mine: '⛏', farm: '🌾' }[n.type], n.x + r - 2, n.y - r + 2, 18, '#fff', 'center', null); toyText(Math.floor(n.tr), n.x, n.y, 18, '#fff', 'center', TOY.navy); toyText(n.name, n.x, n.y + r + 12, 12, '#fff', 'center', TOY.navy); }
       rr(W / 2 - 80, 8, 160, 40, 20); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); toyText('⏱ ' + Math.floor(Math.max(0, g.stateT) / 60) + ':' + String(Math.floor(Math.max(0, g.stateT) % 60)).padStart(2, '0'), W / 2, 28, 22, TOY.navy, 'center', null);
       headline('TURF WARS', 120, 28, 26, '#fff', '#8a5cff');
-      g.ps.slice().sort((a, b) => mine(b).length - mine(a).length).forEach((o, i) => { const x = W - 170, y = 16 + i * 30; rr(x, y, 160, 26, 13); ctx.fillStyle = o.p.color; ctx.fill(); toyText(o.p.name.slice(0, 10) + ' · ' + mine(o).length, x + 80, y + 13, 14, '#fff', 'center', TOY.navy); });
+      g.ps.slice().sort((a, b) => mine(b).length - mine(a).length).forEach((o, i) => { const x = W - 170, y = 16 + i * 30; rr(x, y, 160, 26, 13); ctx.fillStyle = o.p.color; ctx.fill(); toyText(o.p.name.slice(0, 9) + ' · ' + mine(o).length + ' · 💰' + o.gold, x + 80, y + 13, 13, '#fff', 'center', TOY.navy); });
       if (g.state === 'end') { ctx.fillStyle = 'rgba(20,30,50,.7)'; ctx.fillRect(0, 0, W, H); headline(g.resultLine(), W / 2, H / 2, 46, TOY.sun, '#8a5cff'); confetti(40, 1); } };
     return g; } };
 
