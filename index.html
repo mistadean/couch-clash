@@ -10893,9 +10893,9 @@ function cardFX() {
 }
 const Shithead = {
   title: 'Shithead', accent: '#c4402a', phones: true, minPhones: 1, botsOk: true, panelGame: true,
-  how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead!',
+  how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. At the start you get time to swap hand cards with your face-up cards. Play several cards of the same rank at once. You can pick up the pile any time on your turn. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead!',
   create(players) {
-    const deck = makeDeck(players.length > 4 ? 2 : 1), g = { t: 0, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
+    const deck = makeDeck(players.length > 4 ? 2 : 1), g = { t: 0, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, phase: 'swap', swapT: 40, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
     players.forEach(p => g.ps.push({ p, hand: deck.splice(0, 4), up: deck.splice(0, 4), down: deck.splice(0, 4), done: false }));
     g.turn = Math.floor(Math.random() * g.ps.length);
     const byR = (a, b) => a.r - b.r, cur = () => g.ps[g.turn];
@@ -10912,9 +10912,10 @@ const Shithead = {
     function nextTurn() { if (g.winner) return; const n = g.ps.length; for (let k = 1; k <= n; k++) { const j = (g.turn + k) % n; if (!g.ps[j].done) { g.turn = j; break; } } g.turnT = 35; refresh(); }
     function finishCheck(o) { if (!o.done && !o.hand.length && !o.up.length && !o.down.length) { o.done = true; g.out.push(o); say(o.p.name + ' is out! 🎉'); SFX.cheer();
         const left = g.ps.filter(x => !x.done); if (left.length <= 1) { g.winner = g.out[0]; g.loser = left[0] || null; if (g.loser) g.out.push(g.loser); SFX.win(); refresh(); return true; } } return false; }
-    function play(o, c, from) {
-      const arr = o[from], i = arr.indexOf(c); arr.splice(i, 1); g.pile.push(c); g.last = c;
-      c.fly = true; fx.fly(face(c), seat(o), PILE, { dur: 0.3, s0: 0.55, s1: 1.25, arc: 50, flip: from === 'down', done: () => { c.fly = false; SFX.pop(); burst(PILE[0], PILE[1], isRed(c) ? '#ff9aab' : '#cfd6ff', 8, 160, 4, 0.3); } });
+    function play(o, cs, from) { if (!Array.isArray(cs)) cs = [cs]; const c = cs[cs.length - 1]; g.sel[o.p.slot] = [];
+      cs.forEach((cc, k) => { const arr = o[from], i = arr.indexOf(cc); arr.splice(i, 1); g.pile.push(cc); cc.fly = true;
+        fx.fly(face(cc), seat(o), PILE, { delay: k * 0.14, dur: 0.3, s0: 0.55, s1: 1.25, arc: 50, flip: from === 'down', done: () => { cc.fly = false; SFX.pop(); burst(PILE[0], PILE[1], isRed(cc) ? '#ff9aab' : '#cfd6ff', 8, 160, 4, 0.3); } }); });
+      g.last = c; if (cs.length > 1) say(o.p.name + ' plays ' + ['', '', 'a pair of', 'three', 'four'][Math.min(4, cs.length)] + ' ' + rankName(c.r) + 's!');
       while (o.hand.length < 4 && deck.length && from === 'hand') o.hand.push(deck.pop()); o.hand.sort(byR);
       const top4 = g.pile.slice(-4), four = top4.length === 4 && top4.every(x => x.r === top4[0].r);
       if (c.r === 10 || four) { const blown = g.pile.slice(-10); blown.forEach((b, k) => { const a = Math.random() * Math.PI * 2; fx.fly(face(b), PILE, [PILE[0] + Math.cos(a) * 900, PILE[1] + Math.sin(a) * 600], { delay: 0.28 + k * 0.02, dur: 0.9, s0: 1.25, s1: 0.9, arc: -80, spin: (Math.random() - 0.5) * 16 }); });
@@ -10924,35 +10925,56 @@ const Shithead = {
       if (finishCheck(o)) return; nextTurn();
     }
     function pickUp(o, extra, delay = 0) { const n = g.pile.length + (extra ? 1 : 0), to = seat(o);
-      g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); SFX.bonk(); buzz(o.p, 150); say(o.p.name + ' picks up ' + n + ' card' + (n === 1 ? '' : 's') + ' 😬'); nextTurn(); }
+      g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); SFX.bonk(); buzz(o.p, 150); say(o.p.name + ' picks up ' + n + ' card' + (n === 1 ? '' : 's') + ' 😬'); g.sel[o.p.slot] = []; nextTurn(); }
     function blind(o, i) { const c = o.down[i]; if (!c) return; if (canPlay(c)) { say(o.p.name + ' flips ' + cardName(c) + '… it works!'); play(o, c, 'down'); } else { o.down.splice(i, 1); say(o.p.name + ' flips ' + cardName(c) + '… nope!'); fx.fly(face(c), seat(o), PILE, { dur: 0.45, s0: 0.6, s1: 1.25, flip: true }); pickUp(o, c, 0.6); } }
     function autoMove(o) { const s = src(o); if (!s) { nextTurn(); return; } if (s === 'down') return blind(o, Math.floor(Math.random() * o.down.length));
       const opts = o[s].filter(canPlay); if (!opts.length) return pickUp(o);
       const normal = opts.filter(c => c.r !== 2 && c.r !== 10 && c.r !== 7).sort(byR); const pick = normal[0] || opts.find(c => c.r === 7) || opts.find(c => c.r === 2) || opts[0];
-      play(o, pick, s); }
+      play(o, pick.r === 10 ? [pick] : o[s].filter(c => c.r === pick.r), s); }
+    const keep = c => c.r === 2 || c.r === 10 || c.r === 7 ? 20 + c.r : c.r; // how much a bot wants a card face-up
+    function botSwap(o) { const all = o.hand.concat(o.up).sort((a, b) => keep(b) - keep(a)); o.up = all.slice(0, 4); o.hand = all.slice(4).sort(byR); o.ready = true; }
+    function startPlay() { g.phase = 'play'; g.turnT = 35; for (const o of g.ps) o.hand.sort(byR); say('Game on! ' + cur().p.name + ' starts'); SFX.go(); refresh(); }
     g.update = dt => { g.t += dt; if (g.msgT > 0) g.msgT -= dt; g.boom = Math.max(0, g.boom - dt); fx.update(dt);
       if (g.winner) { g.endT += dt; if (g.endT > 6) g.done = true; return; }
       if (g.dealT > 0) { g.dealT -= dt; return; }
+      if (g.phase === 'swap') { g.swapT -= dt; for (const o of g.ps) if (o.p.kind === 'bot' && !o.ready && g.swapT < 38) botSwap(o); if (g.swapT <= 0 || g.ps.every(o => o.ready)) startPlay(); return; }
       const o = cur(); g.turnT -= dt;
       if (o.p.kind === 'bot' && g.turnT < 33.6) return autoMove(o);
       if (g.turnT <= 0) autoMove(o); };
-    g.onPick = (p, v) => { const o = cur(); if (!o || o.p !== p || g.winner || typeof v !== 'string') return; const s = src(o);
-      if (v === 'up!') { if (s !== 'down' && !o[s].some(canPlay)) pickUp(o); return; }
-      const k = v[0], i = +v.slice(1);
-      if (k === 'h' && s === 'hand' && o.hand[i] && canPlay(o.hand[i])) play(o, o.hand[i], 'hand');
-      else if (k === 'u' && s === 'up' && o.up[i] && canPlay(o.up[i])) play(o, o.up[i], 'up');
+    g.onPick = (p, v) => { if (g.winner || typeof v !== 'string') return;
+      if (g.phase === 'swap') { const me = g.ps.find(x => x.p === p); if (!me || g.dealT > 0) return;
+        if (v === 'ready') { me.ready = true; SFX.pop(); refresh(); return; } me.ready = false;
+        const k = v[0], i = +v.slice(1), pk = me.pick; if (k !== 'h' && k !== 'u') return;
+        if (!pk) me.pick = { k, i }; else if (pk.k === k) me.pick = pk.i === i ? null : { k, i };
+        else { const hi = k === 'h' ? i : pk.i, ui = k === 'u' ? i : pk.i, c = me.hand[hi]; me.hand[hi] = me.up[ui]; me.up[ui] = c; me.pick = null; SFX.click(); }
+        sendPhase(p); return; }
+      const o = cur(); if (!o || o.p !== p) return; const s = src(o);
+      if (v === 'up!') { if (g.pile.length) pickUp(o); return; }
+      const k = v[0], i = +v.slice(1), sel = g.sel[p.slot] || (g.sel[p.slot] = []);
+      if (v === 'go') { const cs = sel.map(j => o[s][j]).filter(Boolean); if (cs.length && cs.every(c => c.r === cs[0].r) && canPlay(cs[0])) play(o, cs, s); else { g.sel[p.slot] = []; sendPhase(p); } return; }
+      if ((k === 'h' && s === 'hand') || (k === 'u' && s === 'up')) { const c = o[s][i]; if (!c || !canPlay(c)) return;
+        const at = sel.indexOf(i); if (at >= 0) sel.splice(at, 1); else { if (sel.length && o[s][sel[0]].r !== c.r) sel.length = 0; sel.push(i); }
+        // only one card of this rank? play it straight away
+        if (sel.length === 1 && o[s].filter(x => x.r === c.r).length === 1) { play(o, [c], s); return; }
+        sendPhase(p); }
       else if (k === 'd' && s === 'down') blind(o, i); };
     g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
       if (g.winner) return o === g.loser ? '<b>💩 You\'re the Shithead!</b>Better luck next round.' : `<b>${o === g.winner ? '🏆 You went out first!' : '🎉 You\'re safe!'}</b>${g.loser ? esc(g.loser.p.name) + ' is the Shithead 💩' : ''}`;
       if (o.done) return '<b>🎉 You\'re out!</b>Watch who ends up the Shithead.';
+      if (g.phase === 'swap') { if (g.dealT > 0) return '<b>🃏 Dealing…</b>';
+        const pk = o.pick, hand = o.hand.map((c, i) => pcardHTML(c, 'h' + i, true, pk && pk.k === 'h' && pk.i === i)).join(''), up = o.up.map((c, i) => pcardHTML(c, 'u' + i, true, pk && pk.k === 'u' && pk.i === i)).join('');
+        return `<b>🔄 Swap time · ${Math.ceil(g.swapT)}s</b><div class="small" style="opacity:1">Tap a hand card, then a face-up card to swap them. Put your best cards (2s, 7s, 10s, Aces) face-up!</div><div class="small">Hand</div><div class="hand">${hand}</div><div class="small">Face-up</div><div class="hand">${up}</div><div class="small">Secret</div><div class="hand">${o.down.map(() => pbackHTML('x', false)).join('')}</div>` +
+          (o.ready ? '<div class="small" style="opacity:1">✅ Ready. Waiting for the others… (tap a card to keep swapping)</div>' : '<button class="pbtn big go" data-c="pp" data-v="ready">Ready ▶</button>'); }
       const mine = cur() === o, s = src(o), t = effTop(), beat = !t || t.r === 2 ? 'Anything goes' : 'Beat: ' + rankName(t.r) + ' or higher';
-      const hand = o.hand.map((c, i) => pcardHTML(c, 'h' + i, mine && s === 'hand' && canPlay(c))).join('');
-      const up = o.up.map((c, i) => pcardHTML(c, 'u' + i, mine && s === 'up' && canPlay(c), false, true)).join('');
+      const sel = mine ? (g.sel[p.slot] || []) : [];
+      const hand = o.hand.map((c, i) => pcardHTML(c, 'h' + i, mine && s === 'hand' && canPlay(c), s === 'hand' && sel.includes(i))).join('');
+      const up = o.up.map((c, i) => pcardHTML(c, 'u' + i, mine && s === 'up' && canPlay(c), s === 'up' && sel.includes(i), true)).join('');
       const down = o.down.map((_, i) => pbackHTML('d' + i, mine && s === 'down')).join('');
-      const stuck = mine && s !== 'down' && !o[s].some(canPlay);
+      const stuck = mine && s !== 'down' && !o[s].some(canPlay), selCs = sel.map(j => s && o[s] ? o[s][j] : null).filter(Boolean);
       return `<b>${mine ? (s === 'down' ? '🙈 Flip a secret card!' : '⭐ Your turn!') : 'Waiting for ' + esc(cur().p.name)}</b><div class="small" style="opacity:1">${beat} · deck ${deck.length}</div>` +
         (o.hand.length ? `<div class="hand">${hand}</div>` : '') + `<div class="small">Face-up</div><div class="hand">${up || '<span class="small">none</span>'}</div><div class="small">Secret</div><div class="hand">${down || '<span class="small">none</span>'}</div>` +
-        (stuck ? `<button class="pbtn big" data-c="pp" data-v="up!">Pick up the pile 😬</button>` : ''); };
+        (mine && selCs.length ? `<button class="pbtn big go" data-c="pp" data-v="go">Play ${selCs.length} × ${rankName(selCs[0].r)}</button><div class="small">Tap more ${rankName(selCs[0].r)}s to add them</div>` : mine && s !== 'down' && !stuck ? '<div class="small">Tap a card to play it. Got doubles? Tap each one, then Play.</div>' : '') +
+        (mine && g.pile.length ? `<button class="pbtn big" data-c="pp" data-v="up!"${stuck ? '' : ' style="opacity:.75"'}>${stuck ? 'Pick up the pile 😬' : 'Pick up the pile anyway (' + g.pile.length + ')'}</button>` : ''); };
     g.ranking = () => g.out.concat(g.ps.filter(o => !g.out.includes(o))).map(o => o.p.slot);
     Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => i === g.ps.length - 1 ? 0 : Math.max(1, 3 - i)) });
     g.resultLine = () => g.loser ? '💩 ' + g.loser.p.name + ' is the Shithead!' : '';
@@ -10964,10 +10986,12 @@ const Shithead = {
       if (deck.length) { for (let k = 0; k < Math.min(5, Math.ceil(deck.length / 6)); k++) drawPBack(W / 2 - 150 - k * 2, H / 2 + 4 - k * 2, 1.05); toyText(deck.length, W / 2 - 150, H / 2 + 90, 18, '#fff', 'center', TOY.navy); }
       const t = effTop(); toyText(!t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+', W / 2 + 30, H / 2 - 104, 24, '#fff', 'center', TOY.navy);
       const n = g.ps.length;
-      g.ps.forEach((o, i) => { const [x, y] = seatXY(i, n), act = cur() === o && !g.winner;
+      g.ps.forEach((o, i) => { const [x, y] = seatXY(i, n), act = cur() === o && !g.winner && g.phase === 'play';
         seatCard(x, y, o.p, act, o.done ? 'OUT ✓' : '✋ ' + o.hand.length + '  ·  🙈 ' + o.down.length, act ? ['⏱ ' + Math.ceil(g.turnT), TOY.coral] : (g.loser === o ? ['💩', '#8a5a3a'] : null));
-        if (g.dealT <= 0.2) o.up.forEach((c, k) => drawPCard(x - 54 + k * 36, y + (y > H / 2 ? -78 : 78), c, 0.45)); });
+        if (g.dealT <= 0.2) { const yy = y + (y > H / 2 ? -84 : 84); for (let k = 0; k < 4; k++) { const cx0 = x - 60 + k * 40; if (o.down[k]) drawPBack(cx0 - 4, yy - 5, 0.45, -0.05); if (o.up[k]) drawPCard(cx0 + 3, yy + 3, o.up[k], 0.45, 0.04); }
+          if (g.phase === 'swap') toyText(o.ready ? '✅' : '🔄', x + 86, y - 40, 22, '#fff', 'center', null); } });
       fx.draw();
+      if (g.phase === 'swap' && g.dealT <= 0) { headline('SWAP TIME', W / 2, H / 2 - 150, 54, TOY.sun, '#c4402a'); toyText('Swap hand cards with your face-up cards on your phone · ⏱ ' + Math.ceil(g.swapT), W / 2, H / 2 + 150, 24, '#fff', 'center', TOY.navy); }
       if (g.boom > 0 && g.boom < 1.25) { const k = 1.25 - g.boom; ctx.save(); ctx.globalAlpha = Math.min(1, g.boom * 2); ctx.strokeStyle = '#ffb067'; ctx.lineWidth = 30 * g.boom; ctx.beginPath(); ctx.arc(PILE[0], PILE[1], 40 + k * 520, 0, 7); ctx.stroke(); ctx.strokeStyle = '#fff3a0'; ctx.lineWidth = 12 * g.boom; ctx.beginPath(); ctx.arc(PILE[0], PILE[1], 30 + k * 380, 0, 7); ctx.stroke();
         ctx.translate(PILE[0], PILE[1]); ctx.scale(0.6 + k * 1.4, 0.6 + k * 1.4); toyText('💥', 0, 0, 150, '#fff', 'center', null); ctx.restore(); ctx.globalAlpha = 1;
         if (g.boom > 1.1) headline('BOOM!', W / 2, H / 2 - 150, 90, TOY.sun, TOY.coral); else headline('BOOM!', W / 2, H / 2 - 150 - k * 30, 90 * (0.9 + k * 0.2), TOY.sun, TOY.coral); }
