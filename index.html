@@ -7538,7 +7538,7 @@ function drawSessionResults(G) {
   // tonight's standings
   const rows = Object.entries(S).sort((a, b) => b[1].pts - a[1].pts || a[1].s - b[1].s || b[1].w - a[1].w), X = 620, cw = 590;
   font(26, 800); ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText("Tonight's table", X, T + 10);
-  font(13, 800); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.textAlign = 'center'; const cols = [['PLAYED', 330], ['FIRST OUT', 410], ['SHITHEAD', 495], ['POINTS', 566]]; for (const [t, cx] of cols) ctx.fillText(t, X + cx, T + 52);
+  font(13, 800); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.textAlign = 'center'; const cols = [['PLAYED', 330], ['WINS', 410], ['SHITHEAD', 495], ['POINTS', 566]]; for (const [t, cx] of cols) ctx.fillText(t, X + cx, T + 52);
   const rh = Math.min(48, 430 / Math.max(1, rows.length));
   rows.forEach(([nm, r], i) => { const y = T + 70 + i * rh, a = clamp(age * 2.5 - 0.4 - i * 0.15, 0, 1); if (a <= 0) return; ctx.save(); ctx.globalAlpha = a;
     rr(X, y, cw, rh - 6, 12); ctx.fillStyle = i === 0 ? 'rgba(233,196,106,.2)' : i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.08)'; ctx.fill(); if (i === 0) { ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(233,196,106,.6)'; ctx.stroke(); }
@@ -10972,6 +10972,12 @@ const Shithead = {
     const effTop = () => { for (let i = g.pile.length - 1; i >= 0; i--) if (g.pile[i].r !== 7) return g.pile[i]; return null; };
     const canPlay = c => { if (c.r === 2 || c.r === 10 || c.r === 7) return true; const t = effTop(); return !t || t.r === 2 || c.r >= t.r; };
     const src = o => o.hand.length ? 'hand' : o.up.length ? 'up' : o.down.length ? 'down' : null;
+    // sound that tightens as the pile grows: thuds get heavier and higher, a heartbeat kicks in, release is bigger
+    const heat = () => clamp((g.pile.length - 3) / 17, 0, 1);
+    function landSnd() { const n = g.pile.length, h = heat(); tone(170 + n * 22, 90 + n * 10, 0.09, 'triangle', 0.08 + h * 0.08); noise(0.05, 0.05 + h * 0.07, 1800 - h * 900); if (h > 0.4) tone(90, 50, 0.16, 'sine', 0.1 + h * 0.15); }
+    function burnSnd(n) { const k = clamp(n / 20, 0, 1); tone(140, 30, 0.6 + k * 0.6, 'sawtooth', 0.12 + k * 0.12); noise(0.5 + k * 0.7, 0.18 + k * 0.15, 200); tone(600, 1600, 0.25, 'square', 0.05 + k * 0.05, 0.05); if (n >= 10) { tone(523, 523, 0.12, 'triangle', 0.1, 0.35); tone(659, 659, 0.12, 'triangle', 0.1, 0.47); tone(784, 784, 0.3, 'triangle', 0.12, 0.59); } }
+    function pickSnd(n) { const k = clamp(n / 20, 0, 1); tone(330, 70, 0.35 + k * 0.7, 'sawtooth', 0.08 + k * 0.08); if (n >= 8) { tone(220, 110, 0.6 + k * 0.5, 'triangle', 0.1, 0.12); noise(0.4 + k * 0.5, 0.06 + k * 0.06, 500, 0.05); } }
+    g.beatT = 0;
     function say(m) { g.msg = m; g.msgT = 3; }
     function call(title, sub, card, col, t = 2.2) { g.fxs.call = { title, sub, card, col, t, max: t }; }
     function refresh() { broadcastPhase(); }
@@ -10980,18 +10986,18 @@ const Shithead = {
         const left = g.ps.filter(x => !x.done); if (left.length <= 1) { g.winner = g.out[0]; g.loser = left[0] || null; if (g.loser) g.out.push(g.loser); SFX.win(); refresh(); return true; } } return false; }
     function play(o, cs, from) { if (!Array.isArray(cs)) cs = [cs]; const c = cs[cs.length - 1]; g.sel[o.p.slot] = [];
       cs.forEach((cc, k) => { const arr = o[from], i = arr.indexOf(cc); arr.splice(i, 1); g.pile.push(cc); cc.fly = true;
-        fx.fly(face(cc), seat(o), PILE, { delay: k * 0.14, dur: 0.3, s0: 0.55, s1: 1.25, arc: 50, flip: from === 'down', done: () => { cc.fly = false; SFX.pop(); g.fxs.land = 1; burst(PILE[0], PILE[1], isRed(cc) ? '#ff9aab' : '#e8ecff', 10, 200, 4, 0.35); } }); });
+        fx.fly(face(cc), seat(o), PILE, { delay: k * 0.14, dur: 0.3, s0: 0.55, s1: 1.25, arc: 50, flip: from === 'down', done: () => { cc.fly = false; landSnd(); g.fxs.land = 1; burst(PILE[0], PILE[1], isRed(cc) ? '#ff9aab' : '#e8ecff', 10, 200, 4, 0.35); } }); });
       g.last = c; if (cs.length > 1 && c.r !== 10) call(['', '', 'Pair', 'Three', 'Four'][Math.min(4, cs.length)] + ' of ' + rankName(c.r) + 's', o.p.name + ' drops ' + cs.length + ' at once', c, '#ffe08a');
       while (o.hand.length < 4 && deck.length && from === 'hand') o.hand.push(deck.pop()); o.hand.sort(byR);
       const top4 = g.pile.slice(-4), four = top4.length === 4 && top4.every(x => x.r === top4[0].r);
       if (c.r === 10 || four) { const blown = g.pile.slice(-10); blown.forEach((b, k) => { const a = Math.random() * Math.PI * 2; fx.fly(face(b), PILE, [PILE[0] + Math.cos(a) * 900, PILE[1] + Math.sin(a) * 600], { delay: 0.28 + k * 0.02, dur: 0.9, s0: 1.25, s1: 0.9, arc: -80, spin: (Math.random() - 0.5) * 16 }); });
-        g.pile = []; g.boom = 1.5; shake(0.5); SFX.boom(); burst(PILE[0], PILE[1], '#ffb067', 40, 420, 7, 0.9); burst(PILE[0], PILE[1], '#fff3c4', 20, 300, 5, 0.6); burst(PILE[0], PILE[1], '#ff5a3a', 24, 360, 6, 0.8); say((c.r === 10 ? 'Bomb! ' : 'Four of a kind! ') + o.p.name + ' goes again');
+        const burned = g.pile.length; g.pile = []; g.boom = 1.5; shake(0.3 + Math.min(0.5, burned / 30)); SFX.boom(); burnSnd(burned); burst(PILE[0], PILE[1], '#ffb067', 40, 420, 7, 0.9); burst(PILE[0], PILE[1], '#fff3c4', 20, 300, 5, 0.6); burst(PILE[0], PILE[1], '#ff5a3a', 24, 360, 6, 0.8); say((c.r === 10 ? 'Bomb! ' : 'Four of a kind! ') + o.p.name + ' goes again');
         if (finishCheck(o)) return; if (o.done) { nextTurn(); return; } g.turnT = 35; refresh(); return; }
       if (c.r === 2) call('Reset', 'Anything can be played next', c, '#3ad7b5'); else if (c.r === 7) { const t = effTop(); call('Mirror', t ? 'Copies the ' + rankName(t.r) + ' underneath: beat it' : 'Nothing underneath: anything goes', c, '#b48cff'); }
       if (finishCheck(o)) return; nextTurn();
     }
     function pickUp(o, extra, delay = 0) { const n = g.pile.length + (extra ? 1 : 0), to = seat(o);
-      g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); SFX.bonk(); buzz(o.p, 150); g.fxs.hits.set(o, { t: 0.9, n }); say(o.p.name + ' picks up ' + n + ' card' + (n === 1 ? '' : 's')); g.sel[o.p.slot] = []; nextTurn(); }
+      g.pile.slice(-10).forEach((c, k) => fx.fly(face(c), PILE, to, { delay: delay + k * 0.05, dur: 0.42, s0: 1.2, s1: 0.4, arc: 90 })); o.hand.push(...g.pile); if (extra) o.hand.push(extra); g.pile = []; o.hand.sort(byR); pickSnd(n); buzz(o.p, 150 + Math.min(400, n * 20)); g.fxs.hits.set(o, { t: 0.9, n }); say(o.p.name + ' picks up ' + n + ' card' + (n === 1 ? '' : 's')); g.sel[o.p.slot] = []; nextTurn(); }
     function blind(o, i) { const c = o.down[i]; if (!c) return; if (canPlay(c)) { call('Blind flip', o.p.name + ' turns over ' + cardName(c) + ' and it works', c, '#7fd3ff'); play(o, c, 'down'); } else { o.down.splice(i, 1); call('Blind flip', o.p.name + ' turns over ' + cardName(c) + '. No luck', c, '#ff6b7a'); fx.fly(face(c), seat(o), PILE, { dur: 0.45, s0: 0.6, s1: 1.25, flip: true }); pickUp(o, c, 0.6); } }
     function autoMove(o) { const s = src(o); if (!s) { nextTurn(); return; } if (s === 'down') return blind(o, Math.floor(Math.random() * o.down.length));
       const opts = o[s].filter(canPlay); if (!opts.length) return pickUp(o);
@@ -11004,6 +11010,7 @@ const Shithead = {
       if (g.winner) { g.endT += dt; if (g.endT > 6) g.done = true; return; }
       if (g.dealT > 0) { g.dealT -= dt; if (g.dealT <= 0) refresh(); return; }
       if (g.phase === 'swap') { const before = Math.ceil(g.swapT); g.swapT -= dt; if (Math.ceil(g.swapT) !== before && Math.ceil(g.swapT) % 5 === 0) refresh(); for (const o of g.ps) if (o.p.kind === 'bot' && !o.ready && g.swapT < 18.5) botSwap(o); if (g.swapT <= 0 || g.ps.every(o => o.ready)) startPlay(); return; }
+      if (g.pile.length >= 6 && !g.boom) { g.beatT -= dt; if (g.beatT <= 0) { const h = heat(); g.beatT = 1.3 - h * 0.85; tone(68, 46, 0.13, 'sine', 0.12 + h * 0.18); tone(60, 40, 0.11, 'sine', 0.08 + h * 0.14, 0.17); if (h > 0.7) tone(1300, 1300, 0.03, 'square', 0.03, 0.08); } }
       const o = cur(); g.turnT -= dt;
       if (o.p.kind === 'bot' && g.turnT < 33.6) return autoMove(o);
       if (g.turnT <= 0) autoMove(o); };
@@ -11056,9 +11063,9 @@ const Shithead = {
       const tx = c.card ? -w / 2 + 96 : -w / 2 + 34; if (c.card) drawPCard(-w / 2 + 56, 2, c.card, 0.5, -0.14 + Math.sin(host.t * 3) * 0.04);
       headline(c.title, tx, -12, 32, c.col, TOY.navy, 'left'); toyText(c.sub || '', tx, 20, 17, TOY.navy, 'left', null); ctx.restore(); }
     function sessionPanel() { const S = host.session && host.session.shit; if (!S) return; const rows = Object.entries(S).sort((a, b) => b[1].pts - a[1].pts || a[1].s - b[1].s).slice(0, 5); if (!rows.length) return;
-      const w = 220, x = W - w - 14, y = 12, h = 44 + rows.length * 26; rr(x, y + 4, w, h, 18); ctx.fillStyle = 'rgba(10,40,25,.3)'; ctx.fill(); rr(x, y, w, h, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
-      toyText('TONIGHT', x + 16, y + 21, 16, '#c4402a', 'left', null); toyText('pts · 💩', x + w - 14, y + 21, 13, '#6a76b8', 'right', null);
-      rows.forEach(([nm, r], k) => { const yy = y + 46 + k * 26; toyText((k + 1) + '. ' + (nm.length > 10 ? nm.slice(0, 9) + '…' : nm), x + 16, yy, 16, TOY.navy, 'left', null); toyText(r.pts + ' · ' + r.s, x + w - 14, yy, 16, k === 0 ? '#c4402a' : TOY.navy, 'right', null); }); }
+      const w = 230, x = W - w - 14, y = 12, h = 44 + rows.length * 26; rr(x, y + 4, w, h, 18); ctx.fillStyle = 'rgba(10,40,25,.3)'; ctx.fill(); rr(x, y, w, h, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+      toyText('TONIGHT', x + 16, y + 21, 16, '#c4402a', 'left', null); toyText('WINS', x + w - 62, y + 21, 12, '#6a76b8', 'center', null); toyText('💩', x + w - 22, y + 21, 14, '#6a76b8', 'center', null);
+      rows.forEach(([nm, r], k) => { const yy = y + 46 + k * 26; toyText((k + 1) + '. ' + (nm.length > 10 ? nm.slice(0, 9) + '…' : nm), x + 16, yy, 16, TOY.navy, 'left', null); toyText(String(r.w), x + w - 62, yy, 16, k === 0 ? '#c4402a' : TOY.navy, 'center', null); toyText(String(r.s), x + w - 22, yy, 16, r.s ? '#8a5a3a' : '#9aa3c6', 'center', null); }); }
     g.draw = () => { const F = g.fxs, n = g.ps.length;
       feltTable('SHITHEAD', '#c4402a');
       // pile: last few cards, the newest bounces as it lands with a ring
