@@ -10895,7 +10895,7 @@ const Shithead = {
   title: 'Shithead', accent: '#c4402a', phones: true, minPhones: 1, botsOk: true, panelGame: true,
   how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. At the start you get time to swap hand cards with your face-up cards. Play several cards of the same rank at once. You can pick up the pile any time on your turn. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead!',
   create(players) {
-    const deck = makeDeck(players.length > 4 ? 2 : 1), g = { t: 0, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, phase: 'swap', swapT: 40, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
+    const deck = makeDeck(players.length > 4 ? 2 : 1), g = { t: 0, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
     players.forEach(p => g.ps.push({ p, hand: deck.splice(0, 4), up: deck.splice(0, 4), down: deck.splice(0, 4), done: false }));
     g.turn = Math.floor(Math.random() * g.ps.length);
     const byR = (a, b) => a.r - b.r, cur = () => g.ps[g.turn];
@@ -10936,8 +10936,8 @@ const Shithead = {
     function startPlay() { g.phase = 'play'; g.turnT = 35; for (const o of g.ps) o.hand.sort(byR); say('Game on! ' + cur().p.name + ' starts'); SFX.go(); refresh(); }
     g.update = dt => { g.t += dt; if (g.msgT > 0) g.msgT -= dt; g.boom = Math.max(0, g.boom - dt); fx.update(dt);
       if (g.winner) { g.endT += dt; if (g.endT > 6) g.done = true; return; }
-      if (g.dealT > 0) { g.dealT -= dt; return; }
-      if (g.phase === 'swap') { g.swapT -= dt; for (const o of g.ps) if (o.p.kind === 'bot' && !o.ready && g.swapT < 38) botSwap(o); if (g.swapT <= 0 || g.ps.every(o => o.ready)) startPlay(); return; }
+      if (g.dealT > 0) { g.dealT -= dt; if (g.dealT <= 0) refresh(); return; }
+      if (g.phase === 'swap') { const before = Math.ceil(g.swapT); g.swapT -= dt; if (Math.ceil(g.swapT) !== before && Math.ceil(g.swapT) % 5 === 0) refresh(); for (const o of g.ps) if (o.p.kind === 'bot' && !o.ready && g.swapT < 18.5) botSwap(o); if (g.swapT <= 0 || g.ps.every(o => o.ready)) startPlay(); return; }
       const o = cur(); g.turnT -= dt;
       if (o.p.kind === 'bot' && g.turnT < 33.6) return autoMove(o);
       if (g.turnT <= 0) autoMove(o); };
