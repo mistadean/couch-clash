@@ -241,6 +241,10 @@ html,body{background:var(--sky1)}
 #padMsg .bigbtn.wait{background:#c9cde6;color:#5b64a8}#padMsg .bigbtn.bang{background:#ff5a6e;color:#fff;font-size:44px}
 #padMsg .forehead{display:flex;flex-direction:column;gap:10px;height:calc(100vh - 140px)}#padMsg .fh{flex:1;border-radius:20px;border:5px solid #1b1f5e;font:30px "Lilita One",system-ui}#padMsg .fh small{display:block;font:14px system-ui;opacity:.7}
 #padMsg .fh.yes{background:#4ee07a}#padMsg .fh.pass{background:#ffd23f}#padMsg .fword{font:min(14vw,64px) "Lilita One",system-ui;color:#1b1f5e;text-align:center;padding:10px 0;transform:rotate(0deg)}
+#padMsg .prog{display:flex;gap:6px;justify-content:center;margin:8px 0}#padMsg .rc{width:60px;min-height:74px;border-radius:12px;border:3px solid #1b1f5e;background:#fff;font-size:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 0 #1b1f5e;padding:2px;color:#1b1f5e}
+#padMsg .rc small{font-size:10px;font-weight:700;line-height:1.1}#padMsg .rc em{font-size:10px;font-style:normal;opacity:.6}#padMsg .rc.on{background:#fff6c8}#padMsg .rc.empty{opacity:.35;font:24px "Lilita One",system-ui;box-shadow:none;border-style:dashed}
+#padMsg .dice{display:flex;gap:6px;justify-content:center;font-size:52px;line-height:1;margin:6px 0;color:#1b1f5e}#padMsg .dice .wild{color:#e8384f}#padMsg .bidq{font:34px "Lilita One",system-ui;min-width:90px;display:inline-block;text-align:center}#padMsg .pbtn.die{font-size:32px;padding:6px 10px}
+#padMsg .mis .row .pbtn{padding:8px 9px;font-size:14px;margin:2px}#padMsg .shopi small{display:block;font-size:12px;opacity:.75}#padMsg .pbtn small{display:block;font-size:12px;opacity:.75}
 </style>
 </head>
 <body>
@@ -6397,7 +6401,7 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
 const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
@@ -6520,7 +6524,7 @@ function musicTick() {
 const canvas = $('#tv'); let ctx = canvas.getContext('2d');
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 };
 const host = {
-  started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'bomb',
+  started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'robo',
   cup: [], cupIndex: 0, game: null, timer: 0, results: null, pending: [], buttons: [], t: 0, shake: 0,
   net: { status: 'off', code: '', err: '', url: '', qr: null }, toast: '', toastT: 0,
 };host.fortEndless = !!lsGet('cc_fort_endless');
@@ -6641,8 +6645,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active' };
+const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says', 'robo', 'arms', 'dice', 'turf'];
+const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active', robo: 'strat', arms: 'strat', dice: 'strat', turf: 'strat' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -7380,14 +7384,15 @@ function drawLobby() {
   }
 
   // mode selection
-  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social', 'talk', 'active'].includes(cat) ? cat : 'more'; ensureMissions();
+  const cat = MODE_CAT[host.mode] || 'party', top = ['party', 'cards', 'social', 'talk', 'active', 'strat'].includes(cat) ? cat : 'more'; ensureMissions();
   const setMode = m => { host.mode = m; SFX.pop(); broadcastPhase(); };
-  const tops = [['social', '🎉 Party', 112, host.lastSocial || 'bomb', TOY.sun], ['active', '🤸 Active', 116, host.lastActive || 'qdraw', TOY.mint], ['talk', '💬 Talk', 100, host.lastTalk || 'whosaid', '#ff8fb5'], ['party', '🕹 Arcade', 114, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 104, host.lastCards || 'shit', TOY.coral], ['more', '➕ More', 98, host.lastMore || 'arena', TOY.aqua]];
+  const tops = [['strat', '⚔ Strategy', 128, host.lastStrat || 'robo', TOY.coral], ['social', '🎉 Party', 102, host.lastSocial || 'bomb', TOY.sun], ['active', '🤸 Active', 104, host.lastActive || 'qdraw', TOY.mint], ['talk', '💬 Talk', 88, host.lastTalk || 'whosaid', '#ff8fb5'], ['party', '🕹 Arcade', 100, host.lastParty || 'cup', TOY.grape], ['cards', '🃏 Cards', 92, host.lastCards || 'shit', '#ff9a5a'], ['more', '➕ More', 86, host.lastMore || 'arena', TOY.aqua]];
   let bx = 40;
-  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 18 }); bx += w + 7; }
+  for (const [c, label, w, def, col] of tops) { toyButton(bx, 222, w, 54, label, top === c, () => setMode(def), col, { bounce: top === c, id: 'cat-' + c, px: 16 }); bx += w + 6; }
   const pill = (x, w, t) => { rr(x, 294, w, 44, 22); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); toyText(t, x + 18, 317, 19, TOY.navy, 'left', null); };
   if (top === 'party') { let sx = 40; for (const [m, label, w] of [['cup', '🏆 Full Cup', 150], ['goal', 'Goal Guard', 146], ['sumo', 'Ice Sumo', 128], ['tile', 'Tile Takeover', 168]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastParty = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
   else if (top === 'cards') { let sx = 40; for (const [m, label, w] of [['shit', '💩 Shithead', 170], ['big2', '🂡 Big 2', 130], ['cards', '🃏 Colour Clash', 200]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastCards = m; setMode(m); }, TOY.aqua, { px: 21, id: 'sub-' + m }); sx += w + 10; } }
+  else if (top === 'strat') { let sx = 40; for (const [m, label, w] of [['robo', '🤖 Robo Rumble', 170], ['arms', '💥 Arms Race', 152], ['dice', "🎲 Liar's Dice", 156], ['turf', '🗺 Turf Wars', 146]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastStrat = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'active') { let sx = 40; for (const [m, label, w] of [['qdraw', '🤠 Quick Draw', 160], ['shake', '📳 Shake Race', 160], ['head', '🤪 Forehead', 144], ['says', '📱 Phone Says', 160]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastActive = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'talk') { let sx = 40; for (const [m, label, w] of [['whosaid', '🕵 Who Said It?', 156], ['likely', '👉 Most Likely', 146], ['hot', '🌶 Hot Takes', 130], ['meld', '🧠 Mind Meld', 134], ['lie', '🤥 2 Truths 1 Lie', 156]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastTalk = m; setMode(m); }, TOY.aqua, { px: 17, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'social') { let sx = 40; for (const [m, label, w] of [['bomb', '💣 Bomb Squad', 160], ['draw', '🎨 Draw & Pass', 162], ['heist', '💰 Heist', 108], ['odd', '🕵 Odd One Out', 158]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastSocial = m; setMode(m); }, TOY.aqua, { px: 19, id: 'sub-' + m }); sx += w + 8; }
@@ -11670,7 +11675,287 @@ const PhoneSays = { title: 'Phone Says', accent: '#2fa8ff', phones: true, minPho
     g.ranking = () => g.ps.slice().sort((a, b) => b.lives - a.lives || b.score - a.score).map(o => o.p.slot);
     return g; } };
 
-const GAMES = { qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* =====================================================================
+   STRATEGY GAMES for a group of mates: Robo Rumble · Arms Race · Liar's Dice · Turf Wars
+   ===================================================================== */
+const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], DIR_NAMES = ['NORTH ↑', 'EAST →', 'SOUTH ↓', 'WEST ←'];
+const ROBO_CARDS = [['m1', 'Move 1', '⬆', 18], ['m2', 'Move 2', '⏫', 10], ['m3', 'Move 3', '🚀', 4], ['bk', 'Back up', '⬇', 5], ['tl', 'Turn left', '↺', 10], ['tr', 'Turn right', '↻', 10], ['ut', 'U-turn', '⟲', 4], ['sh', 'Shoot', '🔫', 12], ['sd', 'Shield', '🛡', 6]];
+const ROBO_INFO = Object.fromEntries(ROBO_CARDS.map(([k, n, i]) => [k, { n, i }]));
+/* ---------------- 🤖 ROBO RUMBLE ---------------- */
+const RoboRumble = { title: 'Robo Rumble', accent: '#7fd3ff', phones: true, minPhones: 1, botsOk: true, panelGame: true,
+  how: 'Everyone secretly programs their robot\'s next 5 moves from a hand of cards. Then the TV plays them ALL at once. Shoot, shove robots into pits, shield at the right moment. Damage shrinks your hand! Last robot standing wins the round. First to 2 rounds.',
+  create(players) {
+    const COLS = 14, ROWS = 8, CS = 72, BX = (W - COLS * CS) / 2, BY = 92;
+    const g = { t: 0, done: false, panelGame: true, state: 'program', stateT: 45, round: 1, turn: 0, grid: [], bots: [], step: 0, stepT: 0, fx: [], endT: 0, msg: '', msgT: 0 }; talkCommon(g, players);
+    const starts = [[0, 0, 1], [COLS - 1, ROWS - 1, 3], [COLS - 1, 0, 3], [0, ROWS - 1, 1], [6, 0, 2], [7, ROWS - 1, 0], [0, 3, 1], [COLS - 1, 4, 3]];
+    function newMap() { g.grid = Array.from({ length: ROWS }, () => Array(COLS).fill('.')); const free = (x, y) => !starts.some(([sx, sy]) => Math.abs(sx - x) + Math.abs(sy - y) < 2);
+      let walls = 0, pits = 0; while (walls < 12) { const x = 1 + Math.floor(Math.random() * (COLS - 2)), y = Math.floor(Math.random() * ROWS); if (free(x, y) && g.grid[y][x] === '.') { g.grid[y][x] = '#'; g.grid[ROWS - 1 - y][COLS - 1 - x] = '#'; walls += 2; } }
+      while (pits < 6) { const x = 2 + Math.floor(Math.random() * (COLS - 4)), y = 1 + Math.floor(Math.random() * (ROWS - 2)); if (free(x, y) && g.grid[y][x] === '.') { g.grid[y][x] = 'o'; g.grid[ROWS - 1 - y][COLS - 1 - x] = 'o'; pits += 2; } } }
+    function resetRound() { newMap(); g.ps.forEach((o, i) => { const [x, y, d] = starts[i % starts.length]; Object.assign(o, { x, y, d, px: x, py: y, pd: d, hp: 3, alive: true, prog: [], hand: [], locked: false, fall: 0 }); if (!o.wins) o.wins = 0; }); g.turn = 0; deal(); }
+    function deal() { const deck = []; for (const [k, , , n] of ROBO_CARDS) for (let i = 0; i < n; i++) deck.push(k); shuffleArr(deck); const used = new Set();
+      for (const o of g.ps) { o.prog = []; o.locked = false; o.hand = []; if (!o.alive) continue; const n = 5 + o.hp; for (let i = 0; i < n; i++) { let pr; do pr = 100 + Math.floor(Math.random() * 800); while (used.has(pr)); used.add(pr); o.hand.push({ k: deck.pop(), pr }); } o.hand.sort((a, b) => b.pr - a.pr); }
+      g.state = 'program'; g.stateT = 45; SFX.beep(); broadcastPhase(); }
+    const tile = (x, y) => (x < 0 || y < 0 || x >= COLS || y >= ROWS) ? 'X' : g.grid[y][x];
+    const robotAt = (x, y) => g.ps.find(o => o.alive && o.x === x && o.y === y);
+    function kill(o, why) { if (!o.alive) return; o.alive = false; o.fall = why === 'pit' ? 1 : 0; g.fx.push({ k: why === 'pit' ? 'fall' : 'boom', x: o.x, y: o.y, t: 0 }); SFX.boom(); shake(0.3); }
+    function push(o, d) { const nx = o.x + DIRS[d][0], ny = o.y + DIRS[d][1], t = tile(nx, ny); if (t === '#' || t === 'X') return false; const other = robotAt(nx, ny); if (other && !push(other, d)) return false; o.x = nx; o.y = ny; if (t === 'o') kill(o, 'pit'); return true; }
+    function runStep(k) { g.ps.forEach(o => { o.px = o.x; o.py = o.y; o.pd = o.d; o.shield = false; }); g.lasers = [];
+      const acts = g.ps.filter(o => o.alive && o.prog[k]).map(o => ({ o, c: o.prog[k] })).sort((a, b) => b.c.pr - a.c.pr);
+      for (const { o, c } of acts) { if (!o.alive) continue; const n = { m1: 1, m2: 2, m3: 3 }[c.k];
+        if (n) for (let i = 0; i < n && o.alive; i++) { if (!push(o, o.d)) break; }
+        else if (c.k === 'bk') push(o, (o.d + 2) % 4); else if (c.k === 'tl') o.d = (o.d + 3) % 4; else if (c.k === 'tr') o.d = (o.d + 1) % 4; else if (c.k === 'ut') o.d = (o.d + 2) % 4; else if (c.k === 'sd') o.shield = true; }
+      for (const { o, c } of acts) if (o.alive && c.k === 'sh') { let x = o.x, y = o.y, hit = null; for (let i = 0; i < 20; i++) { x += DIRS[o.d][0]; y += DIRS[o.d][1]; const t = tile(x, y); if (t === '#' || t === 'X') break; hit = robotAt(x, y); if (hit) break; }
+        g.lasers.push({ o, x, y, t: 0 }); SFX.hit(); if (hit && !hit.shield) { hit.hp--; g.fx.push({ k: 'hit', x: hit.x, y: hit.y, t: 0 }); if (hit.hp <= 0) { kill(hit, 'shot'); o.score += 2; } else o.score += 1; } else if (hit) g.fx.push({ k: 'block', x: hit.x, y: hit.y, t: 0 }); } }
+    function endRound() { const alive = g.ps.filter(o => o.alive); let win = null; if (alive.length === 1) win = alive[0]; else if (alive.length > 1) { const mx = Math.max(...alive.map(o => o.hp)), top = alive.filter(o => o.hp === mx); if (top.length === 1) win = top[0]; }
+      if (win) { win.wins++; win.score += 5; g.msg = '🏆 ' + win.p.name + ' wins round ' + g.round; } else g.msg = 'Round ' + g.round + ' is a draw'; g.state = 'roundEnd'; g.stateT = 4; SFX.win(); broadcastPhase(); }
+    function lockAll() { for (const o of g.ps) if (o.alive && !o.locked) { while (o.prog.length < 5) { const left = o.hand.filter(c => !o.prog.includes(c)); o.prog.push(left[Math.floor(Math.random() * left.length)]); } o.locked = true; } g.state = 'run'; g.step = 0; g.stepT = 0.2; broadcastPhase(); }
+    function botProgram(o) { // simulate my own path and pick cards that line up shots and avoid pits
+      let x = o.x, y = o.y, d = o.d; const left = o.hand.slice();
+      for (let s = 0; s < 5; s++) { let best = null, bs = -1e9;
+        for (const c of left) { let nx = x, ny = y, nd = d, sc = Math.random() * 2; const n = { m1: 1, m2: 2, m3: 3 }[c.k];
+          if (n || c.k === 'bk') { const dd = c.k === 'bk' ? (d + 2) % 4 : d; for (let i = 0; i < (n || 1); i++) { const tx = nx + DIRS[dd][0], ty = ny + DIRS[dd][1], t = tile(tx, ty); if (t === '#' || t === 'X') break; nx = tx; ny = ty; if (t === 'o') { sc -= 100; break; } } }
+          else if (c.k === 'tl') nd = (d + 3) % 4; else if (c.k === 'tr') nd = (d + 1) % 4; else if (c.k === 'ut') nd = (d + 2) % 4;
+          const foes = g.ps.filter(e => e !== o && e.alive); const aligned = foes.some(e => (DIRS[nd][0] && e.y === ny && Math.sign(e.x - nx) === DIRS[nd][0]) || (DIRS[nd][1] && e.x === nx && Math.sign(e.y - ny) === DIRS[nd][1]));
+          if (c.k === 'sh') sc += foes.some(e => (DIRS[d][0] && e.y === y && Math.sign(e.x - x) === DIRS[d][0]) || (DIRS[d][1] && e.x === x && Math.sign(e.y - y) === DIRS[d][1])) ? 8 : -2;
+          else { if (aligned) sc += 4; const near = foes.reduce((m, e) => Math.min(m, Math.abs(e.x - nx) + Math.abs(e.y - ny)), 99); sc -= near * 0.3; if (c.k === 'sd') sc += Math.random() * 2; }
+          if (sc > bs) { bs = sc; best = { c, nx, ny, nd }; } }
+        o.prog.push(best.c); left.splice(left.indexOf(best.c), 1); x = best.nx; y = best.ny; d = best.nd; }
+      o.locked = true; }
+    resetRound();
+    g.update = dt => { g.t += dt; if (g.msgT > 0) g.msgT -= dt; for (const f of g.fx) f.t += dt; g.fx = g.fx.filter(f => f.t < 1); if (g.lasers) for (const l of g.lasers) l.t += dt;
+      if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; }
+      if (g.state === 'program') { g.stateT -= dt; for (const o of g.ps) if (o.p.kind === 'bot' && o.alive && !o.locked && g.stateT < 43) botProgram(o);
+        if (g.stateT <= 0 || g.ps.every(o => !o.alive || o.locked)) lockAll(); }
+      else if (g.state === 'run') { g.stepT -= dt; if (g.stepT <= 0) { if (g.step >= 5 || g.ps.filter(o => o.alive).length <= 1) { g.turn++; if (g.ps.filter(o => o.alive).length <= 1 || g.turn >= 4) endRound(); else deal(); return; } runStep(g.step); g.step++; g.stepT = 1.0; } }
+      else if (g.state === 'roundEnd') { g.stateT -= dt; if (g.stateT <= 0) { if (g.ps.some(o => o.wins >= 2) || g.round >= 4) { g.state = 'end'; SFX.win(); broadcastPhase(); } else { g.round++; resetRound(); } } } };
+    g.onPick = (p, v) => { const o = g.find(p); if (!o || g.state !== 'program' || !o.alive || o.locked || typeof v !== 'string') return;
+      if (v[0] === 'h') { const c = o.hand[+v.slice(1)]; if (c && !o.prog.includes(c) && o.prog.length < 5) { o.prog.push(c); SFX.click(); } }
+      else if (v[0] === 's') { o.prog.splice(+v.slice(1), 1); SFX.click(); }
+      else if (v === 'lock' && o.prog.length === 5) { o.locked = true; SFX.pop(); broadcastPhase(); return; }
+      sendPhase(p); };
+    g.panel = p => { const o = g.find(p); if (!o) return '<b>👀 Watching</b>'; const col = o.p.color;
+      if (g.state === 'end') return `<b>🏁 Match over</b>Round wins: ${o.wins} · score ${o.score}`;
+      if (!o.alive) return '<b>💥 Your robot is scrap</b>Watch the rest of the round.';
+      const head = `<div class="small" style="opacity:1">You're the <b style="display:inline;color:${col}">${esc(o.p.name)}</b> robot · facing <b style="display:inline">${DIR_NAMES[o.d]}</b> · ${'❤️'.repeat(o.hp)}</div>`;
+      if (g.state !== 'program') return `<b>📺 Watch the TV!</b>${head}`;
+      if (o.locked) return `<b>🔒 Program locked</b>${head}<div class="prog">${o.prog.map(c => `<span class="rc">${ROBO_INFO[c.k].i}<small>${ROBO_INFO[c.k].n}</small></span>`).join('')}</div>`;
+      const slots = Array.from({ length: 5 }, (_, i) => o.prog[i] ? `<button class="rc on" data-c="pp" data-v="s${i}">${ROBO_INFO[o.prog[i].k].i}<small>${i + 1}. ${ROBO_INFO[o.prog[i].k].n}</small></button>` : `<span class="rc empty">${i + 1}</span>`).join('');
+      const hand = o.hand.map((c, i) => o.prog.includes(c) ? '' : `<button class="rc" data-c="pp" data-v="h${i}">${ROBO_INFO[c.k].i}<small>${ROBO_INFO[c.k].n}</small><em>${c.pr}</em></button>`).join('');
+      return `<b>🤖 Program 5 moves</b>${head}<div class="prog">${slots}</div><div class="small">Tap cards in order · higher number goes first in a tie</div><div class="hand">${hand}</div>${o.prog.length === 5 ? '<button class="pbtn big go" data-c="pp" data-v="lock">Lock in 🔒</button>' : ''}`; };
+    g.ranking = () => g.ps.slice().sort((a, b) => b.wins - a.wins || b.score - a.score).map(o => o.p.slot);
+    g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.wins - a.wins || b.score - a.score)[0]; return '🤖 ' + top.p.name + ' is the last robot standing'; };
+    // ---------- TV ----------
+    const cx = x => BX + x * CS + CS / 2, cy = y => BY + y * CS + CS / 2;
+    g.draw = () => { ctx.fillStyle = '#1b2040'; ctx.fillRect(0, 0, W, H);
+      headline('ROBO RUMBLE', 170, 40, 30, '#fff', '#2fa8ff'); toyText('Round ' + g.round + ' · ' + (g.state === 'program' ? 'PROGRAM YOUR ROBOT · ⏱ ' + Math.ceil(g.stateT) : g.state === 'run' ? 'EXECUTING · step ' + Math.min(5, g.step) + ' / 5' : ''), W / 2, 40, 24, TOY.sun, 'center', TOY.navy);
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) { const t = g.grid[y][x], X = BX + x * CS, Y = BY + y * CS;
+        ctx.fillStyle = (x + y) % 2 ? '#3a4170' : '#343a66'; ctx.fillRect(X, Y, CS, CS);
+        if (t === '#') { rr(X + 4, Y + 4, CS - 8, CS - 8, 10); ctx.fillStyle = '#8a93b8'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); rr(X + 10, Y + 10, CS - 20, 12, 6); ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fill(); }
+        if (t === 'o') { const gr = ctx.createRadialGradient(X + CS / 2, Y + CS / 2, 4, X + CS / 2, Y + CS / 2, CS / 2); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#2a1a3a'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X + CS / 2, Y + CS / 2, CS / 2 - 4, 0, 7); ctx.fill(); ctx.strokeStyle = '#ff5a6e'; ctx.setLineDash([6, 6]); ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); } }
+      const k = g.state === 'run' ? Math.min(1, (1.0 - g.stepT) / 0.55) : 1, e = 1 - Math.pow(1 - k, 3);
+      for (const o of g.ps) { if (!o.alive && !g.fx.some(f => f.x === o.x && f.y === o.y)) continue; const x = cx(o.px) + (cx(o.x) - cx(o.px)) * e, y = cy(o.py) + (cy(o.y) - cy(o.py)) * e;
+        let pd = o.pd, nd = o.d; if (nd - pd > 2) pd += 4; if (pd - nd > 2) nd += 4; const ang = (pd + (nd - pd) * e) * Math.PI / 2; const sc = !o.alive && o.fall ? Math.max(0, 1 - (g.fx.find(f => f.x === o.x && f.y === o.y) || { t: 1 }).t * 1.5) : 1; if (!o.alive && !o.fall) continue;
+        ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.rotate(ang); if (o.shield && g.state === 'run') { ctx.strokeStyle = '#7fd3ff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.stroke(); }
+        rr(-26, -24, 52, 50, 12); ctx.fillStyle = o.p.color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); rr(-8, -40, 16, 22, 4); ctx.fillStyle = '#5b64a8'; ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-9, -6, 7, 0, 7); ctx.arc(9, -6, 7, 0, 7); ctx.fill(); ctx.fillStyle = TOY.navy; ctx.beginPath(); ctx.arc(-9, -9, 3.5, 0, 7); ctx.arc(9, -9, 3.5, 0, 7); ctx.fill(); ctx.restore();
+        toyText(o.p.name, x, y + 40, 14, '#fff', 'center', TOY.navy); toyText('❤️'.repeat(Math.max(0, o.hp)), x, y - 44, 12, '#fff', 'center', null); }
+      if (g.lasers) for (const l of g.lasers) if (l.t < 0.45) { ctx.strokeStyle = l.o.p.color; ctx.lineWidth = 8 * (1 - l.t / 0.45) + 2; ctx.shadowColor = l.o.p.color; ctx.shadowBlur = 20; ctx.beginPath(); ctx.moveTo(cx(l.o.x), cy(l.o.y)); ctx.lineTo(cx(l.x), cy(l.y)); ctx.stroke(); ctx.shadowBlur = 0; }
+      for (const f of g.fx) { const X = cx(f.x), Y = cy(f.y); if (f.k === 'boom') { ctx.globalAlpha = 1 - f.t; toyText('💥', X, Y, 60 + f.t * 60, '#fff', 'center', null); ctx.globalAlpha = 1; } if (f.k === 'hit') { ctx.globalAlpha = 1 - f.t; toyText('-1', X, Y - 30 - f.t * 30, 26, TOY.coral, 'center', '#fff'); ctx.globalAlpha = 1; } if (f.k === 'block') { ctx.globalAlpha = 1 - f.t; toyText('🛡', X, Y - 30, 30, '#fff', 'center', null); ctx.globalAlpha = 1; } }
+      g.ps.forEach((o, i) => { const x = 20 + i * 156; rr(x, H - 34, 148, 28, 14); ctx.fillStyle = o.alive ? o.p.color : '#555a7a'; ctx.fill(); toyText(o.p.name + ' ' + (g.state === 'program' && o.alive ? (o.locked ? '🔒' : '…') : '') + ' 🏆' + o.wins, x + 74, H - 20, 14, '#fff', 'center', TOY.navy); });
+      if (g.state === 'roundEnd') headline(g.msg, W / 2, H / 2, 48, TOY.sun, '#2fa8ff');
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(20,24,50,.7)'; ctx.fillRect(0, 0, W, H); headline(g.resultLine(), W / 2, H / 2, 46, TOY.sun, '#2fa8ff'); confetti(40, 1); } };
+    return g; } };
+
+/* ---------------- 🎲 LIAR'S DICE ---------------- */
+const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+const LiarsDice = { title: "Liar's Dice", accent: '#c4402a', phones: true, minPhones: 1, botsOk: true, panelGame: true,
+  how: 'Your 5 dice are hidden on your phone. Take turns bidding how many of a number are on the WHOLE table (1s are wild). Raise the bid or call LIAR! Wrong side of the call loses a die. Call SPOT ON if you think it\'s exactly right. Last one with dice wins.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'roll', stateT: 2.5, turn: 0, bid: null, bidBy: null, rev: null, endT: 0, draft: {}, log: [] }; talkCommon(g, players);
+    g.ps.forEach(o => { o.n = 5; o.dice = []; }); g.turn = Math.floor(Math.random() * g.ps.length);
+    const alive = () => g.ps.filter(o => o.n > 0), total = () => alive().reduce((a, o) => a + o.n, 0), R = () => broadcastPhase();
+    function roll() { for (const o of g.ps) o.dice = Array.from({ length: o.n }, () => 1 + Math.floor(Math.random() * 6)).sort(); g.bid = null; g.bidBy = null; g.state = 'bid'; g.stateT = 40; g.log = []; SFX.whack(); R(); }
+    function nextTurn() { const n = g.ps.length; for (let k = 1; k <= n; k++) { const j = (g.turn + k) % n; if (g.ps[j].n > 0) { g.turn = j; break; } } g.stateT = 40; R(); }
+    const cur = () => g.ps[g.turn];
+    const valid = (q, f) => q >= 1 && f >= 1 && f <= 6 && (!g.bid || q > g.bid.q || (q === g.bid.q && f > g.bid.f));
+    function bid(o, q, f) { if (!valid(q, f)) return false; g.bid = { q, f }; g.bidBy = o; g.log.unshift(o.p.name + ': ' + q + ' × ' + DICE[f]); SFX.click(); nextTurn(); return true; }
+    function count(f) { return alive().reduce((a, o) => a + o.dice.filter(d => d === f || d === 1).length, 0); }
+    function call(o, spot) { const c = count(g.bid.f), lose = [];
+      if (spot) { if (c === g.bid.q) { alive().forEach(x => { if (x !== o) lose.push(x); }); } else lose.push(o); }
+      else lose.push(c >= g.bid.q ? o : g.bidBy);
+      lose.forEach(x => x.n--); lose.forEach(x => buzz(x.p, 250)); g.rev = { by: o, spot, c, lose, bid: g.bid, bidBy: g.bidBy }; g.state = 'reveal'; g.stateT = 6; SFX.boom(); shake(0.3); R(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'roll' && g.stateT <= 0) roll();
+      else if (g.state === 'bid') { const o = cur();
+        if (o.p.kind === 'bot' && g.stateT < 38.2) { const tot = total(), mine = g.bid ? o.dice.filter(d => d === g.bid.f || d === 1).length : 0, exp = g.bid ? mine + (tot - o.n) / 3 : 0;
+          if (g.bid && g.bid.q > exp + 1.3) return call(o, false); if (g.bid && Math.abs(g.bid.q - exp) < 0.4 && Math.random() < 0.15) return call(o, true);
+          const cnt = [0, 0, 0, 0, 0, 0, 0]; o.dice.forEach(d => cnt[d]++); let bf = 2; for (let f = 2; f <= 6; f++) if (cnt[f] + cnt[1] > cnt[bf] + cnt[1]) bf = f;
+          let q = g.bid ? g.bid.q : 1, f = bf; if (!valid(q, f)) q++; if (!valid(q, f)) { f = g.bid.f; q = g.bid.q + 1; } if (q > exp + 2 && g.bid) return call(o, false); bid(o, q, f); return; }
+        if (g.stateT <= 0) { if (g.bid) call(o, false); else bid(o, 1, 2 + Math.floor(Math.random() * 5)); } }
+      else if (g.state === 'reveal' && g.stateT <= 0) { if (alive().length <= 1) { g.state = 'end'; SFX.win(); R(); return; } const loser = g.rev.lose[0]; g.turn = g.ps.indexOf(loser.n > 0 ? loser : g.rev.by); if (g.ps[g.turn].n <= 0) nextTurn(); g.state = 'roll'; g.stateT = 2; R(); } };
+    g.onPick = (p, v) => { const o = g.find(p); if (!o || g.state !== 'bid' || typeof v !== 'string') return; const d = g.draft[p.slot] || (g.draft[p.slot] = { q: g.bid ? g.bid.q : 1, f: g.bid ? g.bid.f : 2 });
+      if (v === 'q+') d.q = Math.min(total(), d.q + 1); else if (v === 'q-') d.q = Math.max(1, d.q - 1); else if (v[0] === 'f') d.f = +v.slice(1);
+      else if (cur() === o) { if (v === 'bid') { if (!bid(o, d.q, d.f)) { buzz(p, 60); } return; } if (v === 'liar' && g.bid) return call(o, false); if (v === 'spot' && g.bid) return call(o, true); }
+      sendPhase(p); };
+    g.panel = p => { const o = g.find(p); if (!o) return '<b>👀 Watching</b>'; if (g.state === 'end') return `<b>${o.n > 0 ? '🏆 You win!' : 'Game over'}</b>`;
+      if (o.n <= 0) return '<b>💀 Out of dice</b>Enjoy the show.'; const dice = `<div class="dice">${o.dice.map(d => `<span class="${d === 1 ? 'wild' : ''}">${DICE[d]}</span>`).join('')}</div>`;
+      if (g.state !== 'bid') return `<b>🎲 Your dice</b>${dice}<div class="small">Look at the TV!</div>`;
+      const mine = cur() === o, bidTxt = g.bid ? `Current bid: <b style="display:inline">${g.bid.q} × ${DICE[g.bid.f]}</b> by ${esc(g.bidBy.p.name)}` : 'No bid yet: you open';
+      if (!mine) return `<b>🎲 Your dice</b>${dice}<div class="small" style="opacity:1">${bidTxt}</div><div class="small">${esc(cur().p.name)} is thinking… (${total()} dice on the table, 1s wild)</div>`;
+      const d = g.draft[p.slot] || (g.draft[p.slot] = { q: g.bid ? g.bid.q : 1, f: g.bid ? g.bid.f : 2 }), ok = valid(d.q, d.f);
+      return `<b>⭐ Your turn</b>${dice}<div class="small" style="opacity:1">${bidTxt} · ${total()} dice on table · 1s are wild</div>
+        <div class="row"><button class="pbtn" data-c="pp" data-v="q-">−</button><span class="bidq">${d.q} ×</span><button class="pbtn" data-c="pp" data-v="q+">+</button></div>
+        <div class="row">${[2, 3, 4, 5, 6].map(f => `<button class="pbtn die${d.f === f ? ' on' : ''}" data-c="pp" data-v="f${f}">${DICE[f]}</button>`).join('')}</div>
+        <button class="pbtn big${ok ? ' go' : ''}" data-c="pp" data-v="bid"${ok ? '' : ' disabled'}>Bid ${d.q} × ${DICE[d.f]}</button>${g.bid ? '<div class="row"><button class="pbtn big" data-c="pp" data-v="liar" style="background:linear-gradient(#ff8a9a,#ff5a6e);color:#fff">LIAR!</button><button class="pbtn big" data-c="pp" data-v="spot">🎯 Spot on</button></div>' : ''}`; };
+    g.ranking = () => g.ps.slice().sort((a, b) => b.n - a.n).map(o => o.p.slot);
+    g.resultLine = () => { const w = g.ps.find(o => o.n > 0); return w ? '🎲 ' + w.p.name + ' is the last liar standing' : ''; };
+    g.draw = () => { feltTable("LIAR'S DICE", '#c4402a'); const n = g.ps.length;
+      g.ps.forEach((o, i) => { const [x, y] = seatXY(i, n), act = g.state === 'bid' && cur() === o; seatCard(x, y, o.p, act, o.n > 0 ? '🎲 × ' + o.n : 'OUT', act ? ['⏱ ' + Math.ceil(g.stateT), TOY.coral] : null);
+        const dy = y > H / 2 ? -82 : 82; if (g.state === 'reveal') o.dice.forEach((d, k) => { const hit = d === g.rev.bid.f || d === 1; toyText(DICE[d], x - 60 + k * 30, y + dy, 34, hit ? TOY.sun : '#fff', 'center', hit ? TOY.navy : null); });
+        else for (let k = 0; k < o.n; k++) { rr(x - 70 + k * 30, y + dy - 14, 24, 28, 8); ctx.fillStyle = '#8a3020'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); } });
+      if (g.bid && g.state === 'bid') { rr(W / 2 - 170, H / 2 - 70, 340, 140, 30); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(g.bid.q + ' × ' + DICE[g.bid.f], W / 2, H / 2 - 10, 70, TOY.navy, 'center', null); toyText('bid by ' + g.bidBy.p.name, W / 2, H / 2 + 46, 20, '#6a76b8', 'center', null); }
+      if (!g.bid && g.state === 'bid') toyText(cur().p.name + ' opens the bidding', W / 2, H / 2, 32, '#fff', 'center', TOY.navy);
+      if (g.state === 'roll') { const a = g.t * 12; for (let k = 0; k < 5; k++) toyText(DICE[1 + Math.floor((a + k * 3) % 6)], W / 2 - 120 + k * 60, H / 2, 60, '#fff', 'center', null); toyText('Rolling…', W / 2, H / 2 + 70, 26, '#fff', 'center', TOY.navy); }
+      if (g.log.length && g.state === 'bid') g.log.slice(1, 4).forEach((l, i) => toyText(l, W / 2, H / 2 + 100 + i * 24, 16, 'rgba(255,255,255,.7)', 'center', null));
+      if (g.state === 'reveal') { const r = g.rev, age = 6 - g.stateT; headline((r.spot ? '🎯 SPOT ON?' : 'LIAR!') + '  ' + r.by.p.name, W / 2, H / 2 - 60, 46, TOY.sun, TOY.coral);
+        if (age > 1) toyText('There were ' + Math.min(r.c, Math.floor((age - 1) * 6)) + ' × ' + DICE[r.bid.f] + '  (bid: ' + r.bid.q + ')', W / 2, H / 2 + 6, 34, '#fff', 'center', TOY.navy);
+        if (age > 2.5) toyText(r.lose.map(o => o.p.name).join(', ') + ' lose' + (r.lose.length === 1 ? 's' : '') + ' a die', W / 2, H / 2 + 56, 30, '#ff9aab', 'center', TOY.navy); }
+      if (g.state === 'end') { const w = g.ps.find(o => o.n > 0); headline((w ? w.p.name.toUpperCase() : '') + ' WINS', W / 2, H / 2, 70, TOY.sun, TOY.coral); confetti(40, 1); } };
+    return g; } };
+/* ---------------- 💥 ARMS RACE: shop secretly, then fight ---------------- */
+const AR_WEAPONS = { pistol: { n: 'Pistol', i: '🔫', cost: 0, cd: 0.34, dmg: 14, spd: 720, range: 520 }, smg: { n: 'SMG', i: '💨', cost: 500, cd: 0.1, dmg: 6, spd: 760, range: 420, spread: 0.14 },
+  shotgun: { n: 'Shotgun', i: '💥', cost: 650, cd: 0.8, dmg: 9, spd: 640, range: 300, pellets: 6, spread: 0.42 }, rifle: { n: 'Rifle', i: '🎯', cost: 750, cd: 0.95, dmg: 42, spd: 1350, range: 950 }, rocket: { n: 'Rocket', i: '🚀', cost: 1000, cd: 1.3, dmg: 40, spd: 430, range: 760, splash: 95 } };
+const AR_ABIL = { dash: { n: 'Dash', i: '⚡', cost: 300, cd: 3.5 }, mine: { n: 'Mine', i: '💣', cost: 400, cd: 6 }, heal: { n: 'Med-kit', i: '➕', cost: 400, cd: 99 }, bubble: { n: 'Bubble', i: '🫧', cost: 550, cd: 10 } };
+const ArmsRace = { title: 'Arms Race', accent: '#ff5a6e', button: 'FIRE', buttonB: 'ABILITY', panelGame: false,
+  how: 'Each round: secretly spend your cash on your phone (weapons, armour, boots, abilities), then FIGHT. Nobody sees your build until the round starts. Kills and wins earn more cash. The safe zone shrinks, so no hiding! Most points after 5 rounds wins.',
+  create(players) { const g = { t: 0, done: false, state: 'shop', stateT: 25, round: 1, rounds: 5, shots: [], mines: [], fx: [], zone: 1, endT: 0, revealT: 0 }; talkCommon(g, players);
+    const rects = [[300, 160, 70, 140], [910, 420, 70, 140], [560, 110, 160, 50], [560, 560, 160, 50], [180, 470, 120, 50], [980, 200, 120, 50], [610, 320, 60, 80]];
+    g.ps.forEach(o => Object.assign(o, { cash: 800, weapon: 'pistol', armor: 0, boots: false, ability: null, kills: 0, wins: 0, ready: false }));
+    const spawn = [[100, 100], [W - 100, H - 100], [W - 100, 100], [100, H - 100], [W / 2, 90], [W / 2, H - 90], [100, H / 2], [W - 100, H / 2], [400, 380], [880, 340]];
+    function startFight() { g.ps.forEach((o, i) => { const [x, y] = spawn[i % spawn.length]; Object.assign(o, { x, y, vx: 0, vy: 0, fx: 1, fy: 0, maxhp: 100 + o.armor * 40, hp: 100 + o.armor * 40, alive: true, cd: 0, acd: 0, healed: false, inv: 0, dashT: 0, hitT: 0 }); });
+      g.shots = []; g.mines = []; g.state = 'reveal'; g.stateT = 3.5; g.zone = 1; SFX.go(); broadcastPhase(); }
+    function endRound() { const al = g.ps.filter(o => o.alive); let win = al.length === 1 ? al[0] : al.sort((a, b) => b.hp / b.maxhp - a.hp / a.maxhp)[0];
+      if (win) { win.wins++; win.score += 2; win.cash += 600; } g.ps.forEach(o => { o.cash += 400 + (o.alive ? 200 : 0); o.ready = false; }); g.winner = win; g.state = 'roundEnd'; g.stateT = 4; SFX.win(); broadcastPhase(); }
+    const solid = (x, y, r) => rects.some(([rx, ry, rw, rh]) => x + r > rx && x - r < rx + rw && y + r > ry && y - r < ry + rh);
+    function hurt(o, dmg, src) { if (!o.alive || o.inv > 0) return; o.hp -= dmg; o.hitT = 0.15; burst(o.x, o.y, o.p.color, 6, 160, 4, 0.3); SFX.hit();
+      if (o.hp <= 0) { o.alive = false; burst(o.x, o.y, '#ffb067', 30, 300, 7, 0.7); SFX.boom(); shake(0.3); if (src && src !== o) { src.kills++; src.score += 1; src.cash += 300; } } }
+    function fire(o) { const W0 = AR_WEAPONS[o.weapon]; o.cd = W0.cd; let ax = o.fx, ay = o.fy, best = null, bd = W0.range;
+      for (const e of g.ps) if (e !== o && e.alive) { const dx = e.x - o.x, dy = e.y - o.y, d = hyp(dx, dy); if (d < bd && (dx * o.fx + dy * o.fy) / (d || 1) > 0.45) { bd = d; best = e; } }
+      if (best) { const d = hyp(best.x - o.x, best.y - o.y) || 1; ax = (best.x - o.x) / d; ay = (best.y - o.y) / d; }
+      const n = W0.pellets || 1; for (let i = 0; i < n; i++) { const a = Math.atan2(ay, ax) + (Math.random() - 0.5) * (W0.spread || 0.04); g.shots.push({ x: o.x + Math.cos(a) * 22, y: o.y + Math.sin(a) * 22, vx: Math.cos(a) * W0.spd, vy: Math.sin(a) * W0.spd, life: W0.range / W0.spd, dmg: W0.dmg, splash: W0.splash, by: o }); }
+      tone(o.weapon === 'rocket' ? 200 : 900, 300, 0.05, 'square', 0.03); }
+    function ability(o) { const A = o.ability && AR_ABIL[o.ability]; if (!A || o.acd > 0) return; o.acd = A.cd;
+      if (o.ability === 'dash') { o.dashT = 0.18; SFX.dash(); } else if (o.ability === 'mine') { g.mines.push({ x: o.x, y: o.y, by: o, arm: 0.6 }); SFX.click(); } else if (o.ability === 'heal') { if (!o.healed) { o.healed = true; o.hp = Math.min(o.maxhp, o.hp + 60); SFX.power(); } } else if (o.ability === 'bubble') { o.inv = 2; SFX.freeze(); } }
+    g.update = dt => { g.t += dt; for (const f of g.fx) f.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 5) g.done = true; return; } g.stateT -= dt;
+      if (g.state === 'shop') { for (const o of g.ps) if ((o.p.kind === 'bot' || o.p.kind === 'key') && !o.ready) botShop(o); if (g.stateT <= 0 || g.ps.every(o => o.ready)) startFight(); return; }
+      if (g.state === 'reveal') { if (g.stateT <= 0) { g.state = 'fight'; g.stateT = 70; broadcastPhase(); } return; }
+      if (g.state === 'roundEnd') { if (g.stateT <= 0) { g.round++; if (g.round > g.rounds) { g.state = 'end'; SFX.win(); } else { g.state = 'shop'; g.stateT = 25; SFX.beep(); } broadcastPhase(); } return; }
+      // fight
+      if (g.stateT < 45) g.zone = Math.max(0.18, g.zone - dt * 0.02);
+      const zr = g.zone * 760;
+      for (const o of g.ps) { if (!o.alive) continue; const inp = o.p.input, mx = inp.x || 0, my = inp.y || 0, ml = hyp(mx, my);
+        o.cd = Math.max(0, o.cd - dt); o.acd = Math.max(0, o.acd - dt); o.inv = Math.max(0, o.inv - dt); o.hitT = Math.max(0, o.hitT - dt);
+        if (ml > 0.2) { o.fx = mx / ml; o.fy = my / ml; }
+        const sp = (200 + (o.boots ? 45 : 0)) * (o.dashT > 0 ? 3.6 : 1); if (o.dashT > 0) o.dashT -= dt;
+        const tvx = ml > 0.15 ? mx * sp : (o.dashT > 0 ? o.fx * sp : 0), tvy = ml > 0.15 ? my * sp : (o.dashT > 0 ? o.fy * sp : 0); o.vx += (tvx - o.vx) * Math.min(1, dt * 12); o.vy += (tvy - o.vy) * Math.min(1, dt * 12);
+        const nx = clamp(o.x + o.vx * dt, 18, W - 18), ny = clamp(o.y + o.vy * dt, 18, H - 18); if (!solid(nx, o.y, 16)) o.x = nx; if (!solid(o.x, ny, 16)) o.y = ny;
+        if ((o.p.aDown || inp.a) && o.cd <= 0) fire(o); if (o.p.bDown) ability(o);
+        if (hyp(o.x - W / 2, o.y - H / 2) > zr) hurt(o, 9 * dt, null); }
+      for (const s2 of g.shots) { s2.life -= dt; s2.x += s2.vx * dt; s2.y += s2.vy * dt; if (solid(s2.x, s2.y, 2)) s2.life = 0;
+        for (const o of g.ps) if (s2.life > 0 && o.alive && o !== s2.by && hyp(o.x - s2.x, o.y - s2.y) < 20) { s2.life = 0; hurt(o, s2.dmg, s2.by); }
+        if (s2.life <= 0 && s2.splash) { g.fx.push({ k: 'ring', x: s2.x, y: s2.y, r: s2.splash, t: 0 }); for (const o of g.ps) if (o.alive && hyp(o.x - s2.x, o.y - s2.y) < s2.splash) hurt(o, s2.dmg * 0.6, s2.by); SFX.boom(); s2.splash = 0; } }
+      g.shots = g.shots.filter(s2 => s2.life > 0);
+      for (const m of g.mines) { m.arm -= dt; if (m.arm > 0) continue; for (const o of g.ps) if (o.alive && o !== m.by && hyp(o.x - m.x, o.y - m.y) < 30) { m.boom = true; } if (m.boom) { g.fx.push({ k: 'ring', x: m.x, y: m.y, r: 90, t: 0 }); for (const o of g.ps) if (o.alive && hyp(o.x - m.x, o.y - m.y) < 90) hurt(o, 45, m.by); SFX.boom(); shake(0.3); } }
+      g.mines = g.mines.filter(m => !m.boom);
+      if (g.ps.filter(o => o.alive).length <= 1 || g.stateT <= 0) endRound(); };
+    function botShop(o) { const opts = []; if (o.weapon === 'pistol') opts.push(...['smg', 'shotgun', 'rifle', 'rocket'].filter(k => AR_WEAPONS[k].cost <= o.cash)); if (!o.ability) opts.push(...Object.keys(AR_ABIL).filter(k => AR_ABIL[k].cost <= o.cash)); if (o.armor < 2 && o.cash >= 400) opts.push('armor');
+      for (let k = 0; k < 2 && opts.length; k++) buy(o, opts[Math.floor(Math.random() * opts.length)]); o.ready = true; }
+    function buy(o, item) { if (AR_WEAPONS[item]) { const c = AR_WEAPONS[item].cost; if (o.cash < c || o.weapon === item) return false; o.cash -= c; o.weapon = item; return true; }
+      if (AR_ABIL[item]) { const c = AR_ABIL[item].cost; if (o.cash < c || o.ability === item) return false; o.cash -= c; o.ability = item; return true; }
+      if (item === 'armor' && o.armor < 2 && o.cash >= 400) { o.cash -= 400; o.armor++; return true; } if (item === 'boots' && !o.boots && o.cash >= 300) { o.cash -= 300; o.boots = true; return true; } return false; }
+    g.onPick = (p, v) => { const o = g.find(p); if (!o || g.state !== 'shop' || typeof v !== 'string') return; if (v === 'ready') { o.ready = true; SFX.pop(); broadcastPhase(); return; } if (buy(o, v)) SFX.power(); else buzz(p, 60); sendPhase(p); };
+    g.panel = p => { const o = g.find(p); if (!o || g.state !== 'shop') return ''; if (o.ready) return `<b>✅ Ready</b>Build locked: ${AR_WEAPONS[o.weapon].i} ${AR_WEAPONS[o.weapon].n}${o.ability ? ' · ' + AR_ABIL[o.ability].i + ' ' + AR_ABIL[o.ability].n : ''} · 🛡×${o.armor}${o.boots ? ' · 👟' : ''}`;
+      const item = (k, label, cost, owned) => `<button class="pbtn shopi${owned ? ' on' : ''}" data-c="pp" data-v="${k}"${owned || cost > o.cash ? ' disabled' : ''}>${label}<small>${owned ? 'owned' : '$' + cost}</small></button>`;
+      return `<b>🛒 Round ${g.round} shop · $${o.cash}</b><div class="small">Secret! Nobody sees your build until the fight.</div><div class="small" style="opacity:1">Weapon (replaces yours)</div><div class="vgrid">${Object.entries(AR_WEAPONS).filter(([k]) => k !== 'pistol').map(([k, w]) => item(k, w.i + ' ' + w.n, w.cost, o.weapon === k)).join('')}</div>
+        <div class="small" style="opacity:1">Ability (B button)</div><div class="vgrid">${Object.entries(AR_ABIL).map(([k, a]) => item(k, a.i + ' ' + a.n, a.cost, o.ability === k)).join('')}</div>
+        <div class="vgrid">${item('armor', '🛡 Armour +40 (' + o.armor + '/2)', 400, o.armor >= 2)}${item('boots', '👟 Boots', 300, o.boots)}</div><button class="pbtn big go" data-c="pp" data-v="ready">Ready ▶</button>`; };
+    g.ranking = () => g.ps.slice().sort((a, b) => b.score - a.score).map(o => o.p.slot);
+    g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; return '💥 ' + top.p.name + ' wins the arms race (' + top.score + ' pts)'; };
+    g.bot = (p, dt) => { const o = g.find(p); p.input = { x: 0, y: 0, a: false, b: false }; if (!o || g.state !== 'fight' || !o.alive) return;
+      let e = null, bd = 1e9; for (const x of g.ps) if (x !== o && x.alive) { const d = hyp(x.x - o.x, x.y - o.y); if (d < bd) { bd = d; e = x; } } if (!e) return;
+      const W0 = AR_WEAPONS[o.weapon], want = W0.range * 0.6, dx = e.x - o.x, dy = e.y - o.y, d = bd || 1; let mx = dx / d, my = dy / d; if (d < want * 0.6) { mx = -mx; my = -my; } if (Math.abs(d - want) < 80) { mx = -dy / d; my = dx / d; }
+      if (hyp(o.x - W / 2, o.y - H / 2) > g.zone * 700) { const zd = hyp(W / 2 - o.x, H / 2 - o.y) || 1; mx = (W / 2 - o.x) / zd; my = (H / 2 - o.y) / zd; }
+      p.input = { x: mx, y: my, a: d < W0.range, b: false }; o.fx = dx / d; o.fy = dy / d; if (o.ability && Math.random() < dt * 0.5 && d < 250) p.bLatch = true; };
+    g.draw = () => { ctx.fillStyle = '#2b3a2f'; ctx.fillRect(0, 0, W, H); for (let i = 0; i < 60; i++) { ctx.fillStyle = 'rgba(255,255,255,.03)'; ctx.fillRect((i * 211) % W, (i * 97) % H, 60, 30); }
+      if (g.state === 'fight' || g.state === 'reveal') { const zr = g.zone * 760; ctx.save(); ctx.fillStyle = 'rgba(255,60,80,.18)'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(W / 2 + zr, H / 2); ctx.arc(W / 2, H / 2, zr, 0, Math.PI * 2, true); ctx.fill(); ctx.strokeStyle = '#ff5a6e'; ctx.lineWidth = 4; ctx.setLineDash([12, 10]); ctx.beginPath(); ctx.arc(W / 2, H / 2, zr, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
+      for (const [x, y, w, h] of rects) { rr(x, y, w, h, 10); ctx.fillStyle = '#8a6a44'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke(); }
+      for (const m of g.mines) { ctx.fillStyle = m.arm > 0 ? '#888' : (Math.floor(g.t * 6) % 2 ? '#ff5a6e' : '#8a2030'); ctx.beginPath(); ctx.arc(m.x, m.y, 9, 0, 7); ctx.fill(); }
+      for (const s2 of g.shots) { ctx.fillStyle = s2.splash ? '#ffb067' : '#fff6b0'; ctx.beginPath(); ctx.arc(s2.x, s2.y, s2.splash ? 7 : 4, 0, 7); ctx.fill(); }
+      for (const f of g.fx) if (f.t < 0.4) { ctx.strokeStyle = `rgba(255,176,103,${1 - f.t / 0.4})`; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.3 + f.t * 2), 0, 7); ctx.stroke(); }
+      if (g.state === 'fight' || g.state === 'reveal' || g.state === 'roundEnd') for (const o of g.ps) { if (!o.alive) continue;
+        if (o.inv > 0) { ctx.strokeStyle = '#7fd3ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(o.x, o.y, 30, 0, 7); ctx.stroke(); }
+        drawCritter(o.x, o.y - 6, 22, o.p.char, { fx: o.fx, fy: o.fy, ouch: o.hitT > 0, walk: hyp(o.vx, o.vy) > 30 ? host.t * 16 : 0, anim: o.hitT > 0 ? 'hit' : hyp(o.vx, o.vy) > 30 ? 'run' : 'idle' });
+        rr(o.x - 24, o.y - 52, 48, 7, 3.5); ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill(); rr(o.x - 24, o.y - 52, 48 * Math.max(0, o.hp) / o.maxhp, 7, 3.5); ctx.fillStyle = o.p.color; ctx.fill();
+        toyText(o.p.name + ' ' + AR_WEAPONS[o.weapon].i, o.x, o.y - 64, 13, '#fff', 'center', TOY.navy); }
+      toyText('ARMS RACE · Round ' + Math.min(g.round, g.rounds) + '/' + g.rounds + (g.state === 'fight' ? ' · ⏱ ' + Math.ceil(g.stateT) : ''), W / 2, 22, 20, '#fff', 'center', TOY.navy);
+      g.ps.forEach((o, i) => { const x = 14 + i * 126; rr(x, H - 32, 120, 26, 13); ctx.fillStyle = o.p.color; ctx.fill(); toyText(o.p.name.slice(0, 8) + ' ' + o.score + 'p', x + 60, H - 19, 13, '#fff', 'center', TOY.navy); });
+      if (g.state === 'shop') { ctx.fillStyle = 'rgba(20,24,40,.75)'; ctx.fillRect(0, 0, W, H); headline('🛒 SHOP: ROUND ' + g.round, W / 2, 200, 56, TOY.sun, TOY.coral); toyText('Spend your cash on your phone. It\'s secret! · ⏱ ' + Math.ceil(g.stateT), W / 2, 270, 26, '#fff', 'center', TOY.navy);
+        g.ps.forEach((o, i) => { const x = W / 2 + (i - (g.ps.length - 1) / 2) * Math.min(130, 1100 / g.ps.length); drawAvatar(x, 420, 32, o.p, { happy: o.ready }); toyText(o.ready ? '✅' : '🛒', x, 470, 22, '#fff', 'center', null); toyText('$' + o.cash, x, 498, 16, TOY.sun, 'center', null); }); }
+      if (g.state === 'reveal') { ctx.fillStyle = 'rgba(20,24,40,.6)'; ctx.fillRect(0, 0, W, H); headline('LOADOUTS', W / 2, 140, 54, TOY.sun, TOY.coral);
+        g.ps.forEach((o, i) => { const k = Math.min(1, Math.max(0, (3.5 - g.stateT) * 2 - i * 0.3)); if (k <= 0) return; const x = W / 2 + (i - (g.ps.length - 1) / 2) * Math.min(150, 1150 / g.ps.length); ctx.globalAlpha = k;
+          toyPanel(x - 64, 220, 128, 200, 18, '#fff', 5); drawAvatar(x, 260, 26, o.p); toyText(o.p.name.slice(0, 9), x, 300, 15, o.p.color, 'center', TOY.navy); toyText(AR_WEAPONS[o.weapon].i, x, 340, 36, '#fff', 'center', null); toyText((o.ability ? AR_ABIL[o.ability].i : '·') + ' ' + '🛡'.repeat(o.armor) + (o.boots ? '👟' : ''), x, 390, 22, '#fff', 'center', null); ctx.globalAlpha = 1; }); }
+      if (g.state === 'roundEnd') headline(g.winner ? '🏆 ' + g.winner.p.name + ' takes round ' + g.round : 'Round over', W / 2, H / 2, 50, TOY.sun, TOY.coral);
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(20,24,40,.7)'; ctx.fillRect(0, 0, W, H); headline(g.resultLine(), W / 2, H / 2, 40, TOY.sun, TOY.coral); confetti(40, 1); } };
+    return g; } };
+
+/* ---------------- 🗺 TURF WARS: real-time territory, alliances, betrayal ---------------- */
+const TURF_NAMES = ['Harbour', 'Old Mill', 'Ridge', 'Market', 'Quarry', 'Docks', 'Lighthouse', 'Vineyard', 'Fort', 'Oasis', 'Bridge', 'Mine', 'Bazaar', 'Tower', 'Grove', 'Crater', 'Abbey', 'Rapids', 'Summit', 'Bay', 'Outpost', 'Canyon', 'Garden', 'Temple'];
+const TurfWars = { title: 'Turf Wars', accent: '#b48cff', phones: true, minPhones: 1, botsOk: true, panelGame: true,
+  how: 'Every territory grows troops. On your phone, pick one of yours, then send troops to a neighbour to attack or reinforce. Make deals out loud… then break them. Your phone also shows a SECRET bonus territory that grows twice as fast for you. Most land when time runs out (or last one standing) wins.',
+  create(players) { const g = { t: 0, done: false, panelGame: true, state: 'play', stateT: 420, nodes: [], edges: [], moves: [], sel: {}, tick: 0, endT: 0, pushT: 0 }; talkCommon(g, players);
+    // map: random points, connect nearest neighbours, keep it connected
+    const N = Math.min(24, 10 + players.length * 2); const rnd = Math.random;
+    for (let tries = 0; g.nodes.length < N && tries < 4000; tries++) { const x = 110 + rnd() * (W - 220), y = 120 + rnd() * (H - 200); if (g.nodes.every(n => hyp(n.x - x, n.y - y) > 120)) g.nodes.push({ id: g.nodes.length, x, y, own: -1, tr: 4 + Math.floor(rnd() * 10), name: TURF_NAMES[g.nodes.length], adj: new Set() }); }
+    const link = (a, b) => { if (a === b || a.adj.has(b.id)) return; a.adj.add(b.id); b.adj.add(a.id); g.edges.push([a.id, b.id]); };
+    for (const a of g.nodes) g.nodes.filter(b => b !== a).sort((p, q) => hyp(p.x - a.x, p.y - a.y) - hyp(q.x - a.x, q.y - a.y)).slice(0, 3).forEach(b => { if (hyp(b.x - a.x, b.y - a.y) < 330) link(a, b); });
+    const seen = new Set([0]), stack = [0]; while (stack.length) { const n = g.nodes[stack.pop()]; for (const m of n.adj) if (!seen.has(m)) { seen.add(m); stack.push(m); } }
+    for (const n of g.nodes) if (!seen.has(n.id)) { const near = g.nodes.filter(m => seen.has(m.id)).sort((p, q) => hyp(p.x - n.x, p.y - n.y) - hyp(q.x - n.x, q.y - n.y))[0]; link(n, near); seen.add(n.id); for (const m of n.adj) seen.add(m); }
+    // starting bases: spread out
+    const taken = []; g.ps.forEach((o, i) => { let best = null, bs = -1; for (const n of g.nodes) { if (taken.includes(n)) continue; const d = taken.length ? Math.min(...taken.map(t => hyp(t.x - n.x, t.y - n.y))) : hyp(n.x - 100, n.y - 100); if (d > bs) { bs = d; best = n; } }
+      taken.push(best); best.own = i; best.tr = 20; best.cap = i; o.idx = i; const cand = g.nodes.filter(n => n.own === -1); o.secret = cand[Math.floor(Math.random() * cand.length)]; });
+    const R = () => broadcastPhase(), mine = o => g.nodes.filter(n => n.own === o.idx);
+    function send(o, from, to, frac) { if (from.own !== o.idx || !from.adj.has(to.id)) return; const n = Math.floor(from.tr * frac); if (n < 1) return; from.tr -= n; g.moves.push({ from, to, n, own: o.idx, t: 0, d: hyp(to.x - from.x, to.y - from.y) }); SFX.click(); }
+    g.update = dt => { g.t += dt; if (g.state === 'end') { g.endT += dt; if (g.endT > 6) g.done = true; return; } g.stateT -= dt; g.tick += dt; g.pushT += dt;
+      if (g.tick >= 1.5) { g.tick -= 1.5; for (const n of g.nodes) if (n.own >= 0) { const o = g.ps[n.own]; n.tr = Math.min(150, n.tr + 1 + (n.cap === n.own ? 1 : 0) + (o.secret === n ? 1 : 0)); } }
+      for (const m of g.moves) { m.t += dt * 140; if (m.t >= m.d) { m.done = true; const to = m.to; if (to.own === m.own) to.tr += m.n; else { to.tr -= m.n; if (to.tr < 0) { const prev = to.own; to.own = m.own; to.tr = -to.tr; burst(to.x, to.y, g.ps[m.own].p.color, 16, 220, 5, 0.5); SFX.pop(); if (prev >= 0 && !g.nodes.some(n => n.own === prev)) { toast(g.ps[prev].p.name + ' has been wiped off the map!'); SFX.boom(); } } else SFX.hit(); } } }
+      g.moves = g.moves.filter(m => !m.done);
+      for (const o of g.ps) if (o.p.kind === 'bot' && Math.random() < dt * 0.5) { const my = mine(o).filter(n => n.tr > 8); if (my.length) { const from = my[Math.floor(Math.random() * my.length)]; const targets = [...from.adj].map(i => g.nodes[i]).filter(n => n.own !== o.idx && n.tr + 2 < from.tr * 0.7); const tgt = targets.sort((a, b) => a.tr - b.tr)[0]; if (tgt) send(o, from, tgt, 0.7); else { const front = [...from.adj].map(i => g.nodes[i]).filter(n => n.own === o.idx && [...n.adj].some(j => g.nodes[j].own !== o.idx)); if (front.length && ![...from.adj].some(j => g.nodes[j].own !== o.idx)) send(o, from, front[0], 0.6); } } }
+      if (g.pushT > 1) { g.pushT = 0; R(); }
+      const alive = g.ps.filter(o => mine(o).length || g.moves.some(m => m.own === o.idx)); if (g.stateT <= 0 || (g.ps.length > 1 && alive.length <= 1)) { g.ps.forEach(o => o.score = mine(o).length * 10 + Math.round(mine(o).reduce((a, n) => a + n.tr, 0) / 10)); g.state = 'end'; SFX.win(); R(); } };
+    g.onPick = (p, v) => { const o = g.find(p); if (!o || g.state !== 'play' || typeof v !== 'string') return; const sel = g.sel[p.slot];
+      if (v[0] === 'n') { g.sel[p.slot] = +v.slice(1); SFX.click(); sendPhase(p); return; } if (v === 'back') { g.sel[p.slot] = null; sendPhase(p); return; }
+      if (v[0] === 'a' && sel != null) { const [to, f] = v.slice(1).split('_'); send(o, g.nodes[sel], g.nodes[+to], +f / 100); sendPhase(p); } };
+    g.panel = p => { const o = g.find(p); if (!o) return '<b>👀 Watching</b>'; const my = mine(o);
+      if (g.state === 'end') return `<b>🏁 Final: ${my.length} territories</b>`; if (!my.length) return '<b>💀 Wiped out</b>Plot your revenge for the rematch.';
+      const sec = `<div class="small" style="opacity:1">🤫 Secret bonus: <b style="display:inline;font-size:inherit">${esc(o.secret.name)}</b> ${o.secret.own === o.idx ? '(yours! +1/tick)' : '(capture it!)'}</div>`, sel = g.sel[p.slot] != null ? g.nodes[g.sel[p.slot]] : null;
+      if (!sel || sel.own !== o.idx) return `<b>🗺 Your turf (${my.length})</b>${sec}<div class="vgrid">${my.sort((a, b) => b.tr - a.tr).map(n => `<button class="pbtn" data-c="pp" data-v="n${n.id}" style="border-color:${o.p.color}">${esc(n.name)}<small>${n.tr} troops</small></button>`).join('')}</div><div class="small">Tap a territory to send troops from it</div>`;
+      const adj = [...sel.adj].map(i => g.nodes[i]);
+      return `<b>From ${esc(sel.name)} · ${sel.tr} troops</b>${sec}${adj.map(n => { const ow = n.own >= 0 ? g.ps[n.own] : null, friendly = n.own === o.idx; return `<div class="mis"><span style="color:${ow ? ow.p.color : '#8a93b8'}">${friendly ? '🛡' : '⚔'} ${esc(n.name)} · ${n.tr} <small>${ow ? esc(ow.p.name) : 'neutral'}</small></span><span class="row" style="margin:0">${[25, 50, 100].map(f => `<button class="pbtn" data-c="pp" data-v="a${n.id}_${f}">${f}%</button>`).join('')}</span></div>`; }).join('')}<button class="pbtn" data-c="pp" data-v="back">◀ Back</button>`; };
+    g.ranking = () => g.ps.slice().sort((a, b) => b.score - a.score).map(o => o.p.slot);
+    g.resultLine = () => { const top = g.ps.slice().sort((a, b) => b.score - a.score)[0]; return '🗺 ' + top.p.name + ' rules the map'; };
+    g.draw = () => { const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#2f6f8f'); gr.addColorStop(1, '#1d4a66'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(160,210,140,.25)'; for (const n of g.nodes) { ctx.beginPath(); ctx.arc(n.x, n.y, 95, 0, 7); ctx.fill(); }
+      ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,.25)'; for (const [a, b] of g.edges) { ctx.beginPath(); ctx.moveTo(g.nodes[a].x, g.nodes[a].y); ctx.lineTo(g.nodes[b].x, g.nodes[b].y); ctx.stroke(); }
+      for (const m of g.moves) { const k = m.t / m.d, x = m.from.x + (m.to.x - m.from.x) * k, y = m.from.y + (m.to.y - m.from.y) * k, col = g.ps[m.own].p.color; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 10 + Math.min(10, m.n / 4), 0, 7); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(m.n, x, y, 13, '#fff', 'center', TOY.navy); }
+      for (const n of g.nodes) { const col = n.own >= 0 ? g.ps[n.own].p.color : '#c9cde6', r = 26 + Math.min(16, n.tr / 6);
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(n.x + 3, n.y + 5, r, 0, 7); ctx.fill(); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 7); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke();
+        if (n.cap != null) toyText('★', n.x, n.y - r - 8, 18, TOY.sun, 'center', TOY.navy); toyText(n.tr, n.x, n.y, 18, '#fff', 'center', TOY.navy); toyText(n.name, n.x, n.y + r + 12, 12, '#fff', 'center', TOY.navy); }
+      rr(W / 2 - 80, 8, 160, 40, 20); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); toyText('⏱ ' + Math.floor(Math.max(0, g.stateT) / 60) + ':' + String(Math.floor(Math.max(0, g.stateT) % 60)).padStart(2, '0'), W / 2, 28, 22, TOY.navy, 'center', null);
+      headline('TURF WARS', 120, 28, 26, '#fff', '#8a5cff');
+      g.ps.slice().sort((a, b) => mine(b).length - mine(a).length).forEach((o, i) => { const x = W - 170, y = 16 + i * 30; rr(x, y, 160, 26, 13); ctx.fillStyle = o.p.color; ctx.fill(); toyText(o.p.name.slice(0, 10) + ' · ' + mine(o).length, x + 80, y + 13, 14, '#fff', 'center', TOY.navy); });
+      if (g.state === 'end') { ctx.fillStyle = 'rgba(20,30,50,.7)'; ctx.fillRect(0, 0, W, H); headline(g.resultLine(), W / 2, H / 2, 46, TOY.sun, '#8a5cff'); confetti(40, 1); } };
+    return g; } };
+
+const GAMES = { robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -11773,7 +12058,7 @@ function showMsg(html, interactive) {
   if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; if (m.querySelector('[data-react]')) window.reactT0 = performance.now(); } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says' };
+const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says', robo: '🤖 Robo Rumble', arms: '💥 Arms Race', dice: "🎲 Liar's Dice", turf: '🗺 Turf Wars' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -11811,12 +12096,13 @@ function renderPad() {
     hint = 'Lobby';
     if (d.leader) {
       html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
-        <div class="row">${[['bomb', '🎉 Party', 'social'], ['qdraw', '🤸 Active', 'active'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk', 'active'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        <div class="row">${[['robo', '⚔ Strategy', 'strat'], ['bomb', '🎉 Party', 'social'], ['qdraw', '🤸 Active', 'active'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk', 'active', 'strat'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
+        ${MODE_CAT[d.mode] === 'strat' ? `<div class="row">${[['robo', '🤖 Robo Rumble'], ['arms', '💥 Arms Race'], ['dice', "🎲 Liar's Dice"], ['turf', '🗺 Turf Wars']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'active' ? `<div class="row">${[['qdraw', '🤠 Quick Draw'], ['shake', '📳 Shake Race'], ['head', '🤪 Forehead'], ['says', '📱 Phone Says']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'talk' ? `<div class="row">${[['whosaid', '🕵 Who Said It?'], ['likely', '👉 Most Likely'], ['hot', '🌶 Hot Takes'], ['meld', '🧠 Mind Meld'], ['lie', '🤥 2 Truths 1 Lie']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'social' ? `<div class="row">${[['bomb', '💣 Bomb Squad'], ['draw', '🎨 Draw & Pass'], ['heist', '💰 Heist'], ['odd', '🕵 Odd One Out']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'cards' ? `<div class="row">${[['shit', '💩 Shithead'], ['big2', '🂡 Big 2'], ['cards', '🃏 Colour Clash']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
-        ${!['party', 'cards', 'social', 'talk', 'active'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
+        ${!['party', 'cards', 'social', 'talk', 'active', 'strat'].includes(MODE_CAT[d.mode]) ? `<div class="row">${[['arena', '⚔ Arena'], ['smash', '🥊 Fighters'], ['race', '🏁 Racing'], ['raid', '🤝 Co-op'], ['gems', '🏆 5v5']].map(([m, l]) => B('mode', l, m, MODE_CAT[d.mode] === MODE_CAT[m])).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'party' ? `<div class="row">${['cup', 'goal', 'sumo', 'tile'].map(m => B('mode', MODE_NAMES[m].replace('🏆 ', ''), m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'team' ? `<div class="row">${[['gems', '💎 Gem Grab'], ['zones', '🚩 Zones'], ['ball', '⚽ Toy Ball'], ['train', '🚂 Train']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'coop' ? `<div class="row">${[['raid', '👊 Gloom Raid'], ['fort', '🏰 Fort Frenzy']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
