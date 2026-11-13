@@ -10991,7 +10991,7 @@ const Shithead = {
     g.bot = () => {};
     // ---------- 3D table ----------
     const hash = id => ((id * 2654435761) % 1000) / 1000;
-    const C3 = cardTable3D(g, { deckXY: DECK, special: c => c.r === 2 ? 'RESET' : c.r === 7 ? 'MIRROR' : c.r === 10 ? 'BOMB' : '',
+    const C3 = !host.cards3D ? null : cardTable3D(g, { deckXY: DECK, special: c => c.r === 2 ? 'RESET' : c.r === 7 ? 'MIRROR' : c.r === 10 ? 'BOMB' : '',
       active: () => g.phase === 'play' && !g.winner && g.dealT <= 0 ? C3.seatPt(g.turn, g.ps.length, 0.6) : null,
       place: () => { const out = [], n = g.ps.length, S = C3.K.SC, cwp = C3.CW * S, chp = C3.CH * S, big = n > 6 ? 0.72 : n > 4 ? 0.85 : 1;
         deck.forEach((c, i) => out.push({ c, deck: true, x: DECK[0], y: DECK[1], h: 0.1 + i * 0.04, up: false, ry: (hash(c.id) - 0.5) * 0.08 }));
