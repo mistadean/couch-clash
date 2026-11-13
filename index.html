@@ -6405,7 +6405,7 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 8, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
+const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 10, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
 const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
@@ -10903,9 +10903,9 @@ function cardFX() {
 }
 const Shithead = {
   title: 'Shithead', accent: '#c4402a', phones: true, minPhones: 1, botsOk: true, panelGame: true,
-  how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. At the start you get time to swap hand cards with your face-up cards. Play several cards of the same rank at once. You can pick up the pile any time on your turn. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead!',
+  how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. At the start you get time to swap hand cards with your face-up cards. Play several cards of the same rank at once. You can pick up the pile any time on your turn. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead! Up to 10 players: big groups play with 2 or 3 decks shuffled together, and you top your hand back up to 4 from the draw pile.',
   create(players) {
-    const deck = makeDeck(players.length > 4 ? 2 : 1), g = { t: 0, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
+    const nDecks = players.length <= 3 ? 1 : players.length <= 6 ? 2 : 3, deck = makeDeck(nDecks), g = { t: 0, nDecks, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
     players.forEach(p => g.ps.push({ p, hand: deck.splice(0, 4), up: deck.splice(0, 4), down: deck.splice(0, 4), done: false }));
     g.turn = Math.floor(Math.random() * g.ps.length);
     const byR = (a, b) => a.r - b.r, cur = () => g.ps[g.turn];
@@ -11012,7 +11012,7 @@ const Shithead = {
       const show = g.pile.filter(c => !c.fly).slice(-4); show.forEach((c, i) => drawPCard(W / 2 + 30 + (i - show.length + 1) * 26, H / 2 + 4 + (i === show.length - 1 ? Math.sin(g.t * 2.4) * 3 : 0), c, 1.25, ((c.id * 7) % 9 - 4) * 0.03, i === show.length - 1));
       if (!g.pile.length) { ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.setLineDash([10, 8]); ctx.lineWidth = 3; rr(W / 2 - 22, H / 2 - 66, 104, 140, 12); ctx.stroke(); ctx.setLineDash([]); }
       if (deck.length) { for (let k = 0; k < Math.min(5, Math.ceil(deck.length / 6)); k++) drawPBack(W / 2 - 150 - k * 2, H / 2 + 4 - k * 2, 1.05); toyText(deck.length, W / 2 - 150, H / 2 + 90, 18, '#fff', 'center', TOY.navy); } }
-      else if (deck.length) { const [dx, dy] = g.proj(DECK[0], DECK[1] + 46, 0); toyText(deck.length + ' left', dx, dy, 16, '#fff', 'center', TOY.navy); }
+      else if (deck.length) { const [dx, dy] = g.proj(DECK[0], DECK[1] + 46, 0); toyText(deck.length + ' left' + (g.nDecks > 1 ? ' · ' + g.nDecks + ' decks' : ''), dx, dy, 16, '#fff', 'center', TOY.navy); }
       const t = effTop(), [lx, ly] = gl ? g.proj(PILE[0], PILE[1] - 60, 0) : [W / 2 + 30, H / 2 - 104]; if (g.phase === 'play' || !gl) { const lab = !t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+'; if (gl) { dfont(22); const w = ctx.measureText(lab).width + 34; rr(lx - w / 2, ly - 18, w, 36, 18); ctx.fillStyle = 'rgba(10,20,15,.55)'; ctx.fill(); } toyText(lab, lx, ly, 22, gl && t && t.r !== 2 ? TOY.sun : '#fff', 'center', TOY.navy); }
       const n = g.ps.length;
       g.ps.forEach((o, i) => { const [x, y] = seatXY(i, n), act = cur() === o && !g.winner && g.phase === 'play';
