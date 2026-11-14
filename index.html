@@ -250,6 +250,7 @@ html,body{background:var(--sky1)}
 #padMsg .rmap span.w{background:#8a93b8}#padMsg .rmap span.p{background:#000}#padMsg .rmap span.g{background:#5b64a8}#padMsg .rmap span b{font-size:10px;color:#ffd23f;margin:0;display:inline}
 #padMsg .rmap i{width:84%;height:84%;border-radius:4px;font-style:normal;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;color:#fff;border:1px solid #fff}#padMsg .rmap i.gh{opacity:.75;border-style:dashed}#padMsg .rmap .me i{outline:2px solid #ffd23f}
 .rxrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}.rxb{font-size:24px;line-height:1;padding:8px 9px;border-radius:14px;border:2px solid #c9cfee;background:#eef1ff;box-shadow:0 3px 0 #c9cfee}.rxb:active{transform:scale(.9)}
+#padMsg [data-sort] .pcard{touch-action:none;transition:box-shadow .15s}#padMsg [data-sort] .pcard.dragging{position:relative;z-index:9;transition:none;box-shadow:0 14px 24px rgba(20,24,60,.35)}#padMsg [data-sort] .pcard.dropL{box-shadow:-6px 0 0 #ffc61a}#padMsg [data-sort] .pcard.dropR{box-shadow:6px 0 0 #ffc61a}.sortrow .pbtn{font-size:14px;padding:8px 10px}
 </style>
 </head>
 <body>
@@ -11155,7 +11156,7 @@ const Shithead = {
 };
 
 /* ---------- Big 2 ---------- */
-const B2 = { ord: r => r === 2 ? 15 : r, val: c => (c.r === 2 ? 15 : c.r) * 4 + c.s };
+const B2 = { ord: r => r === 2 ? 15 : r, val: c => (c.r === 2 ? 15 : c.r) * 4 + c.s, suit: c => c.s };
 function b2Eval(cs) {
   const n = cs.length; if (![1, 2, 3, 5].includes(n)) return null;
   const s = cs.slice().sort((a, b) => B2.val(a) - B2.val(b)), hi = B2.val(s[n - 1]), rk = s.map(c => B2.ord(c.r));
@@ -11214,7 +11215,11 @@ const BigTwo = {
       if (o.p.kind === 'bot' && g.turnT < 38.4) return botMove(o);
       if (g.turnT <= 0) { if (g.trick) pass(o); else botMove(o); } };
     g.onPick = (p, v) => { const o = cur(), me = g.ps.find(x => x.p === p); if (!me || g.winner || typeof v !== 'string') return;
-      const sel = g.sel[p.slot] || (g.sel[p.slot] = []);
+      const sel = g.sel[p.slot] || (g.sel[p.slot] = []), H0 = me.hand;
+      // arranging your hand works any time, not just on your turn
+      if (v.startsWith('mv:')) { const [f, t] = v.slice(3).split(':').map(Number); if (H0[f] && t >= 0 && t < H0.length && f !== t) { const [c] = H0.splice(f, 1); H0.splice(t, 0, c); } sendPhase(p); return; }
+      if (v === 'sort:r' || v === 'sort:s') { H0.sort(v === 'sort:r' ? (x, y) => B2.val(x) - B2.val(y) : (x, y) => B2.suit(x) - B2.suit(y) || B2.val(x) - B2.val(y)); sendPhase(p); return; }
+      if (v === 'grp') { const picked = H0.filter(c => sel.includes(c)); if (picked.length) { const rest = H0.filter(c => !sel.includes(c)); H0.length = 0; H0.push(...picked.sort((x, y) => B2.val(x) - B2.val(y)), ...rest); } g.sel[p.slot] = []; sendPhase(p); return; }
       if (v[0] === 's') { const c = me.hand[+v.slice(1)]; if (!c) return; const i = sel.indexOf(c); if (i >= 0) sel.splice(i, 1); else sel.push(c); g.err[p.slot] = ''; sendPhase(p); return; }
       if (o !== me) return;
       if (v === 'play') { const err = tryPlay(me, sel.filter(c => me.hand.includes(c))); if (err) { g.err[p.slot] = err; buzz(p, 80); sendPhase(p); } }
@@ -11223,10 +11228,11 @@ const BigTwo = {
     g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
       if (g.winner) return `<b>${g.winner === o ? '🏆 You win!' : esc(g.winner.p.name) + ' wins!'}</b>${o.hand.length ? 'You had ' + o.hand.length + ' cards left.' : ''}`;
       const mine = cur() === o, sel = g.sel[p.slot] || [], e = sel.length ? b2Eval(sel) : null;
-      const cards = o.hand.map((c, i) => pcardHTML(c, 's' + i, true, sel.includes(c))).join('');
+      const hsz = o.hand.length <= 8 ? false : 'sm', cards = o.hand.map((c, i) => pcardHTML(c, 's' + i, true, sel.includes(c), hsz)).join('');
       return `<b>${mine ? (g.trick ? '⭐ Your turn: beat it or pass' : '⭐ Your lead! Play anything') : 'Waiting for ' + esc(cur().p.name)}</b>` +
         `<div class="small" style="opacity:1">${g.trick ? 'To beat: ' + esc(g.trick.name) : g.first && g.must && mine ? 'Must include ' + cardName(g.must) : 'Fresh round'}</div>` +
-        `<div class="hand">${cards}</div><div class="small" style="opacity:1">${sel.length ? (e ? '✓ ' + esc(e.name) : '✗ Not a valid hand') : 'Tap cards to pick them'}</div>` +
+        `<div class="hand" data-sort="1">${cards}</div><div class="small" style="opacity:1">${sel.length ? (e ? '✓ ' + esc(e.name) : '✗ Not a valid hand') : 'Tap to pick · drag to rearrange'}</div>` +
+        `<div class="row sortrow"><button class="pbtn" data-c="pp" data-v="sort:r">Sort by rank</button><button class="pbtn" data-c="pp" data-v="sort:s">Sort by suit</button>${sel.length > 1 ? '<button class="pbtn" data-c="pp" data-v="grp">Group these</button>' : ''}</div>` +
         (g.err[p.slot] ? `<div class="small" style="opacity:1;color:#ff9aab">${esc(g.err[p.slot])}</div>` : '') +
         (mine ? `<div class="row"><button class="pbtn big go" data-c="pp" data-v="play">Play ▶</button>${g.trick ? '<button class="pbtn big" data-c="pp" data-v="pass">Pass</button>' : ''}</div>` : '') + (sel.length ? '<button class="pbtn" data-c="pp" data-v="clear">Clear</button>' : ''); };
     g.ranking = () => g.ps.slice().sort((a, b) => a.hand.length - b.hand.length).map(o => o.p.slot);
@@ -12970,6 +12976,19 @@ function setupPadInput() {
   // the whole right half acts as the button too, for big thumbs
   $('#btnZone').addEventListener('pointerdown', e => { if (e.target === $('#btnZone')) bdown(e); });
   $('#btnZone').addEventListener('pointerup', bup); $('#btnZone').addEventListener('pointercancel', bup);
+  // drag to rearrange cards in a hand ([data-sort]); a plain tap still selects
+  let dg = null, dragJust = false;
+  $('#padMsg').addEventListener('pointerdown', e => { const card = e.target.closest('[data-sort] .pcard'); if (!card) return; const list = card.parentElement, cards = [...list.children].filter(x => x.classList.contains('pcard'));
+    dg = { el: card, list, cards, from: cards.indexOf(card), to: cards.indexOf(card), x0: e.clientX, y0: e.clientY, moved: false, id: e.pointerId }; });
+  $('#padMsg').addEventListener('pointermove', e => { if (!dg || e.pointerId !== dg.id) return; const dx = e.clientX - dg.x0, dy = e.clientY - dg.y0;
+    if (!dg.moved) { if (Math.hypot(dx, dy) < 12) return; dg.moved = true; dg.el.classList.add('dragging'); try { dg.el.setPointerCapture(e.pointerId); } catch (x) {} try { navigator.vibrate && navigator.vibrate(10); } catch (x) {} }
+    e.preventDefault(); dg.el.style.transform = `translate(${dx}px,${dy}px) scale(1.12) rotate(${Math.max(-8, Math.min(8, dx / 12))}deg)`;
+    let best = dg.from, bd = 1e9; dg.cards.forEach((c, i) => { if (c === dg.el) return; const r = c.getBoundingClientRect(), d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)); if (d < bd) { bd = d; best = i; } });
+    if (bd > 90) best = dg.from; dg.to = best; dg.cards.forEach((c, i) => { c.classList.toggle('dropL', i === best && best !== dg.from && best < dg.from); c.classList.toggle('dropR', i === best && best !== dg.from && best > dg.from); }); }, { passive: false });
+  const endDrag = () => { if (!dg) return; const d0 = dg; dg = null; d0.cards.forEach(c => c.classList.remove('dropL', 'dropR')); d0.el.classList.remove('dragging'); d0.el.style.transform = '';
+    if (!d0.moved) return; dragJust = true; setTimeout(() => { dragJust = false; }, 350);
+    if (d0.to !== d0.from) { const tgt = d0.cards[d0.to]; if (d0.to > d0.from) tgt.after(d0.el); else tgt.before(d0.el); ctlSend({ t: 'cmd', c: 'pp', v: 'mv:' + d0.from + ':' + d0.to }); try { navigator.vibrate && navigator.vibrate(15); } catch (x) {} } };
+  window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag);
   // drawing pad for Draw & Pass
   const pen = { col: '#1b1f5e', down: false, last: null };
   $('#padMsg').addEventListener('pointerdown', e => { const c = e.target.closest('#pdraw'); if (!c) return; e.preventDefault(); c.setPointerCapture(e.pointerId); pen.down = true; const r = c.getBoundingClientRect(); pen.last = [(e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height]; const x = c.getContext('2d'); x.fillStyle = pen.col; x.beginPath(); x.arc(pen.last[0], pen.last[1], pen.col === '#ffffff' ? 9 : 4, 0, 7); x.fill(); });
@@ -12977,6 +12996,7 @@ function setupPadInput() {
     x.strokeStyle = pen.col; x.lineWidth = pen.col === '#ffffff' ? 18 : 8; x.lineCap = x.lineJoin = 'round'; x.beginPath(); x.moveTo(pen.last[0], pen.last[1]); x.lineTo(p[0], p[1]); x.stroke(); pen.last = p; });
   window.addEventListener('pointerup', () => { pen.down = false; });
   $('#padMsg').addEventListener('click', e => {
+    if (dragJust && e.target.closest('[data-sort]')) { dragJust = false; return; }
     const mb = e.target.closest('[data-motion]'); if (mb) { motionOn(); return; }
     const rb = e.target.closest('[data-react]'); if (rb) { ctlSend({ t: 'cmd', c: 'pp', v: 'r:' + Math.round(performance.now() - (window.reactT0 || performance.now())) }); rb.disabled = true; try { navigator.vibrate && navigator.vibrate(30); } catch (x) {} return; }
     const pb = e.target.closest('[data-pen]'); if (pb) { pen.col = pb.dataset.pen; document.querySelectorAll('#padMsg [data-pen]').forEach(x => x.classList.toggle('on', x === pb)); return; }
