@@ -6459,6 +6459,8 @@ function setBombSnd(p, url) { p.bombSnd = url || null; p.bombBuf = null; if (!ur
     const go = () => actx.decodeAudioData(u8.buffer.slice(0), buf => { p.bombBuf = buf; toast('🎙 ' + p.name + ' recorded a bomb sound'); playBombSnd(p); }, () => { p.bombSnd = null; toast("That recording didn't work on this TV, try again"); broadcastPhase(); });
     if (actx) go(); else { p.bombPending = go; toast('🎙 ' + p.name + "'s sound saved (turn TV sound on to hear it)"); } } catch (e) { p.bombSnd = null; }
   broadcastPhase(); }
+// any burn plays a recorded sound: the bomber's own if they made one, otherwise someone else's at random
+function pickBombSnd(p) { if (p && p.bombBuf) return p; const pool = host.players.filter(q => q && q.bombBuf); return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; }
 function playBombSnd(p) { if (!actx || !p || !p.bombBuf || !audioState.sound) return false; const src = actx.createBufferSource(), g = actx.createGain(); src.buffer = p.bombBuf; g.gain.value = 1.6; src.connect(g); g.connect(sfxBus || actx.destination); src.start(); return true; }
 function tone(f1, f2, dur, type = 'square', vol = 0.12, delay = 0, bus = null) {
   if (!actx) return;
@@ -11032,7 +11034,7 @@ const Shithead = {
       while (o.hand.length < 4 && deck.length && from === 'hand') o.hand.push(deck.pop()); o.hand.sort(byR);
       const top4 = g.pile.slice(-4), four = top4.length === 4 && top4.every(x => x.r === top4[0].r);
       if (c.r === 10 || four) { const blown = g.pile.slice(-10); blown.forEach((b, k) => { const a = Math.random() * Math.PI * 2; fx.fly(face(b), PILE, [PILE[0] + Math.cos(a) * 900, PILE[1] + Math.sin(a) * 600], { delay: 0.28 + k * 0.02, dur: 0.9, s0: 1.25, s1: 0.9, arc: -80, spin: (Math.random() - 0.5) * 16 }); });
-        const burned = g.pile.length; o.bombs = (o.bombs || 0) + 1; g.pile = []; g.boom = 1.5; shake(0.3 + Math.min(0.5, burned / 30)); if (o.p.bombPending && actx) { o.p.bombPending(); o.p.bombPending = null; } if (!playBombSnd(o.p)) { SFX.boom(); burnSnd(burned); } else tone(140, 30, 0.6, 'sawtooth', 0.08); burst(PILE[0], PILE[1], '#ffb067', 40, 420, 7, 0.9); burst(PILE[0], PILE[1], '#fff3c4', 20, 300, 5, 0.6); burst(PILE[0], PILE[1], '#ff5a3a', 24, 360, 6, 0.8); say((c.r === 10 ? 'Bomb! ' : 'Four of a kind! ') + o.p.name + ' goes again');
+        const burned = g.pile.length; o.bombs = (o.bombs || 0) + 1; g.pile = []; g.boom = 1.5; shake(0.3 + Math.min(0.5, burned / 30)); if (o.p.bombPending && actx) { o.p.bombPending(); o.p.bombPending = null; } if (!playBombSnd(pickBombSnd(o.p))) { SFX.boom(); burnSnd(burned); } else tone(140, 30, 0.6, 'sawtooth', 0.08); burst(PILE[0], PILE[1], '#ffb067', 40, 420, 7, 0.9); burst(PILE[0], PILE[1], '#fff3c4', 20, 300, 5, 0.6); burst(PILE[0], PILE[1], '#ff5a3a', 24, 360, 6, 0.8); say((c.r === 10 ? 'Bomb! ' : 'Four of a kind! ') + o.p.name + ' goes again');
         if (finishCheck(o)) return; if (o.done) { nextTurn(); return; } g.turnT = g.turnLen; refresh(); return; }
       if (c.r === 2) call('Reset', 'Anything can be played next', c, '#3ad7b5'); else if (c.r === 7) { const t = effTop(); call('Mirror', t ? 'Copies the ' + rankName(t.r) + ' underneath: beat it' : 'Nothing underneath: anything goes', c, '#b48cff'); }
       if (finishCheck(o)) return; nextTurn();
@@ -12776,7 +12778,7 @@ function motionStart() { if (SENS.on) return; SENS.on = true;
 function motionOn() { const ok = () => { motionStart(); ctlSend({ t: 'cmd', c: 'pp', v: 'motion:ok' }); };
   try { const asks = []; if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) asks.push(DeviceMotionEvent.requestPermission()); if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) asks.push(DeviceOrientationEvent.requestPermission());
     if (asks.length) Promise.all(asks).then(r => { if (r.every(x => x === 'granted')) ok(); else alert('Motion was blocked. You can still play with the TAP button.'); }).catch(() => ok()); else ok(); } catch (e) { ok(); } }
-function recRow(d) { return `<div class="recbox"><div class="small" style="opacity:1"><b style="display:inline;font-size:15px">🎙 Your bomb sound</b> · plays on the TV when you burn the pile</div><div class="row">` +
+function recRow(d) { return `<div class="recbox"><div class="small" style="opacity:1"><b style="display:inline;font-size:15px">🎙 Your bomb sound</b> · plays on the TV whenever anyone burns the pile (yours always plays for your own bombs)</div><div class="row">` +
   `<button class="pbtn" data-rec="bomb">${d.bombSnd ? 'Re-record' : 'Record (3s)'}</button>` + (d.bombSnd ? `<button class="pbtn" data-recplay="1">▶ Hear it</button><button class="pbtn" data-c="bombsnd" data-v="">Remove</button>` : '') + `</div></div>`; }
 function showMsg(html, interactive) {
   const m = $('#padMsg'); m.classList.toggle('interactive', !!interactive);
