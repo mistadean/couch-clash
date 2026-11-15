@@ -252,6 +252,7 @@ html,body{background:var(--sky1)}
 .rxrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}.rxb{font-size:24px;line-height:1;padding:8px 9px;border-radius:14px;border:2px solid #c9cfee;background:#eef1ff;box-shadow:0 3px 0 #c9cfee}.rxb:active{transform:scale(.9)}
 #padMsg [data-sort] .pcard{touch-action:none;transition:box-shadow .15s}#padMsg [data-sort] .pcard.dragging{position:relative;z-index:9;transition:none;box-shadow:0 14px 24px rgba(20,24,60,.35)}#padMsg [data-sort] .pcard.dropL{box-shadow:-6px 0 0 #ffc61a}#padMsg [data-sort] .pcard.dropR{box-shadow:6px 0 0 #ffc61a}.sortrow .pbtn{font-size:14px;padding:8px 10px}
 .recbox{margin-top:12px;padding:10px;border-radius:16px;background:#fff6e0;border:2px dashed #ffc61a}.pbtn.recording{background:#ff5a6e!important;color:#fff!important;animation:recp 1s infinite}@keyframes recp{50%{opacity:.6}}
+#padMsg .syd-cash{font:38px "Lilita One",system-ui;color:#2bb35a;-webkit-text-stroke:1.5px #1b1f5e;line-height:1.1}.syd-dot{display:inline-block;width:12px;height:12px;border-radius:4px;border:2px solid #1b1f5e;margin-right:6px;vertical-align:-1px}.syd-lv{font-size:12px;color:#ff3a5c;display:inline!important}.syd-row{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;padding:5px 8px;margin:3px 0;border-radius:10px;background:#f4f6fd;font-size:14px}.syd-act{display:flex;gap:4px;flex-shrink:0}#padMsg .pbtn.mini{font-size:12px;padding:5px 8px;margin:0;min-height:0}.syd-props{margin-top:10px;max-height:34vh;overflow:auto}.syd-trade{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;margin:6px 0}.syd-pick{display:block;width:100%;text-align:left;font-size:13px;padding:6px 8px;margin:3px 0;border-radius:10px;border:2px solid #c9cfee;background:#fff;color:#1b1f5e}.syd-pick.on{border-color:#1b1f5e;background:#ffe9a8}
 </style>
 </head>
 <body>
@@ -6408,7 +6409,7 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 10, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
+const MODE_MAX = { syd: 6, cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 10, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
 const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
@@ -6555,7 +6556,7 @@ function musicTick() {
    ===================================================================== */
 const canvas = $('#tv'); let ctx = canvas.getContext('2d');
 let view = { s: 1, ox: 0, oy: 0, dpr: 1 };
-const host = { session: {}, sessionGames: {}, sessionLast: {}, shTimer: 35, fourColour: false, botBomb: 'boom', botBombBuf: null, seatMode: 'off', seatsPrev: null,
+const host = { session: {}, sessionGames: {}, sessionLast: {}, shTimer: 35, fourColour: false, botBomb: 'boom', botBombBuf: null, seatMode: 'off', seatsPrev: null, sydMins: 30,
   started: false, paused: false, controls: lsGet('cc_controls') === 'buttons' ? 'buttons' : 'gestures', fit: clamp(+(lsGet('cc_fit') || 1), 0.8, 1), phase: 'lobby', players: Array(10).fill(null), inGame: null, botsFill: true, mode: 'robo',
   cup: [], cupIndex: 0, game: null, timer: 0, results: null, pending: [], buttons: [], t: 0, shake: 0,
   net: { status: 'off', code: '', err: '', url: '', qr: null }, toast: '', toastT: 0,
@@ -6680,8 +6681,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says', 'robo', 'arms', 'dice', 'turf'];
-const MODE_CAT = { cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active', robo: 'strat', arms: 'strat', dice: 'strat', turf: 'strat' };
+const MODES = ['syd', 'cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says', 'robo', 'arms', 'dice', 'turf'];
+const MODE_CAT = { syd: 'strat', cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active', robo: 'strat', arms: 'strat', dice: 'strat', turf: 'strat' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -6705,7 +6706,7 @@ function hostCmd(p, c, v) {
     case 'start': if (host.phase === 'lobby') startMatch(); return;
     case 'skip': if (host.phase === 'results' || host.phase === 'podium') host.timer = 0; return;
     case 'mode': if (host.phase === 'lobby' && MODES.includes(v)) { host.mode = v; SFX.click(); } break;
-    case 'cardopt': if (host.phase === 'lobby' && (v === 'timer' || v === 'four' || v === 'botbomb' || v === 'seats')) { cardOpt(v); return; } break;
+    case 'cardopt': if (host.phase === 'lobby' && (v === 'timer' || v === 'four' || v === 'botbomb' || v === 'seats' || v === 'sydmins')) { cardOpt(v); return; } break;
     case 'newnight': if (host.phase === 'lobby') { resetSession(); return; } break;
     case 'bots': if (host.phase === 'lobby') { host.botsFill = !host.botsFill; SFX.click(); } break;
     case 'controls': if (host.phase === 'lobby') { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.click(); toast('Arena controls: ' + host.controls); } break;
@@ -6754,7 +6755,7 @@ function phaseInfo(p) {
   if (host.game && host.game.panel && host.phase === 'play') { try { msg.panel = host.game.panel(p); } catch (e) { msg.panel = ''; } }
   if (G) { msg.title = G.title; msg.how = G.how; msg.button = G.button; msg.buttonB = G.buttonB ? ROSTER[p.char].ability.name : ''; msg.ability = G.buttonB ? ROSTER[p.char].ability : null; }
   const l = leader();
-  Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music, audioLocked: !audioOn(), session: !!(G && G.session), shTimer: host.shTimer, fourColour: host.fourColour, botBomb: host.botBomb, botBombSet: !!host.botBombBuf, seatMode: host.seatMode, hasNight: !!(host.session.shit && Object.keys(host.session.shit).length),
+  Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music, audioLocked: !audioOn(), session: !!(G && G.session), shTimer: host.shTimer, fourColour: host.fourColour, botBomb: host.botBomb, botBombSet: !!host.botBombBuf, seatMode: host.seatMode, sydMins: host.sydMins, hasNight: !!(host.session.shit && Object.keys(host.session.shit).length),
     leaderName: l ? l.name : '', count: humans().length, char: p.char, controls: host.controls, fight: !!(G && G.fighter),
     role: host.game && (host.phase === 'play' || host.phase === 'intro') ? (host.inGame && !host.inGame.has(p.slot) ? 'spectator' : host.game.roleOf ? host.game.roleOf(p.slot) : 'fighter') : 'fighter', gestures: !!(G && G.gestures && host.controls === 'gestures' && p.kind === 'phone'), race: !!(G && G.race) });
   if (host.phase === 'lobby') msg.roster = ROSTER.map((c, i) => {
@@ -7464,7 +7465,7 @@ function drawLobby() {
       const txt = '⏱ ' + host.shTimer + 's' + (host.fourColour ? ' · 4-colour' : '') + (host.seatMode !== 'off' ? ' · ' + { shuffle: 'shuffle seats', chase: 'loser chases' }[host.seatMode] : '') + ' · Bots: ' + { boom: 'boom', none: 'silent', mine: 'leader sound', random: 'random sound', bot: 'custom sound' }[host.botBomb];
       font(15, 700); const w = Math.min(215, ctx.measureText(txt).width + 26); rr(sx + 6, 299, w, 34, 17); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke();
       ctx.save(); rr(sx + 6, 299, w, 34, 17); ctx.clip(); toyText(txt, sx + 19, 316, 14, TOY.navy, 'left', null); ctx.restore(); } }
-  else if (top === 'strat') { let sx = 40; for (const [m, label, w] of [['robo', '🤖 Robo Rumble', 170], ['arms', '💥 Arms Race', 152], ['dice', "🎲 Liar's Dice", 156], ['turf', '🗺 Turf Wars', 146]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastStrat = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
+  else if (top === 'strat') { let sx = 40; for (const [m, label, w] of [['syd', '🏙 Surviving Sydney', 196], ['robo', '🤖 Robo Rumble', 146], ['arms', '💥 Arms Race', 128], ['dice', "🎲 Liar's Dice", 132], ['turf', '🗺 Turf Wars', 124]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastStrat = m; setMode(m); }, TOY.aqua, { px: 15, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'active') { let sx = 40; for (const [m, label, w] of [['qdraw', '🤠 Quick Draw', 160], ['shake', '📳 Shake Race', 160], ['head', '🤪 Forehead', 144], ['says', '📱 Phone Says', 160]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastActive = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'talk') { let sx = 40; for (const [m, label, w] of [['whosaid', '🕵 Who Said It?', 156], ['likely', '👉 Most Likely', 146], ['hot', '🌶 Hot Takes', 130], ['meld', '🧠 Mind Meld', 134], ['lie', '🤥 2 Truths 1 Lie', 156]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastTalk = m; setMode(m); }, TOY.aqua, { px: 17, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'social') { let sx = 40; for (const [m, label, w] of [['bomb', '💣 Bomb Squad', 160], ['draw', '🎨 Draw & Pass', 162], ['heist', '💰 Heist', 108], ['odd', '🕵 Odd One Out', 158]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastSocial = m; setMode(m); }, TOY.aqua, { px: 19, id: 'sub-' + m }); sx += w + 8; }
@@ -7562,6 +7563,7 @@ function introRules(rules, x, y, w, h) { const rh = Math.min(46, h / rules.lengt
     else if (k === 'pair') { drawPCard(ix - 6, cy, { r: 9, s: 2 }, s, -0.15); drawPCard(ix + 6, cy, { r: 9, s: 3 }, s, 0.12); }
     else if (k === 'swap') { drawPBack(ix - 6, cy, s, -0.1); drawPCard(ix + 6, cy, { r: 14, s: 3 }, s, 0.12); }
     else if (k === 'pick') { for (let j = 0; j < 3; j++) drawPBack(ix - 4 + j * 4, cy - j * 2, s, -0.1 + j * 0.08); }
+    else if (typeof k === 'string' && k[0] === '#') { rr(ix - 15, cy - 15, 30, 30, 7); ctx.fillStyle = '#fdf8ec'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = k; ctx.fillRect(ix - 13.5, cy - 13.5, 27, 9); ctx.fillStyle = k; ctx.beginPath(); ctx.moveTo(ix - 7, cy + 11); ctx.lineTo(ix - 7, cy + 2); ctx.lineTo(ix, cy - 4); ctx.lineTo(ix + 7, cy + 2); ctx.lineTo(ix + 7, cy + 11); ctx.closePath(); ctx.fill(); ctx.lineWidth = 1.5; ctx.stroke(); }
     else { drawPBack(ix - 7, cy, s, -0.12); drawPBack(ix + 7, cy, s, 0.12); }
     font(px, 600); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = TOY.navy; ctx.fillText(t, x + 54, cy + 1); }); }
 function introCount(y, ch) {
@@ -11548,7 +11550,7 @@ const MISSIONS = ['Get {p} to say "mate"', 'Get {p} to high-five you', 'Get {p} 
 function missionFor(p) { const others = active().filter(q => q !== p && q.kind !== 'bot'); const t = MISSIONS[Math.floor(Math.random() * MISSIONS.length)]; const o = others.length ? others[Math.floor(Math.random() * others.length)].name : 'someone'; return t.replace('{p}', o); }
 const BOTBOMB = { boom: 'Normal boom', none: 'Silent', mine: "Leader's sound", random: 'Random player sound', bot: 'Recorded bot sound' }, BOTBOMB_K = Object.keys(BOTBOMB);
 const SEATMODE = { off: 'Seats stay', shuffle: 'Shuffle seats every game', chase: 'Loser sits after the winner' };
-function cardOpt(k) { if (k === 'seats') { const K = Object.keys(SEATMODE); host.seatMode = K[(K.indexOf(host.seatMode) + 1) % K.length]; toast(SEATMODE[host.seatMode]); } if (k === 'botbomb') { host.botBomb = BOTBOMB_K[(BOTBOMB_K.indexOf(host.botBomb) + 1) % BOTBOMB_K.length]; toast('Bot bombs: ' + BOTBOMB[host.botBomb] + (host.botBomb === 'bot' && !host.botBombBuf ? ' (record it on the leader phone)' : '')); } if (k === 'timer') { host.shTimer = host.shTimer === 35 ? 60 : host.shTimer === 60 ? 15 : 35; toast(host.shTimer === 15 ? 'Fast turns: 15 seconds' : host.shTimer === 60 ? 'Relaxed turns: 60 seconds' : 'Normal turns: 35 seconds'); } if (k === 'four') { host.fourColour = !host.fourColour; toast(host.fourColour ? '4-colour deck: diamonds blue, clubs green' : 'Classic red and black deck'); } SFX.pop(); broadcastPhase(); }
+function cardOpt(k) { if (k === 'sydmins') { const L = [20, 30, 45, 60]; host.sydMins = L[(L.indexOf(host.sydMins) + 1) % L.length]; toast('Surviving Sydney: ' + host.sydMins + ' minute game'); } if (k === 'seats') { const K = Object.keys(SEATMODE); host.seatMode = K[(K.indexOf(host.seatMode) + 1) % K.length]; toast(SEATMODE[host.seatMode]); } if (k === 'botbomb') { host.botBomb = BOTBOMB_K[(BOTBOMB_K.indexOf(host.botBomb) + 1) % BOTBOMB_K.length]; toast('Bot bombs: ' + BOTBOMB[host.botBomb] + (host.botBomb === 'bot' && !host.botBombBuf ? ' (record it on the leader phone)' : '')); } if (k === 'timer') { host.shTimer = host.shTimer === 35 ? 60 : host.shTimer === 60 ? 15 : 35; toast(host.shTimer === 15 ? 'Fast turns: 15 seconds' : host.shTimer === 60 ? 'Relaxed turns: 60 seconds' : 'Normal turns: 35 seconds'); } if (k === 'four') { host.fourColour = !host.fourColour; toast(host.fourColour ? '4-colour deck: diamonds blue, clubs green' : 'Classic red and black deck'); } SFX.pop(); broadcastPhase(); }
 function ensureMissions() { if (!host.missionsOn) return; let added = false; for (const p of active()) if (p.kind === 'phone') { p.missions = p.missions || []; while (p.missions.length < 2) { p.missions.push(missionFor(p)); added = true; } p.missionPts = p.missionPts || 0; } if (added) broadcastPhase(); }
 function claimMission(p, i) { if (!host.missionsOn || !p.missions || !p.missions[i]) return; const m = p.missions.splice(i, 1)[0]; p.missionPts = (p.missionPts || 0) + 1; toast('🎯 ' + p.name + ' completed a secret mission: ' + m); SFX.cheer(); ensureMissions(); broadcastPhase(); }
 
@@ -12712,7 +12714,296 @@ const TurfWars = { title: 'Turf Wars', accent: '#b48cff', phones: true, minPhone
       if (g.state === 'end') { ctx.fillStyle = 'rgba(20,30,50,.7)'; ctx.fillRect(0, 0, W, H); headline(g.resultLine(), W / 2, H / 2, 46, TOY.sun, '#8a5cff'); confetti(40, 1); } };
     return g; } };
 
-const GAMES = { robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* ---- 🏙 Surviving Sydney: a property-trading board game (our own, not anyone else's) ---- */
+const SYD_GRP = [ // colour, build cost, rent ladder [base, 1, 2, 3, 4 granny flats, tower]
+  { c: '#8b5a3c', b: 50 }, { c: '#7fd3ff', b: 50 }, { c: '#ff6fcf', b: 100 }, { c: '#ff8a3d', b: 100 },
+  { c: '#e8384f', b: 150 }, { c: '#ffc61a', b: 150 }, { c: '#3ccf6e', b: 200 }, { c: '#2f5fd0', b: 200 }];
+const P_ = (name, g, price, rent) => ({ t: 'prop', name, g, price, rent });
+const SYD_SQ = [
+  { t: 'go', name: 'Payday' },
+  P_('Mount Druitt', 0, 60, [2, 10, 30, 90, 160, 250]), { t: 'event', name: 'Sydney Moment' }, P_('Blacktown', 0, 60, [4, 20, 60, 180, 320, 450]),
+  { t: 'tax', name: 'Council Rates', amt: 100 }, { t: 'stn', name: 'Central Station', price: 200 },
+  P_('Campbelltown', 1, 100, [6, 30, 90, 270, 400, 550]), { t: 'event', name: 'Sydney Moment' }, P_('Penrith', 1, 120, [8, 40, 100, 300, 450, 600]),
+  { t: 'util', name: 'Harbour Water Co.', price: 150 },
+  { t: 'jail', name: 'Stuck on the M5' },
+  P_('Parramatta', 2, 140, [10, 50, 150, 450, 625, 750]), P_('Liverpool', 2, 160, [12, 60, 180, 500, 700, 900]),
+  { t: 'stn', name: 'Strathfield Station', price: 200 }, P_('Strathfield', 3, 180, [14, 70, 200, 550, 750, 950]), P_('Burwood', 3, 200, [16, 80, 220, 600, 800, 1000]),
+  { t: 'park', name: 'Beach Day' },
+  P_('Newtown', 4, 220, [18, 90, 250, 700, 875, 1050]), { t: 'event', name: 'Sydney Moment' }, P_('Surry Hills', 4, 240, [20, 100, 300, 750, 925, 1100]),
+  { t: 'stn', name: 'Chatswood Station', price: 200 }, P_('Manly', 5, 260, [22, 110, 330, 800, 975, 1150]), P_('Cronulla', 5, 280, [24, 120, 360, 850, 1025, 1200]),
+  { t: 'util', name: 'Blackout Power Co.', price: 150 }, P_('Bondi', 6, 300, [26, 130, 390, 900, 1100, 1275]), P_('Coogee', 6, 320, [28, 150, 450, 1000, 1200, 1400]),
+  { t: 'gojail', name: 'Go to the M5' },
+  { t: 'stn', name: 'Circular Quay Station', price: 200 }, { t: 'event', name: 'Sydney Moment' }, { t: 'tax', name: 'Strata Levy', amt: 150 },
+  P_('Mosman', 7, 350, [35, 175, 500, 1100, 1300, 1500]), P_('Point Piper', 7, 400, [50, 200, 600, 1400, 1700, 2000])];
+const SYD_CARDS = [
+  { t: 'Your Uber surged during a storm.', pay: 40 }, { t: 'Found a $50 note on George St.', get: 50 }, { t: 'Toll roads all week.', pay: 75 },
+  { t: 'The strata meeting ran three hours.', perHouse: 25, perTower: 100 }, { t: 'Tax refund finally came through.', get: 150 },
+  { t: "It's your birthday at the pub. Everyone shouts you.", collectEach: 20 }, { t: 'Weekend trackwork. Go back 3 spaces.', back: 3 },
+  { t: 'Catch the ferry to Manly.', goto: 21 }, { t: 'Snapped by a camera on Parramatta Rd.', jail: true },
+  { t: 'Found an E-tag in the glovebox. Keep it to get off the M5 free.', etag: true }, { t: 'Rental inspection: 40 people turned up. Go to Payday.', goto: 0 },
+  { t: 'Smashed avo habit.', pay: 30 }, { t: 'Sold your old couch on Marketplace.', get: 60 }, { t: 'Energy bill shock.', pay: 90 },
+  { t: 'Footy tipping winner!', get: 100 }, { t: 'Shouted the table at the RSL.', payEach: 15 }, { t: 'Opal card glitch: free ride to the next station.', nextStn: true },
+  { t: 'Interest rates rise again.', perProp: 10 }, { t: 'Landlord sold the place. Moving costs.', pay: 120 }, { t: 'A reality show filmed you at Bondi. Appearance fee!', get: 80 }];
+const money = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-AU');
+const SurvivingSydney = { title: 'Surviving Sydney', accent: '#2f8fd8', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 12,
+  rules: [['#3ccf6e', 'Roll, move, and buy the suburb you land on. Skip it and it goes to auction.'], ['#e8384f', 'Own both suburbs of a colour to double the rent, then build granny flats and a tower.'],
+    ['#ffc61a', "Land on someone else's suburb and you pay rent. Your cash is secret, on your phone."], ['#7fd3ff', 'Trade suburbs, stations and cash with anyone, any time, from your phone.'],
+    ['#8b5a3c', 'Stuck on the M5? Pay the $50 toll, use an E-tag, or roll doubles to escape.'], ['#b48cff', 'Richest when the clock runs out survives Sydney. Go broke and you are out.']],
+  how: 'Roll and move round Sydney. Buy suburbs (or auction them), collect rent, build granny flats and towers on full colour sets, trade on your phone. Richest when the clock runs out wins.',
+  create(players) {
+    const N = SYD_SQ.length, g = { t: 0, done: false, panelGame: true, state: 'turn', ps: players.map((p, i) => ({ p, i, cash: 1500, pos: 0, jail: 0, etag: 0, out: false, vis: 0, hop: 0 })),
+      own: SYD_SQ.map(() => -1), lvl: SYD_SQ.map(() => 0), turn: 0, phase: 'roll', phaseT: 30, dice: [1, 1], rollT: 0, dbl: 0, steps: 0, stepT: 0, jar: 0, card: null, auc: null,
+      deck: [], log: [], clock: (host.sydMins || 30) * 60, final: false, endT: 0, winner: null, ui: {}, offers: {}, botT: 0, startIdx: 0, fx: [] };
+    g.turn = g.startIdx = Math.floor(Math.random() * g.ps.length);
+    const R = () => broadcastPhase(), cur = () => g.ps[g.turn], sq = i => SYD_SQ[i];
+    const log = m => { g.log.unshift(m); g.log.length = Math.min(g.log.length, 4); };
+    const owned = o => SYD_SQ.map((s, i) => i).filter(i => g.own[i] === o.i);
+    const fullSet = (o, gi) => SYD_SQ.every((s, i) => s.t !== 'prop' || s.g !== gi || g.own[i] === o.i);
+    const worth = o => o.cash + owned(o).reduce((a, i) => a + sq(i).price + g.lvl[i] * (sq(i).t === 'prop' ? SYD_GRP[sq(i).g].b : 0), 0);
+    g.worth = worth;
+    const coin = () => { tone(1320, 1320, 0.06, 'square', 0.05); tone(1760, 1760, 0.12, 'square', 0.05, 0.06); };
+    function rentOf(i, roll) { const s = sq(i), w = g.own[i], o = g.ps[w];
+      if (s.t === 'stn') { const k = owned(o).filter(j => sq(j).t === 'stn').length; return 25 * Math.pow(2, k - 1); }
+      if (s.t === 'util') { const k = owned(o).filter(j => sq(j).t === 'util').length; return roll * (k === 2 ? 10 : 4); }
+      return g.lvl[i] ? s.rent[g.lvl[i]] : s.rent[0] * (fullSet(o, s.g) ? 2 : 1); }
+    // money: raise cash by selling to the bank if needed; if still short, you're out
+    function raise(o, need) { const sold = [];
+      while (o.cash < need) { const b = owned(o).filter(i => g.lvl[i] > 0).sort((a, c) => g.lvl[c] - g.lvl[a])[0]; if (b == null) break; g.lvl[b]--; o.cash += SYD_GRP[sq(b).g].b / 2; sold.push('a building on ' + sq(b).name); }
+      while (o.cash < need) { const p = owned(o).sort((a, c) => sq(a).price - sq(c).price)[0]; if (p == null) break; g.own[p] = -1; o.cash += sq(p).price / 2; sold.push(sq(p).name); }
+      if (sold.length) log(o.p.name + ' sold ' + sold.slice(0, 3).join(', ') + (sold.length > 3 ? '…' : '') + ' to cover it'); }
+    function pay(o, to, amt) { if (amt <= 0) return true; if (o.cash < amt) raise(o, amt);
+      if (o.cash < amt) { if (to) to.cash += Math.max(0, o.cash); else g.jar += Math.max(0, o.cash); bankrupt(o, to); return false; }
+      o.cash -= amt; if (to) to.cash += amt; else g.jar += amt; return true; }
+    function bankrupt(o) { o.out = true; o.cash = 0; for (const i of owned(o)) { g.own[i] = -1; g.lvl[i] = 0; } log(o.p.name + ' went broke and moved back in with their parents'); SFX.bonk(); buzz(o.p, 400);
+      g.fx.push({ k: 'broke', o, t: 0 }); if (g.ps.filter(q => !q.out).length <= 1) finish(); }
+    function goJail(o) { o.pos = 10; o.vis = 10; o.jail = 3; g.dbl = 0; log(o.p.name + ' is stuck on the M5'); tone(300, 120, 0.5, 'sawtooth', 0.08); endPhase(true); }
+    // turn flow
+    function startTurn() { if (g.state !== 'turn') return; let guard = 0; while (cur().out && guard++ < 20) g.turn = (g.turn + 1) % g.ps.length; g.dbl = 0; g.phase = cur().jail ? 'jail' : 'roll'; g.phaseT = 30; g.botT = 0.9; R(); }
+    function nextPlayer() { const n = g.ps.length; let k = g.turn;
+      for (let j = 1; j <= n; j++) { const t = (g.turn + j) % n; if (!g.ps[t].out) { k = t; break; } }
+      if (g.final && --g.finalTurns <= 0) return finish(); // everyone gets one last turn after the clock runs out
+      g.turn = k; startTurn(); }
+    function roll(o) { if (g.phase !== 'roll' && g.phase !== 'jail') return; g.dice = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]; g.rollT = 0.8; g.rollWasJail = g.phase === 'jail'; g.phase = 'rolling'; R(); }
+    function afterRoll() { const o = cur(), [a, b] = g.dice, d = a === b, n = a + b;
+      if (g.rollWasJail) { if (d) { o.jail = 0; log(o.p.name + ' rolled doubles and escaped the M5'); return move(o, n); }
+        o.jail--; if (o.jail <= 0) { if (!pay(o, null, 50)) return endPhase(true); log(o.p.name + ' paid the $50 toll after 3 turns'); return move(o, n); }
+        log(o.p.name + ' is still stuck in traffic'); return endPhase(true); }
+      if (d) { g.dbl++; if (g.dbl >= 3) return goJail(o); } move(o, n); }
+    function move(o, n, back) { g.steps = n; g.stepDir = back ? -1 : 1; g.stepT = 0.05; g.phase = 'moving'; R(); }
+    function land(o) { const i = o.pos, s = sq(i);
+      if (s.t === 'prop' || s.t === 'stn' || s.t === 'util') { const w = g.own[i];
+        if (w < 0) { if (o.cash >= s.price) { g.phase = 'decide'; g.phaseT = 30; g.botT = 0.9; R(); } else startAuction(i); return; }
+        if (w === o.i) return endPhase();
+        const owner = g.ps[w], rent = rentOf(i, g.dice[0] + g.dice[1]); const ok = pay(o, owner, rent); if (ok) { log(o.p.name + ' paid ' + owner.p.name + ' ' + money(rent) + ' rent for ' + s.name); coin(); g.fx.push({ k: 'pay', from: o, to: owner, amt: rent, t: 0 }); }
+        return endPhase(!ok); }
+      if (s.t === 'event') { if (!g.deck.length) g.deck = shuffleArr(SYD_CARDS.slice()); g.card = { c: g.deck.pop(), t: 0 }; g.phase = 'card'; tone(500, 900, 0.15, 'triangle', 0.06); R(); return; }
+      if (s.t === 'tax') { const ok = pay(o, null, s.amt); if (ok) log(o.p.name + ' paid ' + money(s.amt) + ' ' + s.name); SFX.bonk(); return endPhase(!ok); }
+      if (s.t === 'gojail') return goJail(o);
+      if (s.t === 'park' && g.jar > 0) { log(o.p.name + ' had a beach day and found ' + money(g.jar) + ' in the fines jar'); o.cash += g.jar; g.jar = 0; coin(); }
+      endPhase(); }
+    function applyCard(o, c) { const all = g.ps.filter(q => !q.out && q !== o);
+      if (c.get) { o.cash += c.get; coin(); } if (c.pay && !pay(o, null, c.pay)) return endPhase(true);
+      if (c.perHouse) { let a = 0; for (const i of owned(o)) a += g.lvl[i] === 5 ? c.perTower : g.lvl[i] * c.perHouse; if (!pay(o, null, a)) return endPhase(true); }
+      if (c.perProp && !pay(o, null, owned(o).length * c.perProp)) return endPhase(true);
+      if (c.collectEach) for (const q of all) pay(q, o, c.collectEach);
+      if (c.payEach) for (const q of all) if (!pay(o, q, c.payEach)) return endPhase(true);
+      if (c.etag) o.etag++;
+      if (c.jail) return goJail(o);
+      if (c.back) return move(o, c.back, true);
+      if (c.goto != null) return move(o, (c.goto - o.pos + N) % N || N);
+      if (c.nextStn) { let k = 1; while (sq((o.pos + k) % N).t !== 'stn') k++; return move(o, k); }
+      endPhase(); }
+    function endPhase(noRepeat) { const o = cur(); if (g.state !== 'turn') return;
+      if (!noRepeat && g.dbl > 0 && !o.jail && !o.out) { g.phase = 'roll'; g.phaseT = 30; g.botT = 0.9; log(o.p.name + ' rolled doubles: roll again'); R(); return; }
+      if (o.out) return nextPlayer(); g.phase = 'end'; g.phaseT = 15; g.botT = 0.8; R(); }
+    function startAuction(i) { g.auc = { i, bid: 0, by: -1, t: 10 }; g.phase = 'auction'; tone(220, 220, 0.2, 'square', 0.07); log(sq(i).name + ' is up for auction'); R(); }
+    function bid(o, inc) { const a = g.auc; if (!a || o.out) return; const nb = Math.max(10, a.bid + inc); if (o.cash < nb || a.by === o.i && inc < 50) return; a.bid = nb; a.by = o.i; a.t = Math.max(a.t, 4.5); tone(700 + Math.min(600, nb), 800 + Math.min(600, nb), 0.06, 'triangle', 0.05); R(); }
+    function endAuction() { const a = g.auc; g.auc = null; if (a.by >= 0) { const w = g.ps[a.by]; w.cash -= a.bid; g.own[a.i] = w.i; log(w.p.name + ' won ' + sq(a.i).name + ' at auction for ' + money(a.bid)); SFX.cheer(); g.fx.push({ k: 'sold', i: a.i, t: 0 }); }
+      else log('No bids for ' + sq(a.i).name); endPhase(); }
+    function buy(o) { const i = o.pos, s = sq(i); if (g.phase !== 'decide' || o.cash < s.price) return; o.cash -= s.price; g.own[i] = o.i; log(o.p.name + ' bought ' + s.name + ' for ' + money(s.price)); coin(); g.fx.push({ k: 'sold', i, t: 0 }); endPhase(); }
+    function build(o, i) { const s = sq(i); if (!s || s.t !== 'prop' || g.own[i] !== o.i || !fullSet(o, s.g) || g.lvl[i] >= 5) return; const c = SYD_GRP[s.g].b; if (o.cash < c) return;
+      o.cash -= c; g.lvl[i]++; log(o.p.name + (g.lvl[i] === 5 ? ' built a tower on ' : ' built a granny flat on ') + s.name); tone(400, 800, 0.15, 'triangle', 0.07); g.fx.push({ k: 'build', i, t: 0 }); R(); }
+    function sell(o, i) { const s = sq(i); if (!s || g.own[i] !== o.i) return;
+      if (g.lvl[i] > 0) { g.lvl[i]--; o.cash += SYD_GRP[s.g].b / 2; log(o.p.name + ' sold a building on ' + s.name); R(); return; }
+      if (s.t === 'prop' && SYD_SQ.some((t, j) => t.t === 'prop' && t.g === s.g && g.lvl[j] > 0)) return;
+      g.own[i] = -1; o.cash += s.price / 2; log(o.p.name + ' sold ' + s.name + ' back to the bank'); R(); }
+    function finish() { if (g.state === 'end') return; g.state = 'end'; g.endT = 0; const alive = g.ps.filter(o => !o.out); g.winner = (alive.length ? alive : g.ps).slice().sort((a, b) => worth(b) - worth(a))[0]; SFX.win(); SFX.cheer(); R(); }
+    // trades
+    function tradeOk(T) { const A = g.ps[T.from], B = g.ps[T.to]; if (!A || !B || A.out || B.out) return false;
+      if (T.give.some(i => g.own[i] !== A.i || g.lvl[i] > 0) || T.get.some(i => g.own[i] !== B.i || g.lvl[i] > 0)) return false;
+      return T.cash >= 0 ? A.cash >= T.cash : B.cash >= -T.cash; }
+    function doTrade(T) { const A = g.ps[T.from], B = g.ps[T.to]; for (const i of T.give) g.own[i] = B.i; for (const i of T.get) g.own[i] = A.i; A.cash -= T.cash; B.cash += T.cash;
+      const parts = [...T.give.map(i => sq(i).name), T.cash > 0 ? money(T.cash) : ''].filter(Boolean).join(' + ') || 'nothing', back = [...T.get.map(i => sq(i).name), T.cash < 0 ? money(-T.cash) : ''].filter(Boolean).join(' + ') || 'nothing';
+      log('Trade: ' + A.p.name + ' gave ' + parts + ' to ' + B.p.name + ' for ' + back); SFX.cheer(); g.fx.push({ k: 'trade', t: 0 }); }
+    const botValue = (o, i) => { const s = sq(i); let v = s.price; if (s.t === 'prop') { const mates = SYD_SQ.filter((t, j) => t.t === 'prop' && t.g === s.g && j !== i); if (mates.every((t, j) => g.own[SYD_SQ.indexOf(t)] === o.i)) v *= 2.2; } return v; };
+    function botTrade(o, T) { const give = T.get.reduce((a, i) => a + botValue(o, i) * (sq(i).t === 'prop' && fullSet(o, sq(i).g) ? 2.5 : 1), 0) + Math.max(0, -T.cash), get = T.give.reduce((a, i) => a + botValue(o, i), 0) + Math.max(0, T.cash); return get >= give * 1.15; }
+    // bots
+    function botAct(o) {
+      if (g.phase === 'jail') { if (o.etag) { o.etag--; o.jail = 0; log(o.p.name + ' used an E-tag'); g.phase = 'roll'; R(); return; } if (o.cash > 400) { if (pay(o, null, 50)) { o.jail = 0; log(o.p.name + ' paid the toll'); g.phase = 'roll'; R(); } return; } return roll(o); }
+      if (g.phase === 'roll') { botBuild(o); return roll(o); }
+      if (g.phase === 'decide') { const s = sq(o.pos), keep = botValue(o, o.pos) > s.price ? 50 : 200; return o.cash - s.price >= keep ? buy(o) : startAuction(o.pos); }
+      if (g.phase === 'end') { botBuild(o); return nextPlayer(); } }
+    function botBuild(o) { let n = 0; while (o.cash > 500 && n++ < 6) { const c = owned(o).filter(i => sq(i).t === 'prop' && fullSet(o, sq(i).g) && g.lvl[i] < 5 && o.cash - SYD_GRP[sq(i).g].b > 450).sort((a, b) => g.lvl[a] - g.lvl[b])[0]; if (c == null) break; build(o, c); } }
+    function botBids() { const a = g.auc; if (!a) return; for (const o of g.ps) { if (o.p.kind !== 'bot' || o.out || a.by === o.i) continue;
+      const max = Math.min(o.cash - 120, botValue(o, a.i) * (0.85 + ((o.i * 37 + a.i) % 7) / 20)); if (a.bid + 10 <= max && Math.random() < 0.06) bid(o, a.bid + 50 <= max && Math.random() < 0.5 ? 50 : 10); } }
+    // phones
+    g.onPick = (p, v) => { const o = g.ps.find(x => x.p === p); if (!o || typeof v !== 'string' || g.state === 'end') return; const mine = cur() === o && !o.out;
+      if (v.startsWith('bid:')) { if (g.phase === 'auction') bid(o, +v.slice(4)); return; }
+      if (v === 'tacc' || v === 'tdec') { const T = g.offers[o.i]; delete g.offers[o.i]; if (T && v === 'tacc' && tradeOk(T)) doTrade(T); else if (T) { const A = g.ps[T.from]; log(o.p.name + ' turned down ' + A.p.name + "'s trade"); } R(); return; }
+      if (v === 'trade') { g.ui[o.i] = { mode: 'trade', to: -1, give: [], get: [], cash: 0 }; sendPhase(p); return; }
+      const U = g.ui[o.i];
+      if (U && U.mode === 'trade') {
+        if (v === 'tcancel') { delete g.ui[o.i]; sendPhase(p); return; }
+        if (v.startsWith('tto:')) { U.to = +v.slice(4); U.give = []; U.get = []; U.cash = 0; sendPhase(p); return; }
+        if (v.startsWith('tg:')) { const i = +v.slice(3), k = U.give.indexOf(i); if (k >= 0) U.give.splice(k, 1); else if (g.own[i] === o.i && !g.lvl[i]) U.give.push(i); sendPhase(p); return; }
+        if (v.startsWith('tw:')) { const i = +v.slice(3), k = U.get.indexOf(i); if (k >= 0) U.get.splice(k, 1); else if (g.own[i] === U.to && !g.lvl[i]) U.get.push(i); sendPhase(p); return; }
+        if (v.startsWith('tc:')) { U.cash = clamp(U.cash + +v.slice(3), -(g.ps[U.to] ? g.ps[U.to].cash : 0), o.cash); sendPhase(p); return; }
+        if (v === 'tsend' && U.to >= 0 && (U.give.length || U.get.length || U.cash)) { const T = { from: o.i, to: U.to, give: U.give.slice(), get: U.get.slice(), cash: U.cash }; delete g.ui[o.i];
+          const B = g.ps[T.to]; if (!tradeOk(T)) { sendPhase(p); return; }
+          if (B.p.kind === 'bot') { if (botTrade(B, T)) doTrade(T); else log(B.p.name + ' said no to ' + o.p.name + "'s trade"); R(); return; }
+          g.offers[T.to] = T; tone(900, 1200, 0.1, 'triangle', 0.05); R(); return; } }
+      if (v.startsWith('b:')) { if (mine && (g.phase === 'roll' || g.phase === 'end' || g.phase === 'jail')) build(o, +v.slice(2)); return; }
+      if (v.startsWith('s:')) { if (mine || g.phase === 'auction') sell(o, +v.slice(2)); return; }
+      if (!mine) return;
+      if (v === 'roll') roll(o);
+      else if (v === 'buy') buy(o);
+      else if (v === 'auc' && g.phase === 'decide') startAuction(o.pos);
+      else if (v === 'end' && g.phase === 'end') nextPlayer();
+      else if (v === 'toll' && g.phase === 'jail') { if (pay(o, null, 50)) { o.jail = 0; log(o.p.name + ' paid the $50 toll'); g.phase = 'roll'; R(); } }
+      else if (v === 'etag' && g.phase === 'jail' && o.etag) { o.etag--; o.jail = 0; log(o.p.name + ' used an E-tag'); g.phase = 'roll'; R(); } };
+    const chipOf = (i, extra = '') => { const s = sq(i), col = s.t === 'prop' ? SYD_GRP[s.g].c : s.t === 'stn' ? '#555b7a' : '#8a93b8'; return `<span class="syd-dot" style="background:${col}"></span>${esc(s.name)}${g.lvl[i] ? ' <b class="syd-lv">' + (g.lvl[i] === 5 ? 'TOWER' : '⌂'.repeat(g.lvl[i])) + '</b>' : ''}${extra}`; };
+    g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
+      if (g.state === 'end') return `<b>${g.winner === o ? '🏆 You survived Sydney!' : esc(g.winner.p.name) + ' survived Sydney'}</b>Your net worth: ${money(worth(o))}`;
+      if (o.out) return '<b>📦 You went broke</b>Back to Mum and Dad\'s. Watch the rest play out.';
+      const mine = cur() === o, s0 = sq(o.pos), head = `<div class="syd-cash">${money(o.cash)}</div><div class="small">${o.jail ? 'Stuck on the M5' : 'on ' + esc(s0.name)}${o.etag ? ' · E-tags: ' + o.etag : ''}</div>`;
+      const T = g.offers[o.i];
+      if (T) { const A = g.ps[T.from]; return head + `<b>🤝 ${esc(A.p.name)} wants to trade</b><div class="syd-trade"><div><div class="small">You get</div>${T.give.map(i => `<div class="syd-row">${chipOf(i)}</div>`).join('')}${T.cash > 0 ? `<div class="syd-row">${money(T.cash)} cash</div>` : ''}${!T.give.length && T.cash <= 0 ? '<div class="small">nothing</div>' : ''}</div><div><div class="small">You give</div>${T.get.map(i => `<div class="syd-row">${chipOf(i)}</div>`).join('')}${T.cash < 0 ? `<div class="syd-row">${money(-T.cash)} cash</div>` : ''}${!T.get.length && T.cash >= 0 ? '<div class="small">nothing</div>' : ''}</div></div><div class="row"><button class="pbtn big go" data-c="pp" data-v="tacc">Accept</button><button class="pbtn big" data-c="pp" data-v="tdec">No thanks</button></div>`; }
+      const U = g.ui[o.i];
+      if (U && U.mode === 'trade') { const others = g.ps.filter(q => q !== o && !q.out);
+        if (U.to < 0) return head + `<b>🤝 Trade with…</b><div class="row">${others.map(q => `<button class="pbtn" data-c="pp" data-v="tto:${q.i}">${esc(q.p.name)}</button>`).join('')}</div><button class="pbtn" data-c="pp" data-v="tcancel">Cancel</button>`;
+        const B = g.ps[U.to], mineL = owned(o).filter(i => !g.lvl[i]), theirL = owned(B).filter(i => !g.lvl[i]);
+        return head + `<b>🤝 Trade with ${esc(B.p.name)}</b><div class="small">Tap to add or remove</div><div class="syd-trade"><div><div class="small">You give</div>${mineL.map(i => `<button class="syd-pick${U.give.includes(i) ? ' on' : ''}" data-c="pp" data-v="tg:${i}">${chipOf(i)}</button>`).join('') || '<div class="small">no suburbs</div>'}</div><div><div class="small">You want</div>${theirL.map(i => `<button class="syd-pick${U.get.includes(i) ? ' on' : ''}" data-c="pp" data-v="tw:${i}">${chipOf(i)}</button>`).join('') || '<div class="small">no suburbs</div>'}</div></div>` +
+          `<div class="small" style="opacity:1">Cash: ${U.cash > 0 ? 'you pay ' + money(U.cash) : U.cash < 0 ? 'they pay ' + money(-U.cash) : 'none'}</div><div class="row">${[-100, -50, 50, 100].map(c => `<button class="pbtn" data-c="pp" data-v="tc:${c}">${c > 0 ? 'I pay +' : 'They pay +'}${money(Math.abs(c))}</button>`).join('')}</div>` +
+          `<div class="row"><button class="pbtn big go" data-c="pp" data-v="tsend">Send offer</button><button class="pbtn" data-c="pp" data-v="tcancel">Cancel</button></div>`; }
+      let act = '';
+      if (g.phase === 'auction' && g.auc) { const a = g.auc, s = sq(a.i), lead = a.by === o.i;
+        act = `<b>🔨 Auction: ${esc(s.name)}</b><div class="small" style="opacity:1">Worth ${money(s.price)} · top bid ${a.by >= 0 ? money(a.bid) + ' by ' + esc(g.ps[a.by].p.name) : 'none yet'}</div>` + (lead ? '<div class="small" style="opacity:1">✅ You\'re winning</div>' : '') +
+          `<div class="row">${[10, 50, 100].map(c => `<button class="pbtn big${c === 10 ? ' go' : ''}" data-c="pp" data-v="bid:${c}"${o.cash < Math.max(10, a.bid + c) ? ' disabled' : ''}>+${money(c)}</button>`).join('')}</div>`; }
+      else if (mine && g.phase === 'roll') act = `<b>⭐ Your turn</b><button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`;
+      else if (mine && g.phase === 'jail') act = `<b>🚗 Stuck on the M5</b><div class="small" style="opacity:1">${o.jail} turn${o.jail === 1 ? '' : 's'} left in traffic</div><button class="pbtn big go" data-c="pp" data-v="roll">🎲 Try for doubles</button><div class="row"><button class="pbtn" data-c="pp" data-v="toll"${o.cash < 50 ? ' disabled' : ''}>Pay $50 toll</button>${o.etag ? '<button class="pbtn" data-c="pp" data-v="etag">Use E-tag</button>' : ''}</div>`;
+      else if (mine && g.phase === 'decide') { const s = sq(o.pos); act = `<b>🏠 ${esc(s.name)}</b><div class="small" style="opacity:1">For sale: ${money(s.price)}${s.t === 'prop' ? ' · rent from ' + money(s.rent[0]) : ''}</div><button class="pbtn big go" data-c="pp" data-v="buy">Buy for ${money(s.price)}</button><button class="pbtn big" data-c="pp" data-v="auc">Auction it</button>`; }
+      else if (mine && g.phase === 'end') act = `<button class="pbtn big go" data-c="pp" data-v="end">End turn ▶</button>`;
+      else if (mine) act = `<b>⭐ Your turn</b><div class="small">…</div>`;
+      else act = `<b>Waiting for ${esc(cur().p.name)}</b>`;
+      const canB = mine && (g.phase === 'roll' || g.phase === 'end' || g.phase === 'jail'), list = owned(o).sort((a, b) => a - b);
+      const props = list.map(i => { const s = sq(i), can = canB && s.t === 'prop' && fullSet(o, s.g) && g.lvl[i] < 5 && o.cash >= SYD_GRP[s.g].b;
+        return `<div class="syd-row">${chipOf(i)}<span class="syd-act">${can ? `<button class="pbtn mini" data-c="pp" data-v="b:${i}">+${g.lvl[i] === 4 ? 'Tower' : 'Flat'} ${money(SYD_GRP[s.g].b)}</button>` : ''}${mine || g.phase === 'auction' ? `<button class="pbtn mini" data-c="pp" data-v="s:${i}">Sell</button>` : ''}</span></div>`; }).join('');
+      return head + act + `<div class="syd-props"><div class="small">Your suburbs (${list.length})</div>${props || '<div class="small">None yet</div>'}</div>` + (g.ps.filter(q => !q.out).length > 1 && g.phase !== 'auction' ? '<button class="pbtn" data-c="pp" data-v="trade">🤝 Trade</button>' : ''); };
+    g.ranking = () => g.ps.slice().sort((a, b) => (a.out - b.out) || worth(b) - worth(a)).map(o => o.p.slot);
+    Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => Math.max(0, 3 - i)) });
+    g.resultLine = () => g.winner ? '🏙 ' + g.winner.p.name + ' survived Sydney with ' + money(worth(g.winner)) : '';
+    g.bot = () => {};
+    g.update = dt => { g.t += dt; for (let i = g.fx.length - 1; i >= 0; i--) { g.fx[i].t += dt; if (g.fx[i].t > 2.5) g.fx.splice(i, 1); }
+      for (const o of g.ps) { const d = ((o.pos - o.vis + N) % N); if (d > N / 2) o.vis = (o.vis - Math.min(N - d, dt * 7) + N) % N; else o.vis = (o.vis + Math.min(d, dt * 7)) % N; }
+      if (g.state === 'end') { g.endT += dt; if (g.endT > 7) g.done = true; return; }
+      if (!g.final) { g.clock -= dt; if (g.clock <= 0) { g.final = true; g.finalTurns = g.ps.filter(q => !q.out).length; log('Time! One last turn each, then we count up'); SFX.go(); R(); } }
+      const o = cur();
+      if (g.phase === 'rolling') { g.rollT -= dt; if (Math.random() < 0.5) noise(0.02, 0.04, 2500); if (g.rollT <= 0) afterRoll(); return; }
+      if (g.phase === 'moving') { g.stepT -= dt; if (g.stepT <= 0) { g.stepT = 0.17; o.pos = (o.pos + g.stepDir + N) % N; g.steps--; tone(600 + (g.steps % 2) * 150, 600, 0.04, 'triangle', 0.04);
+          if (g.stepDir > 0 && o.pos === 0) { o.cash += 200; log(o.p.name + ' passed Payday: +$200'); coin(); }
+          if (g.steps <= 0) land(o); } return; }
+      if (g.card) { g.card.t += dt; if (g.card.t > 2.8 && !g.card.done) { g.card.done = true; const c = g.card.c; log(o.p.name + ': ' + c.t); applyCard(o, c); } if (g.card && g.card.t > 3.4) g.card = null; }
+      if (g.phase === 'card') return;
+      if (g.phase === 'auction') { g.auc.t -= dt; botBids(); if (g.auc.t <= 0) endAuction(); return; }
+      if (o.p.kind === 'bot') { g.botT -= dt; if (g.botT <= 0) { g.botT = 0.9; botAct(o); } return; }
+      g.phaseT -= dt; if (g.phaseT <= 0) { if (g.phase === 'roll' || g.phase === 'jail') roll(o); else if (g.phase === 'decide') startAuction(o.pos); else if (g.phase === 'end') nextPlayer(); } };
+    // ---------- TV ----------
+    const BX = 20, BY = 15, BW = 1240, BH = 690, CW0 = 120, CH0 = 110, SW = (BW - 2 * CW0) / 9, SH = (BH - 2 * CH0) / 5;
+    function rect(i) { // 0 bottom-right, round anticlockwise as you look at it
+      if (i === 0) return { x: BX + BW - CW0, y: BY + BH - CH0, w: CW0, h: CH0, side: 'c' };
+      if (i < 10) return { x: BX + BW - CW0 - i * SW, y: BY + BH - CH0, w: SW, h: CH0, side: 'b' };
+      if (i === 10) return { x: BX, y: BY + BH - CH0, w: CW0, h: CH0, side: 'c' };
+      if (i < 16) return { x: BX, y: BY + BH - CH0 - (i - 10) * SH, w: CW0, h: SH, side: 'l' };
+      if (i === 16) return { x: BX, y: BY, w: CW0, h: CH0, side: 'c' };
+      if (i < 26) return { x: BX + CW0 + (i - 17) * SW, y: BY, w: SW, h: CH0, side: 't' };
+      if (i === 26) return { x: BX + BW - CW0, y: BY, w: CW0, h: CH0, side: 'c' };
+      return { x: BX + BW - CW0, y: BY + CH0 + (i - 27) * SH, w: CW0, h: SH, side: 'r' }; }
+    const centre = i => { const r = rect(i); return [r.x + r.w / 2, r.y + r.h / 2]; };
+    function house(x, y, s, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x - s, y + s * 0.8); ctx.lineTo(x - s, y - s * 0.1); ctx.lineTo(x, y - s); ctx.lineTo(x + s, y - s * 0.1); ctx.lineTo(x + s, y + s * 0.8); ctx.closePath(); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
+    function train(x, y) { rr(x - 14, y - 10, 28, 20, 6); ctx.fillStyle = '#ffc61a'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = TOY.navy; ctx.fillRect(x - 10, y - 6, 8, 6); ctx.fillRect(x + 2, y - 6, 8, 6); ctx.beginPath(); ctx.arc(x - 7, y + 11, 3, 0, 7); ctx.arc(x + 7, y + 11, 3, 0, 7); ctx.fill(); }
+    function sqName(t, x, y, w, px) { wrap(t, x, y, w, px + 2, px, TOY.navy, 'center', 700); }
+    function drawSq(i) { const s = sq(i), r = rect(i), w = g.own[i], cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+      ctx.fillStyle = s.t === 'go' ? '#d9f7e4' : s.t === 'jail' ? '#ffe6cc' : s.t === 'park' ? '#fff3c4' : s.t === 'gojail' ? '#ffd6db' : '#fdf8ec'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(27,31,94,.5)'; ctx.strokeRect(r.x, r.y, r.w, r.h);
+      if (s.t === 'prop') { const B = 20, col = SYD_GRP[s.g].c; let bx = r.x, by = r.y, bw = r.w, bh = B;
+        if (r.side === 't') { by = r.y + r.h - B; } else if (r.side === 'l') { bx = r.x + r.w - B; bw = B; bh = r.h; by = r.y; } else if (r.side === 'r') { bw = B; bh = r.h; }
+        ctx.fillStyle = col; ctx.fillRect(bx, by, bw, bh); ctx.strokeRect(bx, by, bw, bh);
+        const lv = g.lvl[i]; if (lv) { const horiz = r.side === 'b' || r.side === 't'; if (lv === 5) { rr(bx + bw / 2 - 9, by + bh / 2 - 8, 18, 16, 3); ctx.fillStyle = '#ff3a5c'; ctx.fill(); ctx.stroke(); }
+          else for (let k = 0; k < lv; k++) { const off = (k - (lv - 1) / 2) * 15; house(horiz ? bx + bw / 2 + off : bx + bw / 2, horiz ? by + bh / 2 + 1 : by + bh / 2 + off, 5.5, '#fff'); } }
+        const tx = r.side === 'l' ? r.x + (r.w - B) / 2 : r.side === 'r' ? r.x + B + (r.w - B) / 2 : cx, ty = r.side === 'b' ? r.y + B + (r.h - B) / 2 - 8 : r.side === 't' ? r.y + (r.h - B) / 2 - 8 : cy - 8;
+        sqName(s.name, tx, ty - 4, (r.side === 'l' || r.side === 'r' ? r.w - B : r.w) - 8, 13); toyText(money(s.price), tx, ty + 26, 12, '#6a76b8', 'center', null); }
+      else if (s.t === 'stn') { train(cx, cy - 14); sqName(s.name.replace(' Station', ''), cx, cy + 12, r.w - 8, 12); toyText('$200', cx, cy + 32, 11, '#6a76b8', 'center', null); }
+      else if (s.t === 'util') { ctx.fillStyle = s.name.startsWith('Harbour') ? '#2fa8ff' : '#ffc61a'; ctx.beginPath(); if (s.name.startsWith('Harbour')) { ctx.moveTo(cx, cy - 30); ctx.quadraticCurveTo(cx + 13, cy - 12, cx, cy - 6); ctx.quadraticCurveTo(cx - 13, cy - 12, cx, cy - 30); } else { ctx.moveTo(cx + 4, cy - 32); ctx.lineTo(cx - 9, cy - 14); ctx.lineTo(cx, cy - 14); ctx.lineTo(cx - 4, cy + 0); ctx.lineTo(cx + 10, cy - 19); ctx.lineTo(cx + 1, cy - 19); ctx.closePath(); } ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); sqName(s.name, cx, cy + 14, r.w - 6, 11); }
+      else if (s.t === 'event') { ctx.fillStyle = '#b48cff'; ctx.beginPath(); ctx.arc(cx, cy - 10, 17, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText('?', cx, cy - 9, 24, '#fff', 'center', TOY.navy); sqName('Sydney Moment', cx, cy + 22, r.w - 8, 11); }
+      else if (s.t === 'tax') { sqName(s.name, cx, cy - 10, r.w - 8, 13); toyText('Pay ' + money(s.amt), cx, cy + 20, 13, TOY.coral, 'center', null); }
+      else if (s.t === 'go') { headline('PAYDAY', cx, cy - 12, 22, '#3ccf6e', TOY.navy); toyText('+$200 as you pass', cx, cy + 16, 11, TOY.navy, 'center', null); ctx.strokeStyle = '#3ccf6e'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx + 34, cy + 36); ctx.lineTo(cx - 30, cy + 36); ctx.stroke(); ctx.fillStyle = '#3ccf6e'; ctx.beginPath(); ctx.moveTo(cx - 40, cy + 36); ctx.lineTo(cx - 28, cy + 29); ctx.lineTo(cx - 28, cy + 43); ctx.fill(); }
+      else if (s.t === 'jail') { for (let k = 0; k < 3; k++) { rr(r.x + 16 + k * 30, cy - 34 + (k % 2) * 6, 24, 13, 4); ctx.fillStyle = ['#e8384f', '#2fa8ff', '#3ccf6e'][k]; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); } headline('STUCK ON', cx, cy + 2, 15, '#ff8a3d', TOY.navy); headline('THE M5', cx, cy + 20, 17, '#ff8a3d', TOY.navy); toyText('or just passing', cx, cy + 40, 10, '#6a76b8', 'center', null); }
+      else if (s.t === 'park') { headline('BEACH DAY', cx, cy - 18, 17, '#2fa8ff', TOY.navy); toyText('Fines jar', cx, cy + 6, 12, TOY.navy, 'center', null); headline(money(g.jar), cx, cy + 28, 20, '#3ccf6e', TOY.navy); }
+      else if (s.t === 'gojail') { headline('GO TO', cx, cy - 14, 17, TOY.coral, TOY.navy); headline('THE M5', cx, cy + 8, 19, TOY.coral, TOY.navy); toyText('do not pass Payday', cx, cy + 32, 10, '#6a76b8', 'center', null); }
+      if (w >= 0) { const col = g.ps[w].p.color; ctx.lineWidth = 5; ctx.strokeStyle = col; ctx.strokeRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6); const ox = r.side === 'b' ? cx : r.side === 't' ? cx : r.side === 'l' ? r.x + 10 : r.x + r.w - 10, oy = r.side === 'b' ? r.y + r.h - 10 : r.side === 't' ? r.y + 10 : cy;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ox, oy, 7, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); }
+      const pop = g.fx.find(f => (f.k === 'sold' || f.k === 'build') && f.i === i); if (pop && pop.t < 0.8) { ctx.save(); ctx.globalAlpha = 1 - pop.t / 0.8; ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; const e = pop.t * 30; ctx.strokeRect(r.x - e, r.y - e, r.w + e * 2, r.h + e * 2); ctx.restore(); } }
+    function tokenXY(o) { const a = Math.floor(o.vis), b = (a + 1) % N, f = o.vis - a, [x1, y1] = centre(a), [x2, y2] = centre(b), here = g.ps.filter(q => !q.out && Math.round(q.vis) % N === Math.round(o.vis) % N), k = here.indexOf(o), m = here.length;
+      const ox = m > 1 ? ((k % 3) - Math.min(2, m - 1) / 2) * 24 : 0, oy = m > 3 ? (Math.floor(k / 3) - 0.5) * 24 : 0, hop = Math.sin(f * Math.PI) * 16; return [x1 + (x2 - x1) * f + ox, y1 + (y2 - y1) * f + oy - hop]; }
+    function skyline(x, y, s, a) { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#1b1f5e'; ctx.strokeStyle = '#1b1f5e';
+      ctx.lineWidth = 7 * s; ctx.beginPath(); ctx.moveTo(x - 330 * s, y); ctx.quadraticCurveTo(x - 160 * s, y - 150 * s, x + 10 * s, y); ctx.stroke(); ctx.lineWidth = 3 * s; for (let k = 1; k < 9; k++) { const t = k / 9, px = x - 330 * s + t * 340 * s, py = y - 4 * t * (1 - t) * 75 * s; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, y); ctx.stroke(); }
+      ctx.fillRect(x - 345 * s, y - 40 * s, 20 * s, 40 * s); ctx.fillRect(x + 2 * s, y - 40 * s, 20 * s, 40 * s);
+      for (const [dx, h, wd] of [[90, 60, 38], [130, 82, 46], [176, 54, 34]]) { ctx.beginPath(); ctx.moveTo(x + dx * s, y); ctx.quadraticCurveTo(x + (dx + 6) * s, y - h * s, x + (dx + wd) * s, y - h * s * 1.05); ctx.quadraticCurveTo(x + (dx + wd * 0.8) * s, y - h * 0.4 * s, x + (dx + wd) * s, y); ctx.closePath(); ctx.fill(); }
+      ctx.fillRect(x + 230 * s, y - 90 * s, 22 * s, 90 * s); ctx.fillRect(x + 236 * s, y - 128 * s, 10 * s, 38 * s); ctx.beginPath(); ctx.arc(x + 241 * s, y - 104 * s, 14 * s, 0, 7); ctx.fill(); ctx.fillRect(x + 262 * s, y - 60 * s, 30 * s, 60 * s); ctx.fillRect(x + 298 * s, y - 75 * s, 26 * s, 75 * s); ctx.restore(); }
+    function die(x, y, v, s, rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); rr(-s / 2, -s / 2, s, s, s * 0.2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = TOY.navy;
+      const P = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[v];
+      for (const [a, b] of P) { ctx.beginPath(); ctx.arc(a * s * 0.26, b * s * 0.26, s * 0.09, 0, 7); ctx.fill(); } ctx.restore(); }
+    g.draw = () => { const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#7fd3ff'); gr.addColorStop(1, '#2f8fd8'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      // centre: harbour, skyline, title
+      const IX = BX + CW0, IY = BY + CH0, IW = BW - 2 * CW0, IH = BH - 2 * CH0; const hg = ctx.createLinearGradient(0, IY, 0, IY + IH); hg.addColorStop(0, '#bfe9ff'); hg.addColorStop(0.62, '#8fd3ff'); hg.addColorStop(0.62, '#2f8fd8'); hg.addColorStop(1, '#1f6fb8'); ctx.fillStyle = hg; ctx.fillRect(IX, IY, IW, IH);
+      skyline(IX + IW / 2 + 40, IY + IH * 0.62, 1.05, 0.22); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; for (let k = 0; k < 6; k++) { const yy = IY + IH * 0.7 + k * 22, ph = (g.t * 30 + k * 70) % 160; ctx.beginPath(); ctx.moveTo(IX + 40 + ph, yy); ctx.lineTo(IX + 120 + ph, yy); ctx.moveTo(IX + 520 + ph, yy + 8); ctx.lineTo(IX + 590 + ph, yy + 8); ctx.stroke(); }
+      for (let i = 0; i < N; i++) drawSq(i);
+      headline('SURVIVING SYDNEY', IX + IW / 2, IY + 40, 44, '#fff', '#2f8fd8');
+      const left = Math.max(0, g.clock), clk = g.final ? 'LAST ROUND' : Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0'); rr(IX + IW / 2 - 70, IY + 72, 140, 34, 17); ctx.fillStyle = g.final ? TOY.coral : 'rgba(255,255,255,.92)'; ctx.fill(); toyText('⏱ ' + clk, IX + IW / 2, IY + 89, 18, g.final ? '#fff' : TOY.navy, 'center', null);
+      // whose turn + dice
+      const o = cur(); if (g.state !== 'end' && o) { const roll = g.phase === 'rolling', rt = g.rollT; drawAvatar(IX + IW / 2 - 200, IY + 160, 28, o.p, { happy: true });
+        toyText(o.p.name + "'s turn", IX + IW / 2 - 162, IY + 150, 24, '#fff', 'left', TOY.navy); toyText(o.jail ? 'Stuck on the M5' : g.phase === 'decide' ? 'Buy ' + sq(o.pos).name + '?' : g.phase === 'end' ? 'Building, trading or ending turn' : g.phase === 'moving' ? 'On the move' : g.phase === 'auction' ? 'Auction!' : 'Rolling', IX + IW / 2 - 162, IY + 176, 15, TOY.navy, 'left', null);
+        const dv = roll ? [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)] : g.dice; die(IX + IW / 2 + 130, IY + 162, dv[0], 54, roll ? Math.random() * 0.6 - 0.3 : -0.08); die(IX + IW / 2 + 200, IY + 166, dv[1], 54, roll ? Math.random() * 0.6 - 0.3 : 0.1);
+        if (g.dice[0] === g.dice[1] && !roll && g.phase !== 'roll') toyText('DOUBLES', IX + IW / 2 + 165, IY + 206, 14, TOY.sun, 'center', TOY.navy); }
+      // log
+      g.log.slice(0, 3).forEach((m, k) => { ctx.globalAlpha = 1 - k * 0.25; toyText(m, IX + IW / 2, IY + 236 + k * 26, k ? 15 : 18, k ? TOY.navy : '#fff', 'center', k ? null : TOY.navy); ctx.globalAlpha = 1; });
+      // players: rank by net worth (cash itself stays secret)
+      const live = g.ps.slice().sort((a, b) => (a.out - b.out) || worth(b) - worth(a)), cw = Math.min(176, (IW - 40) / live.length);
+      live.forEach((q, k) => { const x = IX + IW / 2 - (live.length * cw) / 2 + k * cw + 4, y = IY + IH - 74; rr(x, y, cw - 8, 62, 16); ctx.fillStyle = q.out ? 'rgba(255,255,255,.4)' : 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = q === cur() ? 4 : 2.5; ctx.strokeStyle = q === cur() ? TOY.sun : TOY.navy; ctx.stroke();
+        drawAvatar(x + 26, y + 31, 18, q.p, {}); toyText((k + 1) + '. ' + (q.p.name.length > 9 ? q.p.name.slice(0, 8) + '…' : q.p.name), x + 50, y + 20, 15, TOY.navy, 'left', null);
+        toyText(q.out ? 'broke' : owned(q).length + ' owned' + (q.jail ? ' · M5' : '') + (q.etag ? ' · E-tag' : ''), x + 50, y + 43, 12, '#6a76b8', 'left', null); });
+      // tokens
+      for (const q of g.ps) { if (q.out) continue; const [x, y] = tokenXY(q), isCur = q === cur(); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y + 18, 13, 5, 0, 0, 7); ctx.fill(); drawAvatar(x, y, isCur ? 17 : 14, q.p, { happy: isCur }); if (isCur) { ctx.lineWidth = 3; ctx.strokeStyle = TOY.sun; ctx.beginPath(); ctx.arc(x, y, 20 + Math.sin(g.t * 6) * 2, 0, 7); ctx.stroke(); } }
+      // rent / money flying
+      for (const f of g.fx) if (f.k === 'pay' && f.t < 1.4) { const k = Math.min(1, f.t / 1.1), [x1, y1] = tokenXY(f.from), [x2, y2] = tokenXY(f.to), x = x1 + (x2 - x1) * k, y = y1 + (y2 - y1) * k - Math.sin(k * Math.PI) * 80; ctx.globalAlpha = f.t > 1.1 ? 1 - (f.t - 1.1) / 0.3 : 1; headline('-' + money(f.amt), x, y, 26, '#3ccf6e', TOY.navy); ctx.globalAlpha = 1; }
+      // event card
+      if (g.card) { const t = g.card.t, a = Math.min(1, t * 4, (3.4 - t) * 4), sc = 0.7 + 0.3 * (1 - Math.pow(1 - Math.min(1, t * 3), 3)); ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(W / 2, H / 2 + 10); ctx.scale(sc, sc);
+        rr(-230, -120, 460, 240, 26); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.save(); rr(-230, -120, 460, 240, 26); ctx.clip(); ctx.fillStyle = '#b48cff'; ctx.fillRect(-230, -120, 460, 56); ctx.restore();
+        headline('SYDNEY MOMENT', 0, -92, 28, '#fff', TOY.navy); wrap(g.card.c.t, 0, -20, 400, 32, 26, TOY.navy, 'center', 700);
+        const c = g.card.c, eff = c.get ? '+' + money(c.get) : c.pay ? '-' + money(c.pay) : c.collectEach ? '+' + money(c.collectEach) + ' from everyone' : c.payEach ? '-' + money(c.payEach) + ' to everyone' : c.perHouse ? '$25 per flat, $100 per tower' : c.perProp ? '$10 per thing you own' : c.etag ? 'Keep this E-tag' : c.jail ? 'Go to the M5' : c.back ? 'Back 3 spaces' : c.goto != null ? 'Move to ' + sq(c.goto).name : c.nextStn ? 'To the next station' : '';
+        toyText(eff, 0, 80, 26, c.get || c.collectEach || c.etag ? '#2bb35a' : TOY.coral, 'center', null); ctx.restore(); }
+      // auction
+      if (g.auc) { const a = g.auc, s = sq(a.i), col = s.t === 'prop' ? SYD_GRP[s.g].c : '#8a93b8'; ctx.save(); ctx.translate(W / 2, H / 2 + 20); rr(-250, -110, 500, 220, 26); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.save(); rr(-250, -110, 500, 220, 26); ctx.clip(); ctx.fillStyle = col; ctx.fillRect(-250, -110, 500, 50); ctx.restore();
+        headline('AUCTION · ' + s.name.toUpperCase(), 0, -85, 26, '#fff', TOY.navy); toyText('worth ' + money(s.price), 0, -40, 16, '#6a76b8', 'center', null);
+        headline(a.by >= 0 ? money(a.bid) : 'No bids', 0, 4, 54, a.by >= 0 ? '#2bb35a' : '#9aa3c6', TOY.navy); toyText(a.by >= 0 ? 'top bid: ' + g.ps[a.by].p.name : 'Bid on your phone', 0, 52, 20, TOY.navy, 'center', null);
+        rr(-200, 74, 400, 14, 7); ctx.fillStyle = '#eef1ff'; ctx.fill(); rr(-200, 74, 400 * clamp(a.t / 10, 0, 1), 14, 7); ctx.fillStyle = a.t < 3 ? TOY.coral : TOY.sun; ctx.fill(); ctx.restore(); }
+      for (const f of g.fx) if (f.k === 'broke' && f.t < 2.4) { ctx.globalAlpha = Math.min(1, (2.4 - f.t) * 2); headline(f.o.p.name.toUpperCase() + ' WENT BROKE', W / 2, H / 2 - 40, 48, TOY.coral, TOY.navy); ctx.globalAlpha = 1; }
+      if (g.state === 'end' && g.winner) { ctx.fillStyle = 'rgba(27,31,94,.6)'; ctx.fillRect(0, 0, W, H); headline(g.winner.p.name.toUpperCase() + ' SURVIVED SYDNEY', W / 2, H / 2 - 60, 54, TOY.sun, '#2f8fd8');
+        live.slice(0, 5).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ' + (q.out ? 'broke' : money(worth(q))), W / 2, H / 2 + 10 + k * 34, k ? 22 : 28, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
+    startTurn();
+    return g;
+  } };
+
+const GAMES = { syd: SurvivingSydney, robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -12818,7 +13109,7 @@ function showMsg(html, interactive) {
   if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; if (m.querySelector('[data-react]')) window.reactT0 = performance.now(); } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says', robo: '🤖 Robo Rumble', arms: '💥 Arms Race', dice: "🎲 Liar's Dice", turf: '🗺 Turf Wars' };
+const MODE_NAMES = { syd: '🏙 Surviving Sydney', cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says', robo: '🤖 Robo Rumble', arms: '💥 Arms Race', dice: "🎲 Liar's Dice", turf: '🗺 Turf Wars' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -12857,7 +13148,8 @@ function renderPad() {
     if (d.leader) {
       html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
         <div class="row">${[['robo', '⚔ Strategy', 'strat'], ['bomb', '🎉 Party', 'social'], ['qdraw', '🤸 Active', 'active'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk', 'active', 'strat'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
-        ${MODE_CAT[d.mode] === 'strat' ? `<div class="row">${[['robo', '🤖 Robo Rumble'], ['arms', '💥 Arms Race'], ['dice', "🎲 Liar's Dice"], ['turf', '🗺 Turf Wars']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
+        ${MODE_CAT[d.mode] === 'strat' ? `<div class="row">${[['syd', '🏙 Surviving Sydney'], ['robo', '🤖 Robo Rumble'], ['arms', '💥 Arms Race'], ['dice', "🎲 Liar's Dice"], ['turf', '🗺 Turf Wars']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
+        ${d.mode === 'syd' ? `<div class="row">${B('cardopt', '⏱ Game length: ' + d.sydMins + ' min', 'sydmins', true)}</div>` : ''}
         ${MODE_CAT[d.mode] === 'active' ? `<div class="row">${[['qdraw', '🤠 Quick Draw'], ['shake', '📳 Shake Race'], ['head', '🤪 Forehead'], ['says', '📱 Phone Says']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'talk' ? `<div class="row">${[['whosaid', '🕵 Who Said It?'], ['likely', '👉 Most Likely'], ['hot', '🌶 Hot Takes'], ['meld', '🧠 Mind Meld'], ['lie', '🤥 2 Truths 1 Lie']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'social' ? `<div class="row">${[['bomb', '💣 Bomb Squad'], ['draw', '🎨 Draw & Pass'], ['heist', '💰 Heist'], ['odd', '🕵 Odd One Out']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
