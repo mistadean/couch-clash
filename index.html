@@ -12788,7 +12788,7 @@ const SurvivingSydney = { title: 'Surviving Sydney', accent: '#2f8fd8', phones: 
       if (g.rollWasJail) { if (d) { o.jail = 0; log(o.p.name + ' rolled doubles and escaped the M5'); return move(o, n); }
         o.jail--; if (o.jail <= 0) { if (!pay(o, null, 50)) return endPhase(true); log(o.p.name + ' paid the $50 toll after 3 turns'); return move(o, n); }
         log(o.p.name + ' is still stuck in traffic'); return endPhase(true); }
-      if (d) { g.dbl++; if (g.dbl >= 3) return goJail(o); } move(o, n); }
+      if (d) { g.dbl++; if (g.dbl >= 3) return goJail(o); } else g.dbl = 0; move(o, n); } // a normal roll ends the doubles run
     function move(o, n, back) { g.steps = n; g.stepDir = back ? -1 : 1; g.stepT = 0.05; g.phase = 'moving'; R(); }
     function land(o) { const i = o.pos, s = sq(i);
       if (s.t === 'prop' || s.t === 'stn' || s.t === 'util') { const w = g.own[i];
