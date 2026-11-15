@@ -6692,16 +6692,19 @@ function hostCmd(p, c, v) {
   if (c === 'pick') { if (pickChar(p, +v)) broadcastPhase(); else sendPhase(p); return; }
   if (c === 'mis') { if (host.phase === 'lobby' || host.phase === 'results' || host.phase === 'podium') claimMission(p, +v); return; }
   if (c === 'pp') { if (host.phase === 'play' && !host.paused && host.game && host.game.onPick) host.game.onPick(p, v); return; }
-  if (leader() !== p) return;
-  switch (c) {
-    case 'start': if (host.phase === 'lobby') startMatch(); return;
-    case 'skip': if (host.phase === 'results' || host.phase === 'podium') host.timer = 0; return;
-    case 'mode': if (host.phase === 'lobby' && MODES.includes(v)) { host.mode = v; SFX.click(); } break;
+  // every player can record their own sound, not just the leader
+  if (c === 'bombsnd' || c === 'bombtest' || c === 'bombpart' || c === 'botpart') { switch (c) {
     case 'bombsnd': if (typeof v === 'string' && v.length < 600000 && (v === '' || v.startsWith('data:audio'))) { setBombSnd(p, v); return; } break;
     case 'bombtest': if (v === 'bot') playBuf(host.botBombBuf); else playBombSnd(p); return;
     case 'botpart': case 'bombpart': if (typeof v === 'string') { const toBot = c === 'botpart'; if (toBot && leader() !== p) return; const [id, i, n, ...rest] = v.split('|'), k = +i, N = +n; if (!(N > 0 && N <= 120 && k >= 0 && k < N)) return;
       const R = p.recv && p.recv.id === id ? p.recv : (p.recv = { id, n: N, parts: [], got: 0 }); if (R.parts[k] == null) { R.parts[k] = rest.join('|'); R.got++; }
       if (R.got === R.n) { const url = R.parts.join(''); p.recv = null; if (url.startsWith('data:audio') || url.startsWith('data:video')) { const u2 = url.replace(/^data:video/, 'data:audio'); if (toBot) setBotBombSnd(u2); else setBombSnd(p, u2); } } } return;
+  } return; }
+  if (leader() !== p) return;
+  switch (c) {
+    case 'start': if (host.phase === 'lobby') startMatch(); return;
+    case 'skip': if (host.phase === 'results' || host.phase === 'podium') host.timer = 0; return;
+    case 'mode': if (host.phase === 'lobby' && MODES.includes(v)) { host.mode = v; SFX.click(); } break;
     case 'cardopt': if (host.phase === 'lobby' && (v === 'timer' || v === 'four' || v === 'botbomb')) { cardOpt(v); return; } break;
     case 'newnight': if (host.phase === 'lobby') { resetSession(); return; } break;
     case 'bots': if (host.phase === 'lobby') { host.botsFill = !host.botsFill; SFX.click(); } break;
