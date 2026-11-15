@@ -6456,12 +6456,21 @@ function applyVolume() {
 // players' own recorded sound effects (kept for the night on the TV)
 function setBombSnd(p, url) { p.bombSnd = url || null; p.bombBuf = null; if (!url) { toast(p.name + "'s bomb sound removed"); broadcastPhase(); return; }
   try { const bin = atob(url.split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    const go = () => actx.decodeAudioData(u8.buffer.slice(0), buf => { p.bombBuf = buf; toast('🎙 ' + p.name + ' recorded a bomb sound'); playBombSnd(p); }, () => { p.bombSnd = null; toast("That recording didn't work on this TV, try again"); broadcastPhase(); });
+    const go = () => actx.decodeAudioData(u8.buffer.slice(0), buf => { p.bombBuf = punchUp(buf); toast('🎙 ' + p.name + ' recorded a bomb sound'); playBombSnd(p); }, () => { p.bombSnd = null; toast("That recording didn't work on this TV, try again"); broadcastPhase(); });
     if (actx) go(); else { p.bombPending = go; toast('🎙 ' + p.name + "'s sound saved (turn TV sound on to hear it)"); } } catch (e) { p.bombSnd = null; }
   broadcastPhase(); }
 // any burn plays a recorded sound: the bomber's own if they made one, otherwise someone else's at random
 function pickBombSnd(p) { if (p && p.bombBuf) return p; const pool = host.players.filter(q => q && q.bombBuf); return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; }
-function playBombSnd(p) { if (!actx || !p || !p.bombBuf || !audioState.sound) return false; const src = actx.createBufferSource(), g = actx.createGain(); src.buffer = p.bombBuf; g.gain.value = 1.6; src.connect(g); g.connect(sfxBus || actx.destination); src.start(); return true; }
+// cut the quiet bit before you start shouting, and level it up so it lands with the burn
+function punchUp(buf) { try { const ch = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate, d0 = buf.getChannelData(0); let peak = 0;
+    for (let c = 0; c < ch; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; } }
+    if (peak < 0.003) return buf; const th = Math.max(0.02, peak * 0.12); let st = 0; while (st < len && Math.abs(d0[st]) < th) st++; st = Math.max(0, st - Math.floor(sr * 0.015));
+    let en = len - 1; while (en > st && Math.abs(d0[en]) < th * 0.5) en--; en = Math.min(len, en + Math.floor(sr * 0.25));
+    const out = actx.createBuffer(ch, Math.max(1, en - st), sr), gain = Math.min(6, 0.98 / peak);
+    for (let c = 0; c < ch; c++) { const src = buf.getChannelData(c), dst = out.getChannelData(c); for (let i = 0; i < dst.length; i++) { const v = src[st + i] * gain; dst[i] = v > 1 ? 1 : v < -1 ? -1 : v; } const f = Math.min(dst.length, Math.floor(sr * 0.004)); for (let i = 0; i < f; i++) dst[i] *= i / f; }
+    return out; } catch (e) { return buf; } }
+function playBombSnd(p) { if (!actx || !p || !p.bombBuf || !audioState.sound) return false; const src = actx.createBufferSource(), g = actx.createGain(); src.buffer = p.bombBuf; g.gain.value = 1.0; src.connect(g); g.connect(actx.destination); src.start(); if (audioState.music) { duckMusic(Math.min(2.5, p.bombBuf.duration + 0.3)); } return true; }
+function duckMusic(sec) { try { if (!musicBus) return; const t = actx.currentTime, gv = musicBus.gain, v = gv.value; gv.cancelScheduledValues(t); gv.setValueAtTime(v, t); gv.linearRampToValueAtTime(v * 0.25, t + 0.05); gv.setValueAtTime(v * 0.25, t + sec); gv.linearRampToValueAtTime(v, t + sec + 0.4); } catch (e) {} }
 function tone(f1, f2, dur, type = 'square', vol = 0.12, delay = 0, bus = null) {
   if (!actx) return;
   const t = actx.currentTime + delay;
