@@ -6410,7 +6410,7 @@ const PLAYER_COLORS = [['#ff4d5e', '#b32435'], ['#3fa9ff', '#1670b8'], ['#ffd23f
   ['#a66bff', '#6a35c4'], ['#ff6fcf', '#c22f93'], ['#3fe0d0', '#1a9c90'], ['#a8e040', '#6a9a1a'], ['#c49a6c', '#8a6238']];
 const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
-const MODE_MAX = { syd: 6, cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 10, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
+const MODE_MAX = { haul: 8, syd: 6, cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 10, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
 const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
@@ -6682,8 +6682,8 @@ function onCtrlClose(conn) {
   if (host.phase === 'lobby') { host.players[p.slot] = null; toast(p.name + ' left'); }
   broadcastPhase(); // leadership may have moved to another phone
 }
-const MODES = ['syd', 'cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says', 'robo', 'arms', 'dice', 'turf'];
-const MODE_CAT = { syd: 'strat', cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active', robo: 'strat', arms: 'strat', dice: 'strat', turf: 'strat' };
+const MODES = ['haul', 'syd', 'cup', 'arena', 'goal', 'sumo', 'tile', 'smash', 'duel', 'tag', 'race', 'fort', 'raid', 'gems', 'zones', 'ball', 'train', 'odd', 'cards', 'shit', 'big2', 'bomb', 'draw', 'heist', 'whosaid', 'likely', 'hot', 'meld', 'lie', 'qdraw', 'shake', 'head', 'says', 'robo', 'arms', 'dice', 'turf'];
+const MODE_CAT = { haul: 'strat', syd: 'strat', cup: 'party', goal: 'party', sumo: 'party', tile: 'party', arena: 'arena', smash: 'fight', duel: 'fight', tag: 'fight', race: 'race', fort: 'coop', raid: 'coop', gems: 'team', zones: 'team', ball: 'team', train: 'team', odd: 'social', cards: 'cards', shit: 'cards', big2: 'cards', bomb: 'social', draw: 'social', heist: 'social', whosaid: 'talk', likely: 'talk', hot: 'talk', meld: 'talk', lie: 'talk', qdraw: 'active', shake: 'active', head: 'active', says: 'active', robo: 'strat', arms: 'strat', dice: 'strat', turf: 'strat' };
 const GESTURE_KINDS = ['jab', 'charge', 'cancel', 'heavy', 'jump', 'block', 'unblock', 'dash', 'dashend', 'special', 'item'];
 const GESTURE_HELP = [['Tap', 'Jab'], ['Hold, release', 'Heavy hit'], ['Swipe ↑', 'Jump / dodge'], ['Swipe ↓ + hold', 'Block'], ['Swipe ← →', 'Dash attack'], ['Double-tap', 'Special ability'], ['Jab, jab, heavy', 'Combo finisher']];
 function hostCmd(p, c, v) {
@@ -7466,7 +7466,7 @@ function drawLobby() {
       const txt = '⏱ ' + host.shTimer + 's' + (host.fourColour ? ' · 4-colour' : '') + (host.seatMode !== 'off' ? ' · ' + { shuffle: 'shuffle seats', chase: 'loser chases' }[host.seatMode] : '') + ' · Bots: ' + { boom: 'boom', none: 'silent', mine: 'leader sound', random: 'random sound', bot: 'custom sound' }[host.botBomb];
       font(15, 700); const w = Math.min(215, ctx.measureText(txt).width + 26); rr(sx + 6, 299, w, 34, 17); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke();
       ctx.save(); rr(sx + 6, 299, w, 34, 17); ctx.clip(); toyText(txt, sx + 19, 316, 14, TOY.navy, 'left', null); ctx.restore(); } }
-  else if (top === 'strat') { let sx = 40; for (const [m, label, w] of [['syd', '🏙 Surviving Sydney', 196], ['robo', '🤖 Robo Rumble', 146], ['arms', '💥 Arms Race', 128], ['dice', "🎲 Liar's Dice", 132], ['turf', '🗺 Turf Wars', 124]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastStrat = m; setMode(m); }, TOY.aqua, { px: 15, id: 'sub-' + m }); sx += w + 6; } }
+  else if (top === 'strat') { let sx = 40; for (const [m, label, w] of [['haul', '🛻 Haul', 100], ['syd', '🏙 Surviving Sydney', 196], ['robo', '🤖 Robo Rumble', 146], ['arms', '💥 Arms Race', 128], ['dice', "🎲 Liar's Dice", 132], ['turf', '🗺 Turf Wars', 124]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastStrat = m; setMode(m); }, TOY.aqua, { px: 15, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'active') { let sx = 40; for (const [m, label, w] of [['qdraw', '🤠 Quick Draw', 160], ['shake', '📳 Shake Race', 160], ['head', '🤪 Forehead', 144], ['says', '📱 Phone Says', 160]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastActive = m; setMode(m); }, TOY.aqua, { px: 18, id: 'sub-' + m }); sx += w + 8; } }
   else if (top === 'talk') { let sx = 40; for (const [m, label, w] of [['whosaid', '🕵 Who Said It?', 156], ['likely', '👉 Most Likely', 146], ['hot', '🌶 Hot Takes', 130], ['meld', '🧠 Mind Meld', 134], ['lie', '🤥 2 Truths 1 Lie', 156]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastTalk = m; setMode(m); }, TOY.aqua, { px: 17, id: 'sub-' + m }); sx += w + 6; } }
   else if (top === 'social') { let sx = 40; for (const [m, label, w] of [['bomb', '💣 Bomb Squad', 160], ['draw', '🎨 Draw & Pass', 162], ['heist', '💰 Heist', 108], ['odd', '🕵 Odd One Out', 158]]) { toyButton(sx, 294, w, 44, label, host.mode === m, () => { host.lastSocial = m; setMode(m); }, TOY.aqua, { px: 19, id: 'sub-' + m }); sx += w + 8; }
@@ -12839,7 +12839,301 @@ const SurvivingSydney = { title: 'Surviving Sydney', accent: '#2f8fd8', phones: 
     startTurn(); return g;
   } };
 
-const GAMES = { syd: SurvivingSydney, robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
+/* ---- 🛻 Haul: utes drive to the junk pile in the middle, grab something, haul it home and fill the garage ---- */
+const HAUL_LIGHT = [['🚲', 'bike'], ['🛒', 'trolley'], ['🪴', 'pot plant'], ['🧸', 'giant teddy'], ['📺', 'old telly'], ['🪑', 'armchair'], ['🎸', 'guitar'], ['🗿', 'garden statue']];
+const HAUL_HEAVY = [['🛋', 'couch'], ['🚗', 'old car'], ['🛶', 'canoe'], ['🛁', 'bathtub'], ['🎹', 'piano'], ['🏍', 'motorbike']];
+const HAUL_GOODS = { pie: ['🥧', 'Meat pie', '+2 to your roll'], slush: ['🥤', 'Slushie', 'Roll twice, keep the best'], tarp: ['⛺', 'Tarp', 'Your load can\'t be nicked'], straps: ['🪢', 'Straps', 'Heavy load at full speed'], oil: ['🛢', 'Oil can', 'Leave a slick behind you'] };
+const HAUL_WHEEL = [['goodie', '🎁 Goodie', 5, '#3ccf6e'], ['spin', '🌀 Spin out', 3, '#ff9a1f'], ['tow', '🚛 Tow home', 3, '#2f8fd8'], ['swap', '🔁 Swap trays', 2, '#b48cff'], ['flip', '🌉 Flip bridges', 3, '#ffc61a'],
+  ['jackpot', '🏆', 0.6, '#ff2d55'], ['goodie', '🎁 Goodie', 4, '#3ccf6e'], ['clean', '🧹 +3 junk', 3, '#2bb3a8'], ['nick', '😈 Nick anyone', 2, '#e8384f'], ['bog', '🟫 Bogged', 3, '#a0703f']];
+const HAUL_STYLES = { ute: '🛻 Ute', pickup: '💪 Big pickup', tradie: '🪜 Tradie' };
+const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 11,
+  rules: [['#8b5a3c', 'Drive to the junk pile in the middle, grab something and haul it home.'], ['#e8913a', 'Fill all 5 bays in your garage to win.'], ['#2f8fd8', 'Heavy junk fills 2 bays, but you drive 2 slower.'],
+    ['#e8384f', 'Stop next to a loaded ute with an empty tray and nick its load!'], ['#3ccf6e', 'Servos give free goodies. Switches flip the drawbridges.'], ['#b48cff', 'Land on The Big Spin and chase the jackpot.']],
+  how: 'Drive to the junk pile, grab something, haul it home. Heavy junk fills 2 bays but slows you down. Nick loads, flip bridges, spin the wheel. First to fill 5 bays wins.',
+  create(players) {
+    const n = players.length, K = Math.max(4, Math.min(8, n)), CX = 640, CY = 380, RX = 470, RY = 270, TAU = Math.PI * 2;
+    // ---------- the board: spokes from each garage to the pile, two ring roads, a river with bridges ----------
+    const nodes = [], edges = [];
+    const ang = i => -Math.PI / 2 + i * TAU / K;
+    const add = (r, a, type, ex) => { nodes.push(Object.assign({ x: CX + Math.cos(a) * RX * r, y: CY + Math.sin(a) * RY * r, r, a, type, adj: [] }, ex || {})); return nodes.length - 1; };
+    const link = (a, b, br) => { edges.push({ a, b, br }); const e = edges.length - 1; nodes[a].adj.push([b, e]); nodes[b].adj.push([a, e]); };
+    const HUB = add(0, 0, 'hub'), G = [], O = [], I = [], BR = [];
+    for (let i = 0; i < K; i++) { const a = ang(i); G[i] = add(1, a, i < n ? 'garage' : 'servo', { owner: i < n ? i : -1 }); O[i] = add(0.79, a, 'road'); const M = add(0.64, a, 'road'); I[i] = add(0.39, a, 'road'); 
+      BR[i] = { draw: i % 2 === 0, up: i % 4 === 0, v: i % 4 === 0 ? 1 : 0, M, I: I[i] }; link(G[i], O[i]); link(O[i], M); link(M, I[i], i); link(I[i], HUB); }
+    for (let i = 0; i < K; i++) { const j = (i + 1) % K, a0 = ang(i), d = TAU / K;
+      const A = add(0.79, a0 + d / 3, i % 2 === 0 ? 'servo' : 'road'), B = add(0.79, a0 + 2 * d / 3, i % 2 === 1 ? 'spin' : 'road'); link(O[i], A); link(A, B); link(B, O[j]);
+      const C = add(0.39, a0 + d / 2, i % 2 === 0 ? 'switch' : i % 4 === 1 ? 'spin' : 'road'); link(I[i], C); link(C, I[j]); }
+    const HZ = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road' && !O.includes(k)); // where hazards can appear
+    const openE = e => { const ed = edges[e]; return ed.br == null || !BR[ed.br].draw || !BR[ed.br].up; };
+    const mk = heavy => { const L = heavy ? HAUL_HEAVY : HAUL_LIGHT, [e, name] = L[Math.floor(Math.random() * L.length)]; return { e, name, heavy }; };
+    const pile = []; for (let k = 0; k < n * 4 + 2; k++) pile.push(mk(Math.random() < 0.38));
+    const g = { t: 0, done: false, panelGame: true, state: 'custom', cT: 14, turn: 0, phase: 'pre', phaseT: 25, botT: 1, dice: 1, dice2: 0, rollT: 0, round: 1, fx: [], log: [], winner: null, endT: 0,
+      turnNo: 0, cands: [], reach: null, nickList: [], wheel: null, works: new Set(), mud: new Set(), oil: new Map(), drops: new Map(), pile };
+    g.ps = players.map((p, i) => { const nd = nodes[G[i]]; return { p, i, garage: G[i], node: G[i], x: nd.x, y: nd.y, h: nd.a + Math.PI, load: null, bays: [], goods: [], tarp: false, straps: false, slush: false, boost: 0, stuck: false, skip: false,
+      style: Object.keys(HAUL_STYLES)[Math.floor(Math.random() * 3)], ready: p.kind === 'bot', path: [], spinT: 0, bounce: 0 }; });
+    const R = () => broadcastPhase(), cur = () => g.ps[g.turn], filled = o => o.bays.reduce((s, it) => s + (it.heavy ? 2 : 1), 0);
+    const log = m => { g.log.unshift(m); g.log.length = Math.min(3, g.log.length); };
+    const float = (o, txt, col) => g.fx.push({ k: 'txt', x: o.x, y: o.y, txt, col: col || '#fff', t: 0 });
+    const banner = (txt, col) => g.fx.push({ k: 'ban', txt, col: col || TOY.sun, t: 0 });
+    const rnd = L => L[Math.floor(Math.random() * L.length)], an = w => (/^[aeiou]/i.test(w) ? 'an ' : 'a ') + w;
+    const sfx = { putt: () => tone(90 + Math.random() * 20, 70, 0.06, 'sawtooth', 0.03), skid: () => { noise(0.5, 0.08, 1800); tone(700, 300, 0.4, 'triangle', 0.04); }, clank: () => { tone(220, 120, 0.18, 'square', 0.06); tone(160, 90, 0.2, 'square', 0.05, 0.12); },
+      grab: () => { tone(500, 800, 0.08, 'triangle', 0.06); tone(800, 1200, 0.1, 'triangle', 0.05, 0.07); }, bank: () => { tone(660, 660, 0.08, 'square', 0.05); tone(880, 880, 0.08, 'square', 0.05, 0.08); tone(1320, 1320, 0.16, 'square', 0.05, 0.16); },
+      tick: () => tone(1500, 1400, 0.02, 'square', 0.04), splat: () => { noise(0.25, 0.08, 400); tone(160, 80, 0.25, 'sine', 0.06); } };
+    // ---------- hazards that change every round ----------
+    const occupied = k => g.ps.some(o => o.node === k);
+    function roundEvents() { g.works.clear(); const nw = K > 5 ? 2 : 1; let guard = 0; while (g.works.size < nw && guard++ < 50) { const k = rnd(HZ); if (!occupied(k) && !g.drops.has(k) && !g.mud.has(k)) g.works.add(k); }
+      for (const k of [...g.mud]) if (Math.random() < 0.5) g.mud.delete(k); guard = 0; while (g.mud.size < (K > 5 ? 3 : 2) && guard++ < 50) { const k = rnd(HZ); if (!occupied(k) && !g.works.has(k) && !g.oil.has(k) && !g.drops.has(k)) g.mud.add(k); }
+      for (const [k, exp] of [...g.oil]) if (exp < g.round) g.oil.delete(k); }
+    roundEvents();
+    // ---------- paths ----------
+    const enterable = (v, o) => !g.works.has(v) && !(nodes[v].type === 'garage' && v !== o.garage);
+    const terminal = (u, o) => u === HUB || u === o.garage || g.mud.has(u) || g.oil.has(u) || (g.drops.has(u) && !o.load);
+    function reach(o, s) { const from = o.node, dist = new Map([[from, 0]]), par = new Map(), q = [from];
+      while (q.length) { const u = q.shift(), d = dist.get(u); if (d >= s || (u !== from && terminal(u, o))) continue;
+        for (const [v, e] of nodes[u].adj) { if (dist.has(v) || !openE(e) || !enterable(v, o)) continue; dist.set(v, d + 1); par.set(v, u); q.push(v); } }
+      return { dist, par }; }
+    function field(src, o) { const dist = new Map([[src, 0]]), q = [src]; while (q.length) { const u = q.shift(); for (const [v, e] of nodes[u].adj) { if (dist.has(v) || !openE(e) || !enterable(v, o)) continue; dist.set(v, dist.get(u) + 1); q.push(v); } } return dist; }
+    function pathTo(v) { const P = []; let c = v; while (c != null && c !== cur().node) { P.unshift(c); c = g.reach.par.get(c); } return P; }
+    const nickable = o => o.load ? [] : g.ps.filter(q => q !== o && q.load && !q.tarp && q.node !== q.garage && !(q.lockT > g.turnNo) && (q.node === o.node || nodes[o.node].adj.some(([v, e]) => v === q.node && openE(e))));
+    function targetFor(o) { if (o.load) return o.garage; const near = field(o.node, o), opts = [];
+      if (g.pile.length) opts.push(HUB); for (const k of g.drops.keys()) opts.push(k); for (const q of g.ps) if (q !== o && q.load && !q.tarp && q.node !== q.garage) opts.push(q.node);
+      let best = HUB, bd = 1e9; for (const k of opts) { const d = near.get(k); if (d != null && d < bd) { bd = d; best = k; } } return best; }
+    function bestToward(o, tgt) { const f = field(tgt, o); let best = null, bd = 1e9; for (const c of g.cands) { const d = (f.get(c) ?? 99) + Math.random() * 0.1; if (d < bd) { bd = d; best = c; } } return best; }
+    // ---------- turn flow ----------
+    function startTurn() { const o = cur(); if (o.skip) { o.skip = false; log(o.p.name + ' is bogged and misses a turn'); float(o, 'BOGGED!', '#c98a4b'); endTurn(); return; }
+      g.phase = 'pre'; g.phaseT = 25; g.botT = 0.9; g.dice2 = 0; R(); }
+    function roll(o) { if (g.phase !== 'pre') return; g.dice = 1 + Math.floor(Math.random() * 6); g.dice2 = 0;
+      if (o.slush) { g.dice2 = 1 + Math.floor(Math.random() * 6); o.slush = false; } g.rollT = 0.8; g.phase = 'rolling'; R(); }
+    function doneRoll() { const o = cur(), d = Math.max(g.dice, g.dice2);
+      if (o.stuck) { if (d < 4) { float(o, 'Still bogged!', '#c98a4b'); log(o.p.name + ' spun the wheels in the mud'); endTurn(); return; } o.stuck = false; float(o, 'Unstuck!', TOY.mint); }
+      let s = d + o.boost; o.boost = 0; if (o.load && o.load.heavy && !o.straps) s = Math.max(1, s - 2); g.steps = s;
+      g.reach = reach(o, s); g.cands = [...g.reach.dist.keys()].filter(k => k !== o.node);
+      if (!g.cands.length) { float(o, 'Boxed in!', TOY.coral); endTurn(); return; }
+      g.phase = 'choose'; g.phaseT = 25; g.botT = 1; R(); }
+    function go(o, id) { if (g.phase !== 'choose' || !g.cands.includes(id)) return; o.path = pathTo(id); g.phase = 'moving'; g.cands = []; R(); }
+    function useGood(o, k) { if (g.phase !== 'pre') return; const i = o.goods.indexOf(k); if (i < 0) return;
+      if (k === 'oil' && (o.node === HUB || nodes[o.node].type === 'garage')) { float(o, 'Not here!', TOY.coral); return; }
+      o.goods.splice(i, 1); const [e, nm] = HAUL_GOODS[k]; float(o, e + ' ' + nm + '!', TOY.sun); SFX.pop();
+      if (k === 'pie') o.boost += 2; if (k === 'slush') o.slush = true; if (k === 'tarp') o.tarp = true; if (k === 'straps') o.straps = true; if (k === 'oil') { g.oil.set(o.node, g.round + 2); log(o.p.name + ' left an oil slick'); } R(); }
+    function giveGood(o) { const k = rnd(Object.keys(HAUL_GOODS)); if (o.goods.length >= 2) o.goods.shift(); o.goods.push(k); float(o, HAUL_GOODS[k][0] + ' ' + HAUL_GOODS[k][1], TOY.mint); sfx.grab(); log(o.p.name + ' grabbed ' + an(HAUL_GOODS[k][1].toLowerCase())); }
+    function dropLoad(o) { const opts = nodes[o.node].adj.map(([v]) => v).filter(v => nodes[v].type === 'road' && !g.drops.has(v) && !g.works.has(v)); if (!opts.length) return; const v = rnd(opts); g.drops.set(v, o.load); log(o.p.name + "'s " + o.load.name + ' fell off!'); float(o, 'IT FELL OFF!', TOY.coral); o.load = null; o.tarp = false; }
+    function spinOut(o) { o.spinT = 1.2; sfx.skid(); float(o, 'WHEEE!', '#9be7ff'); if (o.load && o.load.heavy && !o.straps && Math.random() < 0.5) dropLoad(o); }
+    function unload(o) { o.bays.push(o.load); log(o.p.name + ' banked ' + an(o.load.name) + '!'); float(o, o.load.e + ' BANKED!', TOY.sun); o.load = null; o.tarp = false; sfx.bank(); SFX.cheer(); }
+    function land(o) { const id = o.node, t = nodes[id];
+      if (g.oil.has(id)) { g.oil.delete(id); spinOut(o); }
+      if (g.mud.has(id)) { o.stuck = true; sfx.splat(); float(o, 'BOGGED!', '#c98a4b'); log(o.p.name + ' got bogged. Roll 4+ to get out'); }
+      if (g.drops.has(id) && !o.load) { o.load = g.drops.get(id); g.drops.delete(id); sfx.grab(); float(o, o.load.e + ' Finders keepers!', TOY.mint); }
+      if (id === HUB && !o.load && g.pile.length) { g.phase = 'pick'; g.phaseT = 15; g.botT = 1; R(); return; }
+      if (id === o.garage && o.load) unload(o);
+      if (t.type === 'servo') giveGood(o);
+      if (t.type === 'spin') { g.phase = 'spin'; g.phaseT = 12; g.botT = 1; tone(500, 900, 0.15, 'triangle', 0.06); R(); return; }
+      if (t.type === 'switch') { g.phase = 'switch'; g.phaseT = 10; g.botT = 1; R(); return; }
+      afterLand(o); }
+    function afterLand(o) { if (checkEnd()) return; const N = nickable(o); if (N.length) { g.nickList = N; g.phase = 'nick'; g.phaseT = 10; g.botT = 0.9; R(); return; } endTurn(); }
+    function pick(o, k) { if (g.phase !== 'pick' || !g.pile[k]) return; o.load = g.pile.splice(k, 1)[0]; sfx.grab(); float(o, o.load.e + ' ' + o.load.name + (o.load.heavy ? ' (heavy!)' : ''), TOY.sun); log(o.p.name + ' loaded ' + an(o.load.name)); afterLand(o); }
+    function nick(o, q) { if (g.phase !== 'nick' || !q || !q.load || !g.nickList.includes(q)) return; o.load = q.load; q.load = null; q.tarp = false; o.lockT = g.turnNo + g.ps.length; float(q, 'NICKED!', TOY.coral); float(o, o.load.e + ' Yoink!', TOY.mint); log(o.p.name + ' nicked ' + q.p.name + "'s " + o.load.name + '!'); SFX.bonk(); sfx.grab(); endTurn(); }
+    function flip() { for (const b of BR) if (b.draw) b.up = !b.up; sfx.clank(); banner('DRAWBRIDGES FLIPPED', TOY.sun); }
+    function spinWheel(o) { if (g.phase !== 'spin') return; const tot = HAUL_WHEEL.reduce((s, w) => s + w[2], 0); let r = Math.random() * tot, k = 0; for (; k < HAUL_WHEEL.length; k++) { r -= HAUL_WHEEL[k][2]; if (r <= 0) break; } k = Math.min(k, HAUL_WHEEL.length - 1);
+      let s = 0; const st = HAUL_WHEEL.map(w => { const a = s; s += w[2] / tot; return a; }), en = k + 1 < HAUL_WHEEL.length ? st[k + 1] : 1, J = HAUL_WHEEL.findIndex(w => w[0] === 'jackpot');
+      let f = st[k] + (en - st[k]) * (0.15 + Math.random() * 0.7);
+      if (k === J - 1 && Math.random() < 0.6) f = en - 0.004; if (k === J + 1 && Math.random() < 0.6) f = st[k] + 0.004; // so close!
+      const from = g.wheel ? g.wheel.rot % TAU : 0, to = from + TAU * 6 + (((-f * TAU - from) % TAU) + TAU) % TAU;
+      g.wheel = { rot: from, from, to, t: 0, dur: 3.6, k, st, show: 1, last: -1, resT: 0 }; g.phase = 'spinning'; R(); }
+    function wheelResult(o, kind) { const others = g.ps.filter(q => q !== o);
+      if (kind === 'goodie') giveGood(o);
+      else if (kind === 'spin') { const opts = nodes[o.node].adj.filter(([v, e]) => openE(e) && enterable(v, o) && v !== HUB).map(([v]) => v); spinOut(o); if (opts.length) o.node = rnd(opts); }
+      else if (kind === 'tow') { o.node = o.garage; float(o, 'Free tow!', TOY.aqua); if (o.load) unload(o); }
+      else if (kind === 'swap') { const L = o.load ? others.filter(q => !q.tarp) : others.filter(q => q.load && !q.tarp); if (L.length) { const q = rnd(L); [o.load, q.load] = [q.load, o.load]; log(o.p.name + ' swapped trays with ' + q.p.name); float(q, 'SWAPPED!', TOY.grape); } else float(o, 'Nobody to swap with', '#fff'); }
+      else if (kind === 'flip') flip();
+      else if (kind === 'clean') { for (let k = 0; k < 3; k++) g.pile.push(mk(Math.random() < 0.38)); banner('COUNCIL CLEAN-UP: +3 JUNK', '#7ff0e4'); }
+      else if (kind === 'nick') { const L = others.filter(q => q.load && !q.tarp && q.node !== q.garage).sort((a, b) => (b.load.heavy ? 1 : 0) - (a.load.heavy ? 1 : 0)); if (!o.load && L.length) { const q = L[0]; o.load = q.load; q.load = null; float(q, 'NICKED!', TOY.coral); log(o.p.name + ' nicked ' + q.p.name + "'s " + o.load.name + ' from afar!'); SFX.bonk(); } else giveGood(o); }
+      else if (kind === 'bog') { o.skip = true; sfx.splat(); float(o, 'Bogged next turn', '#c98a4b'); }
+      else if (kind === 'jackpot') { o.bays.push({ e: '🏆', name: 'mystery jackpot', heavy: false }); log('JACKPOT! ' + o.p.name + ' got a mystery prize straight into the garage!'); banner('💰 JACKPOT! 💰', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer(); confetti(60, 1.2);
+        for (let k = 0; k < 6; k++) tone(700, 1100, 0.18, 'square', 0.05, k * 0.2); } }
+    function checkEnd() { const w = g.ps.find(q => filled(q) >= 5); if (w) { finish(w); return true; }
+      if (!g.pile.length && !g.drops.size && !g.ps.some(q => q.load)) { finish(null); return true; } return false; }
+    function endTurn() { const o = cur(); o.straps = false; g.phase = 'pause'; g.phaseT = 0.8; g.cands = []; R(); }
+    function nextPlayer() { g.turnNo++; g.turn = (g.turn + 1) % g.ps.length; if (g.turn === 0) { g.round++; roundEvents(); if (g.round > 40) return finish(null); } startTurn(); }
+    function finish(w) { if (g.state === 'end') return; g.phase = 'over'; g.state = 'end'; g.endT = 0; g.winner = w || g.ps.slice().sort((a, b) => filled(b) - filled(a))[0]; SFX.win(); SFX.cheer(); R(); }
+    // ---------- phone ----------
+    g.onPick = (p, v) => { const o = g.ps.find(x => x.p === p); if (!o || g.state === 'end') return; v = String(v);
+      if (g.state === 'custom') { if (v.startsWith('style:') && HAUL_STYLES[v.slice(6)]) { o.style = v.slice(6); SFX.pop(); R(); } if (v === 'ready') { o.ready = true; R(); } return; }
+      if (o !== cur()) return;
+      if (v === 'roll') roll(o); else if (v.startsWith('use:')) useGood(o, v.slice(4)); else if (v.startsWith('go:')) go(o, +v.slice(3));
+      else if (v === 'best') go(o, bestToward(o, targetFor(o))); else if (v.startsWith('to:')) go(o, +v.slice(3));
+      else if (v.startsWith('pick:')) pick(o, +v.slice(5)); else if (v.startsWith('nick:')) nick(o, g.ps[+v.slice(5)]); else if (v === 'nonick') { if (g.phase === 'nick') endTurn(); }
+      else if (v === 'flip' && g.phase === 'switch') { flip(); afterLand(o); } else if (v === 'leave' && g.phase === 'switch') afterLand(o); else if (v === 'spin') spinWheel(o); };
+    const bayHTML = o => { let h = '', c = 0; for (const it of o.bays) { const w = it.heavy ? 70 : 32; h += `<span style="display:inline-flex;align-items:center;justify-content:center;width:${w}px;height:32px;margin:2px;border-radius:8px;background:#ffe9a8;border:2px solid #1b1f5e;font-size:20px">${it.e}</span>`; c += it.heavy ? 2 : 1; }
+      for (; c < 5; c++) h += '<span style="display:inline-block;width:32px;height:32px;margin:2px;border-radius:8px;background:#eef1fb;border:2px dashed #b6bde0;vertical-align:top"></span>'; return `<div style="margin:4px 0">${h}</div>`; };
+    function phoneMap(o) { const pts = [o.node, ...g.cands].map(k => nodes[k]); let x0 = Math.min(...pts.map(p => p.x)) - 70, x1 = Math.max(...pts.map(p => p.x)) + 70, y0 = Math.min(...pts.map(p => p.y)) - 70, y1 = Math.max(...pts.map(p => p.y)) + 70;
+      let w = Math.max(420, x1 - x0), h = Math.max(300, y1 - y0); if (w / h < 1.25) w = h * 1.25; else h = Math.max(h, w / 1.6); const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; x0 = cx - w / 2; y0 = cy - h / 2;
+      const R0 = w * 0.042; let s = `<svg viewBox="${x0} ${y0} ${w} ${h}" style="width:100%;max-height:38vh;background:#8fd16e;border-radius:14px;border:3px solid #1b1f5e;touch-action:manipulation">`;
+      s += `<ellipse cx="${CX}" cy="${CY}" rx="${RX * 0.515}" ry="${RY * 0.515}" fill="none" stroke="#4fb3ec" stroke-width="26"/>`;
+      for (const [k, e] of edges.entries()) { const a = nodes[e.a], b = nodes[e.b], op = openE(k); s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${op ? '#f2e3c2' : '#e8384f'}" stroke-width="${op ? 16 : 8}" ${op ? '' : 'stroke-dasharray="10 8"'} stroke-linecap="round"/>`; }
+      const ic = k => { const nd = nodes[k]; return k === HUB ? '🗑' : k === o.garage ? '🏠' : nd.type === 'garage' ? '🏚' : g.works.has(k) ? '🚧' : g.drops.has(k) ? g.drops.get(k).e : g.oil.has(k) ? '🛢' : g.mud.has(k) ? '🟫' : nd.type === 'servo' ? '⛽' : nd.type === 'spin' ? '🎡' : nd.type === 'switch' ? '🔀' : ''; };
+      nodes.forEach((nd, k) => { const t = ic(k); s += `<circle cx="${nd.x}" cy="${nd.y}" r="${R0 * 0.45}" fill="#fff" stroke="#1b1f5e" stroke-width="2"/>`; if (t) s += `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 0.8}" text-anchor="middle" dominant-baseline="central">${t}</text>`; });
+      for (const q of g.ps) if (q !== o) { const nd = nodes[q.node]; s += `<circle cx="${nd.x}" cy="${nd.y - R0 * 0.6}" r="${R0 * 0.35}" fill="${q.p.color}" stroke="#1b1f5e" stroke-width="2"/>`; }
+      for (const k of g.cands) { const nd = nodes[k], t = ic(k); s += `<g data-c="pp" data-v="go:${k}" style="cursor:pointer"><circle cx="${nd.x}" cy="${nd.y}" r="${R0}" fill="${o.p.color}" fill-opacity=".85" stroke="#fff" stroke-width="4"/>${t ? `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 1.05}" text-anchor="middle" dominant-baseline="central">${t}</text>` : ''}</g>`; }
+      const me = nodes[o.node]; s += `<text x="${me.x}" y="${me.y}" font-size="${R0 * 1.3}" text-anchor="middle" dominant-baseline="central">🛻</text></svg>`; return s; }
+    g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
+      if (g.state === 'custom') return `<b>🛻 Pick your ride</b><div class="small">Your colour is your seat colour</div>${Object.entries(HAUL_STYLES).map(([k, l]) => `<button class="pbtn big ${o.style === k ? 'go' : ''}" data-c="pp" data-v="style:${k}">${l}</button>`).join('')}<button class="pbtn big ${o.ready ? '' : 'go'}" data-c="pp" data-v="ready">${o.ready ? '✅ Ready! Waiting…' : "Let's haul!"}</button>`;
+      const tray = o.load ? `${o.load.e} ${esc(o.load.name)}${o.load.heavy ? ' <b style="display:inline;color:#e8384f">heavy</b>' : ''}${o.tarp ? ' ⛺' : ''}` : 'empty';
+      const head = `<div class="small" style="opacity:1">Your garage (${filled(o)}/5)</div>${bayHTML(o)}<div style="font-size:15px;margin:2px 0">🛻 Tray: <b style="display:inline">${tray}</b>${o.goods.length ? ' · ' + o.goods.map(k => HAUL_GOODS[k][0]).join(' ') : ''}</div>`;
+      if (g.state === 'end') return head + `<b>${g.winner === o ? '🏆 Your garage is full. You win!' : esc(g.winner.p.name) + ' filled their garage'}</b>`;
+      if (o !== cur()) return head + `<b>${esc(cur().p.name)} is driving…</b>`;
+      if (g.phase === 'pre') return head + `<b>⭐ Your turn</b>${o.stuck ? '<div class="small" style="opacity:1">🟫 Bogged! Roll 4 or more to get out</div>' : ''}${o.goods.map(k => `<button class="pbtn" data-c="pp" data-v="use:${k}">${HAUL_GOODS[k][0]} ${HAUL_GOODS[k][1]}: ${HAUL_GOODS[k][2]}</button>`).join('')}<button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`;
+      if (g.phase === 'choose') { const q = []; if (g.cands.includes(HUB)) q.push(['to:' + HUB, '🗑 Drive to the pile']); if (g.cands.includes(o.garage)) q.push(['to:' + o.garage, '🏠 Drive home']);
+        if (!q.length) q.push(['best', o.load ? '➡ Head for home' : '➡ Head for the junk']); for (const [ty, l] of [['servo', '⛽ Servo'], ['spin', '🎡 Big Spin'], ['switch', '🔀 Bridge switch']]) { const c = g.cands.find(k => nodes[k].type === ty); if (c != null) q.push(['to:' + c, l]); }
+        return head + `<b>Move up to ${g.steps}. Tap a spot</b>${phoneMap(o)}<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${q.map(([v, l]) => `<button class="pbtn" style="flex:1 1 45%;margin:0" data-c="pp" data-v="${v}">${l}</button>`).join('')}</div>`; }
+      if (g.phase === 'pick') { const seen = new Set(), B = []; g.pile.forEach((it, k) => { if (seen.has(it.name) || B.length >= 6) return; seen.add(it.name); B.push(`<button class="pbtn" data-c="pp" data-v="pick:${k}">${it.e} ${esc(it.name)}${it.heavy ? ' · <b style="display:inline;color:#e8384f">heavy</b> (2 bays, 2 slower)' : ' · 1 bay'}</button>`); });
+        return head + '<b>🗑 Grab something!</b>' + B.join(''); }
+      if (g.phase === 'nick') return head + '<b>😈 Nick a load?</b>' + g.nickList.map(q => `<button class="pbtn big go" data-c="pp" data-v="nick:${q.i}">Nick ${esc(q.p.name)}'s ${q.load.e} ${esc(q.load.name)}</button>`).join('') + '<button class="pbtn" data-c="pp" data-v="nonick">Leave it</button>';
+      if (g.phase === 'switch') return head + '<b>🔀 Bridge switch</b><div class="small" style="opacity:1">Flip every drawbridge? Open ones close, closed ones open.</div><button class="pbtn big go" data-c="pp" data-v="flip">🌉 Flip them</button><button class="pbtn big" data-c="pp" data-v="leave">Leave them</button>';
+      if (g.phase === 'spin') return head + '<b>🎡 The Big Spin!</b><button class="pbtn big go" data-c="pp" data-v="spin">SPIN IT</button>';
+      return head + '<b>⭐ Your turn</b><div class="small">Watch the TV…</div>'; };
+    g.ranking = () => g.ps.slice().sort((a, b) => (b === g.winner) - (a === g.winner) || filled(b) - filled(a)).map(o => o.p.slot);
+    Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => Math.max(0, 3 - i)) });
+    g.resultLine = () => g.winner ? '🛻 ' + g.winner.p.name + ' filled the garage first' : '';
+    g.bot = () => {};
+    // ---------- bots ----------
+    function botAct(o) {
+      if (g.phase === 'pre') { const want = k => k === 'slush' || k === 'pie' || (k === 'straps' && o.load && o.load.heavy) || (k === 'tarp' && o.load && !o.tarp) || (k === 'oil' && o.load && o.node !== HUB && nodes[o.node].type !== 'garage');
+        const k = o.goods.find(want); if (k) useGood(o, k); else roll(o); return; }
+      if (g.phase === 'choose') { const tgt = targetFor(o); let c = bestToward(o, tgt); const f = field(tgt, o), bd = f.get(c) ?? 99;
+        if (o.goods.length < 2) { const sv = g.cands.find(k => nodes[k].type === 'servo' && (f.get(k) ?? 99) <= bd + 1); if (sv != null) c = sv; }
+        if (Math.random() < 0.3) { const sp = g.cands.find(k => nodes[k].type === 'spin' && (f.get(k) ?? 99) <= bd + 1); if (sp != null) c = sp; }
+        go(o, c); return; }
+      if (g.phase === 'pick') { const heavy = filled(o) <= 3 && Math.random() < 0.55; let k = g.pile.findIndex(it => it.heavy === heavy); if (k < 0) k = 0; pick(o, k); return; }
+      if (g.phase === 'nick') { nick(o, g.nickList[0]); return; }
+      if (g.phase === 'switch') { if (Math.random() < 0.55) flip(); afterLand(o); return; }
+      if (g.phase === 'spin') spinWheel(o); }
+    function timeout(o) { if (g.phase === 'pre') roll(o); else if (g.phase === 'choose') go(o, bestToward(o, targetFor(o))); else if (g.phase === 'pick') pick(o, 0); else if (g.phase === 'nick') endTurn(); else if (g.phase === 'switch') afterLand(o); else if (g.phase === 'spin') spinWheel(o); }
+    // ---------- update ----------
+    g.update = dt => { g.t += dt; for (let i = g.fx.length - 1; i >= 0; i--) { g.fx[i].t += dt; if (g.fx[i].t > (g.fx[i].k === 'jack' ? 4 : 2.2)) g.fx.splice(i, 1); }
+      for (const b of BR) b.v += ((b.draw && b.up ? 1 : 0) - b.v) * Math.min(1, dt * 4);
+      const mover = g.phase === 'moving' && g.state === 'turn' ? cur() : null;
+      for (const o of g.ps) { o.spinT = Math.max(0, o.spinT - dt);
+        if (o === mover) continue;
+        const here = g.ps.filter(q => q.node === o.node && q !== mover), k = here.indexOf(o), m = here.length, nd = nodes[o.node];
+        const tx = nd.x + (m > 1 ? (k - (m - 1) / 2) * 26 : 0), ty = nd.y + (m > 1 ? ((k % 2) - 0.5) * 10 : 0), f = 1 - Math.exp(-dt * 7), dx = tx - o.x, dy = ty - o.y;
+        if (Math.hypot(dx, dy) > 3) o.h = lerpAng(o.h, Math.atan2(dy, dx), f); o.x += dx * f; o.y += dy * f; }
+      if (mover) { const o = mover, nd = nodes[o.node], dx = nd.x - o.x, dy = nd.y - o.y, d = Math.hypot(dx, dy), sp = 330 * dt; o.bounce += dt * 18;
+        if (d > 2) { o.h = lerpAng(o.h, Math.atan2(dy, dx), Math.min(1, dt * 12)); const s = Math.min(sp, d); o.x += dx / d * s; o.y += dy / d * s; if (Math.random() < dt * 14) sfx.putt(); }
+        else if (o.path.length) o.node = o.path.shift(); else land(o); }
+      if (g.state === 'end') { g.endT += dt; if (g.endT > 7) g.done = true; return; }
+      if (g.state === 'custom') { g.cT -= dt; if (g.cT <= 0 || g.ps.every(q => q.ready)) { g.state = 'turn'; banner("LET'S HAUL!", TOY.sun); SFX.go(); startTurn(); } return; }
+      const o = cur();
+      if (g.phase === 'moving') return;
+      if (g.phase === 'rolling') { g.rollT -= dt; if (Math.random() < 0.5) noise(0.02, 0.04, 2500); if (g.rollT <= 0) doneRoll(); return; }
+      if (g.phase === 'spinning') { const w = g.wheel; w.t += dt; const u = Math.min(1, w.t / w.dur); w.rot = w.from + (w.to - w.from) * (1 - Math.pow(1 - u, 3.2));
+        const fr = (((-w.rot) % TAU) + TAU) % TAU / TAU; let seg = 0; for (let i = 0; i < w.st.length; i++) if (fr >= w.st[i]) seg = i; if (seg !== w.last) { w.last = seg; sfx.tick(); }
+        if (u >= 1) { w.resT += dt; if (w.resT > 0.01 && !w.applied) { w.applied = true; const kind = HAUL_WHEEL[w.k][0]; if (kind !== 'jackpot') tone(880, 1320, 0.2, 'triangle', 0.06); wheelResult(o, kind); w.label = HAUL_WHEEL[w.k][1] === '🏆' ? '💰 JACKPOT 💰' : HAUL_WHEEL[w.k][1]; R(); }
+          if (w.resT > 1.6) { w.show = 0; if (checkEnd()) return; afterLand(o); } } return; }
+      if (g.phase === 'pause') { g.phaseT -= dt; if (g.phaseT <= 0) nextPlayer(); return; }
+      if (o.p.kind === 'bot') { g.botT -= dt; if (g.botT <= 0) { g.botT = 0.85; botAct(o); } return; }
+      g.phaseT -= dt; if (g.phaseT <= 0) timeout(o); };
+    function lerpAng(a, b, f) { let d = ((b - a) % TAU + TAU * 1.5) % TAU - TAU / 2; return a + d * f; }
+    // ---------- TV drawing ----------
+    const emo = (t, x, y, px) => { ctx.font = px + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y); };
+    const NODECOL = { road: '#ffffff', servo: '#3ccf6e', spin: '#b48cff', switch: '#ffc61a', hub: '#8b5a3c', garage: '#ffffff' };
+    let bg = null; const board = () => { if (bg) return bg; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+      const gr = x.createRadialGradient(CX, CY, 60, CX, CY, 760); gr.addColorStop(0, '#a8e07f'); gr.addColorStop(1, '#6cc24f'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < 90; i++) { const tx = Math.random() * W, ty = Math.random() * H; x.fillStyle = `rgba(40,120,50,${0.1 + Math.random() * 0.12})`; x.beginPath(); x.arc(tx, ty, 6 + Math.random() * 18, 0, 7); x.fill(); }
+      for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, r = 1.08 + Math.random() * 0.4, tx = CX + Math.cos(a) * RX * r, ty = CY + Math.sin(a) * RY * r; if (tx < 20 || tx > W - 20 || ty < 20 || ty > H - 20) continue;
+        x.fillStyle = 'rgba(0,0,0,.18)'; x.beginPath(); x.ellipse(tx + 3, ty + 12, 14, 5, 0, 0, 7); x.fill(); x.fillStyle = '#2f9e44'; x.beginPath(); x.arc(tx, ty, 14, 0, 7); x.fill(); x.fillStyle = '#51c26a'; x.beginPath(); x.arc(tx - 4, ty - 4, 8, 0, 7); x.fill(); }
+      x.lineCap = 'round'; x.lineJoin = 'round';
+      for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = '#1b1f5e'; x.lineWidth = 32; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); }
+      for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = '#f2e3c2'; x.lineWidth = 24; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); }
+      x.setLineDash([8, 10]); x.strokeStyle = 'rgba(27,31,94,.22)'; x.lineWidth = 2.5; for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); } x.setLineDash([]);
+      x.strokeStyle = '#2c8fd0'; x.lineWidth = 40; x.beginPath(); x.ellipse(CX, CY, RX * 0.515, RY * 0.515, 0, 0, TAU); x.stroke(); x.strokeStyle = '#4fb3ec'; x.lineWidth = 32; x.stroke();
+      x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 2; for (let i = 0; i < 40; i++) { const a = i / 40 * TAU, px = CX + Math.cos(a) * RX * 0.515, py = CY + Math.sin(a) * RY * 0.515; x.beginPath(); x.moveTo(px - 6, py); x.quadraticCurveTo(px, py - 3, px + 6, py); x.stroke(); }
+      x.fillStyle = '#c69a62'; x.beginPath(); x.ellipse(CX, CY, 74, 46, 0, 0, TAU); x.fill(); x.lineWidth = 4; x.strokeStyle = '#1b1f5e'; x.stroke();
+      return bg = c; };
+    function truck(o, x, y, h, sc) { ctx.save(); ctx.translate(x, y); ctx.rotate(h); ctx.scale(sc, sc); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy;
+      ctx.fillStyle = 'rgba(0,0,0,.22)'; rr(-24, -9, 52, 26, 9); ctx.fill();
+      ctx.fillStyle = '#22243a'; for (const [wx, wy] of [[-16, -14], [-16, 10], [12, -14], [12, 10]]) { rr(wx - 6, wy, 12, 5, 2); ctx.fill(); }
+      const big = o.style === 'pickup' ? 1.1 : 1; ctx.scale(big, big);
+      rr(-25, -12, 30, 24, 4); ctx.fillStyle = o.p.dark || shade(o.p.color, -0.3); ctx.fill(); ctx.stroke(); rr(-22, -9, 24, 18, 3); ctx.fillStyle = shade(o.p.color, -0.5); ctx.fill();
+      rr(2, -12, 24, 24, 7); ctx.fillStyle = o.p.color; ctx.fill(); ctx.stroke(); rr(13, -9, 7, 18, 2); ctx.fillStyle = '#bfe8ff'; ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.35)'; rr(4, -10, 7, 20, 3); ctx.fill();
+      ctx.fillStyle = '#fff3a0'; ctx.beginPath(); ctx.arc(25, -8, 2.5, 0, 7); ctx.arc(25, 8, 2.5, 0, 7); ctx.fill();
+      if (o.style === 'tradie') { ctx.strokeStyle = '#d9dee8'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-24, -10); ctx.lineTo(8, -10); ctx.moveTo(-24, 10); ctx.lineTo(8, 10); for (const lx of [-20, -11, -2, 7]) { ctx.moveTo(lx, -10); ctx.lineTo(lx, 10); } ctx.stroke(); }
+      if (o.style === 'pickup') { ctx.fillStyle = '#c9ced8'; rr(26, -11, 4, 22, 2); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 1.5; ctx.stroke(); }
+      if (o.style === 'ute') { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(-25, -2, 51, 4); }
+      ctx.restore();
+      if (o.load) { const lx = x + Math.cos(h) * -10 * sc, ly = y + Math.sin(h) * -10 * sc; emo(o.load.e, lx, ly - 2, o.load.heavy ? 26 : 20); if (o.tarp) emo('⛺', lx + 12, ly - 14, 12); } }
+    function garage(o) { const nd = nodes[o.garage], ux = Math.cos(nd.a), uy = Math.sin(nd.a), bw = 136, bh = 50, bx = Math.max(bw / 2 + 6, Math.min(W - bw / 2 - 6, nd.x + ux * 84)), by = Math.max(bh / 2 + 4, Math.min(H - bh / 2 - 2, nd.y + uy * 42));
+      const f = filled(o); ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.2)'; rr(bx - bw / 2 + 3, by - bh / 2 + 5, bw, bh, 10); ctx.fill(); rr(bx - bw / 2, by - bh / 2, bw, bh, 10); ctx.fillStyle = '#fff8e7'; ctx.fill(); ctx.lineWidth = o === cur() && g.state !== 'end' ? 4 : 3; ctx.strokeStyle = o === cur() && g.state !== 'end' ? TOY.sun : TOY.navy; ctx.stroke();
+      ctx.save(); rr(bx - bw / 2, by - bh / 2, bw, bh, 10); ctx.clip(); ctx.fillStyle = o.p.color; ctx.fillRect(bx - bw / 2, by - bh / 2, bw, 18); ctx.restore();
+      toyText((o.p.name.length > 11 ? o.p.name.slice(0, 10) + '…' : o.p.name) + '  ' + f + '/5', bx, by - bh / 2 + 9, 12, '#fff', 'center', TOY.navy);
+      let sx = bx - 5 * 25 / 2, c = 0; for (const it of o.bays) { const w = it.heavy ? 48 : 23; rr(sx + c * 25 + 1, by - 3, w, 22, 5); ctx.fillStyle = '#ffe9a8'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); emo(it.e, sx + c * 25 + 1 + w / 2, by + 8, it.heavy ? 18 : 15); c += it.heavy ? 2 : 1; }
+      for (; c < 5; c++) { rr(sx + c * 25 + 1, by - 3, 23, 22, 5); ctx.fillStyle = 'rgba(27,31,94,.08)'; ctx.fill(); }
+      ctx.restore(); }
+    function die(x, y, v, s, rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); rr(-s / 2, -s / 2, s, s, s * 0.2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = TOY.navy;
+      const P = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[v];
+      for (const [a, b] of P) { ctx.beginPath(); ctx.arc(a * s * 0.26, b * s * 0.26, s * 0.09, 0, 7); ctx.fill(); } ctx.restore(); }
+    function drawWheel() { const w = g.wheel; if (!w || !w.show) return; const tot = HAUL_WHEEL.reduce((s, x) => s + x[2], 0), Rw = 230, x0 = 640, y0 = 380;
+      ctx.fillStyle = 'rgba(27,31,94,.55)'; ctx.fillRect(0, 0, W, H); headline('THE BIG SPIN', 640, 112, 46, TOY.sun, TOY.coral);
+      ctx.save(); ctx.translate(x0, y0); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(6, 10, Rw + 14, 0, TAU); ctx.fill(); ctx.fillStyle = TOY.navy; ctx.beginPath(); ctx.arc(0, 0, Rw + 14, 0, TAU); ctx.fill();
+      for (let i = 0; i < 24; i++) { const a = i / 24 * TAU; ctx.fillStyle = (Math.floor(g.t * 6) + i) % 2 ? '#fff3a0' : '#ffb03b'; ctx.beginPath(); ctx.arc(Math.cos(a) * (Rw + 7), Math.sin(a) * (Rw + 7), 4, 0, TAU); ctx.fill(); }
+      HAUL_WHEEL.forEach((s, i) => { const a0 = w.rot + w.st[i] * TAU - Math.PI / 2, a1 = a0 + s[2] / tot * TAU; ctx.fillStyle = s[3]; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, Rw, a0, a1); ctx.closePath(); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.save(); ctx.rotate((a0 + a1) / 2); if (s[0] === 'jackpot') { emo('🏆', Rw - 22, 0, 18); } else { ctx.translate(Rw - 16, 0); dfont(17); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(27,31,94,.6)'; ctx.strokeText(s[1], 0, 0); ctx.fillStyle = '#fff'; ctx.fillText(s[1], 0, 0); } ctx.restore(); });
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 34, 0, TAU); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); emo('🛻', 0, 2, 30); ctx.restore();
+      ctx.fillStyle = TOY.coral; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x0 - 20, y0 - Rw - 30); ctx.lineTo(x0 + 20, y0 - Rw - 30); ctx.lineTo(x0, y0 - Rw + 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (w.label) { const k = Math.min(1, w.resT * 5); ctx.save(); ctx.translate(640, 660); ctx.scale(k, k); headline(w.label, 0, 0, 44, '#fff', HAUL_WHEEL[w.k][3]); ctx.restore(); } }
+    g.draw = () => { ctx.drawImage(board(), 0, 0, W, H);
+      // bridges
+      BR.forEach((b, i) => { const a = nodes[b.M], c = nodes[b.I], mx = (a.x + c.x) / 2, my = (a.y + c.y) / 2, h = Math.atan2(c.y - a.y, c.x - a.x), L = 64;
+        ctx.save(); ctx.translate(mx, my); ctx.rotate(h);
+        if (!b.draw) { rr(-L / 2, -15, L, 30, 4); ctx.fillStyle = '#b07a45'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.strokeStyle = 'rgba(27,31,94,.3)'; ctx.lineWidth = 2; for (let k = -L / 2 + 8; k < L / 2; k += 8) { ctx.beginPath(); ctx.moveTo(k, -13); ctx.lineTo(k, 13); ctx.stroke(); } }
+        else { const v = b.v, half = L / 2 * (1 - v * 0.62); for (const sgn of [-1, 1]) { ctx.save(); ctx.translate(sgn * L / 2, 0); ctx.fillStyle = 'rgba(0,0,0,' + (0.25 * v) + ')'; rr(sgn > 0 ? -half - 4 : 4, -11, half, 30, 4); ctx.fill();
+            rr(sgn > 0 ? -half : 0, -15 - v * 6, half, 30, 4); ctx.fillStyle = v > 0.5 ? '#9aa6bf' : '#7d8aa6'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
+            ctx.fillStyle = TOY.sun; for (let k = 0; k < 3; k++) { const xx = sgn > 0 ? -half + 3 + k * 7 : half - 9 - k * 7; ctx.fillRect(xx, -13 - v * 6, 4, 26); } ctx.restore(); }
+          for (const sgn of [-1, 1]) { ctx.fillStyle = '#5d6b8a'; rr(-6, sgn * 21 - 6, 12, 12, 3); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; ctx.beginPath(); ctx.arc(0, sgn * 21, 3.5, 0, 7); ctx.fill(); } }
+        ctx.restore(); });
+      // spaces
+      const hl = new Set(g.phase === 'choose' ? g.cands : []), C = cur();
+      nodes.forEach((nd, k) => { if (k === HUB || nd.type === 'garage') return; const col = NODECOL[nd.type], R0 = nd.type === 'road' ? 11 : 17;
+        if (hl.has(k)) { ctx.save(); ctx.globalAlpha = 0.55 + Math.sin(g.t * 6) * 0.25; ctx.fillStyle = C.p.color; ctx.beginPath(); ctx.arc(nd.x, nd.y, R0 + 9, 0, TAU); ctx.fill(); ctx.restore(); }
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(nd.x, nd.y, R0, 0, TAU); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
+        if (nd.type === 'servo') emo('⛽', nd.x, nd.y + 1, 18); else if (nd.type === 'spin') emo('🎡', nd.x, nd.y + 1, 18); else if (nd.type === 'switch') emo('🔀', nd.x, nd.y + 1, 16);
+        if (g.mud.has(k)) { ctx.fillStyle = '#8b5a2b'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 22, 14, 0.3, 0, TAU); ctx.fill(); ctx.fillStyle = '#a8743f'; ctx.beginPath(); ctx.ellipse(nd.x - 5, nd.y - 3, 8, 4, 0.3, 0, TAU); ctx.ellipse(nd.x + 8, nd.y + 4, 5, 3, 0, 0, TAU); ctx.fill(); }
+        if (g.oil.has(k)) { const gr = ctx.createRadialGradient(nd.x, nd.y, 2, nd.x, nd.y, 22); gr.addColorStop(0, '#1d1d2b'); gr.addColorStop(0.6, '#3a2f5b'); gr.addColorStop(0.8, 'rgba(120,220,255,.8)'); gr.addColorStop(0.9, 'rgba(255,120,220,.7)'); gr.addColorStop(1, 'rgba(255,240,120,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 24, 16, -0.2, 0, TAU); ctx.fill(); }
+        if (g.works.has(k)) emo('🚧', nd.x, nd.y - 2, 26);
+        if (g.drops.has(k)) { const b = Math.sin(g.t * 4 + k) * 3; emo(g.drops.get(k).e, nd.x, nd.y - 6 + b, 24); }
+        if (hl.has(k) && g.phase === 'choose') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(nd.x, nd.y, 4, 0, TAU); ctx.fill(); } });
+      // the junk pile
+      { const nd = nodes[HUB]; if (hl.has(HUB)) { ctx.save(); ctx.globalAlpha = 0.55 + Math.sin(g.t * 6) * 0.25; ctx.fillStyle = C.p.color; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 86, 58, 0, 0, TAU); ctx.fill(); ctx.restore(); }
+        ctx.fillStyle = '#8b6a45'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y + 6, 58, 30, 0, 0, TAU); ctx.fill(); const show = g.pile.slice(0, 11);
+        show.forEach((it, k) => { const a = k * 2.4, r = 10 + (k % 4) * 11; emo(it.e, nd.x + Math.cos(a) * r * 1.5, nd.y + Math.sin(a) * r * 0.55 - (k < 4 ? 14 : 0), it.heavy ? 26 : 20); });
+        rr(nd.x - 34, nd.y + 30, 68, 20, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(g.pile.length + ' left', nd.x, nd.y + 40, 12, TOY.navy, 'center', null); }
+      for (const o of g.ps) garage(o);
+      // utes
+      for (const o of g.ps) { const isC = o === C && g.state === 'turn', moving = isC && g.phase === 'moving', by = moving ? -Math.abs(Math.sin(o.bounce)) * 3 : 0, spin = o.spinT > 0 ? (1.2 - o.spinT) / 1.2 * TAU * 2 : 0;
+        if (isC) { ctx.save(); ctx.globalAlpha = 0.5; ctx.strokeStyle = TOY.sun; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(o.x, o.y, 30 + Math.sin(g.t * 6) * 3, 0, TAU); ctx.stroke(); ctx.restore(); }
+        truck(o, o.x, o.y + by, o.h + spin, isC ? 1.05 : 0.9);
+        if (o.stuck) emo('🟫', o.x + 18, o.y - 18, 14);
+        if (isC) drawAvatar(o.x, o.y - 38, 12, o.p, { happy: true }); }
+      // HUD: whose turn
+      if (g.state === 'turn') { rr(14, 12, 270, 92, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); drawAvatar(50, 50, 22, C.p, { happy: true }); toyText(C.p.name, 82, 40, 20, TOY.navy, 'left', null);
+        const ph = { pre: 'Getting ready', rolling: 'Rolling…', choose: 'Choosing a route', moving: 'Driving…', pick: 'Picking junk', nick: 'Nick it?', switch: 'At the switch', spin: 'The Big Spin!', spinning: 'Spinning…', pause: '' }[g.phase] || '';
+        toyText(ph, 82, 64, 14, '#55608f', 'left', null); toyText('Round ' + g.round, 82, 86, 12, '#8a92b8', 'left', null);
+        const rolling = g.phase === 'rolling'; die(g.dice2 ? 210 : 240, 58, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice, 42, rolling ? Math.random() * 0.6 - 0.3 : -0.06); if (g.dice2) die(256, 58, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice2, 34, 0.1); }
+      g.log.slice(0, 2).forEach((m, k) => toyText(m, W - 18, 26 + k * 24, k ? 13 : 16, k ? TOY.navy : '#fff', 'right', k ? null : TOY.navy));
+      // floating text + banners
+      for (const f of g.fx) { if (f.k === 'txt') { ctx.globalAlpha = Math.max(0, 1 - f.t / 1.8); headline(f.txt, f.x, f.y - 40 - f.t * 36, 22, f.col, TOY.navy); ctx.globalAlpha = 1; }
+        if (f.k === 'ban' && g.phase !== 'spinning') { const a = Math.max(0, Math.min(1, f.t * 5, (2.2 - f.t) * 3)); ctx.globalAlpha = a; headline(f.txt, 640, 150, 40, f.col, TOY.navy); ctx.globalAlpha = 1; }
+        if (f.k === 'jack') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.35 - f.t * 0.08) * (Math.floor(f.t * 8) % 2); ctx.fillStyle = Math.floor(f.t * 4) % 2 ? '#ff2d55' : '#ffd23f'; ctx.fillRect(0, 0, W, H); ctx.restore(); } }
+      if (g.state === 'custom') { ctx.fillStyle = 'rgba(27,31,94,.5)'; ctx.fillRect(0, 0, W, H); headline('PICK YOUR RIDE', 640, 150, 52, TOY.sun, '#e8913a'); toyText('Choose a ute on your phone', 640, 196, 20, '#fff', 'center', TOY.navy);
+        const sp = Math.min(150, 1100 / g.ps.length); g.ps.forEach((o, k) => { const x = 640 - (g.ps.length - 1) * sp / 2 + k * sp, y = 360; truck(o, x, y, -Math.PI / 2 + Math.sin(g.t * 2 + k) * 0.08, 1.9); drawAvatar(x, y + 78, 18, o.p, { happy: o.ready }); toyText(o.p.name, x, y + 108, 15, '#fff', 'center', TOY.navy); toyText(o.ready ? '✓ ready' : HAUL_STYLES[o.style].split(' ').slice(1).join(' '), x, y + 128, 13, o.ready ? TOY.mint : '#cfd6ff', 'center', null); });
+        toyText(Math.ceil(g.cT) + '', 640, 600, 30, '#fff', 'center', TOY.navy); }
+      if (g.phase === 'spinning') drawWheel();
+      if (g.state === 'end' && g.winner) { ctx.fillStyle = 'rgba(27,31,94,.6)'; ctx.fillRect(0, 0, W, H); headline(g.winner.p.name.toUpperCase() + ' FILLED THE GARAGE!', 640, 250, 46, TOY.sun, '#e8913a');
+        truck(g.winner, 640, 340, Math.sin(g.t * 3) * 0.1, 2.2);
+        g.ps.slice().sort((a, b) => filled(b) - filled(a)).slice(0, 6).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ·  ' + filled(q) + '/5  ' + q.bays.map(it => it.e).join(''), 640, 420 + k * 32, k ? 20 : 26, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
+    return g;
+  } };
+
+const GAMES = { haul: Haul, syd: SurvivingSydney, robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
 window.CC = { host, ctl: null }; // handle for debugging in the browser console
 
 /* =====================================================================
@@ -12945,7 +13239,7 @@ function showMsg(html, interactive) {
   if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; if (m.querySelector('[data-react]')) window.reactT0 = performance.now(); } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-const MODE_NAMES = { syd: '🏙 Surviving Sydney', cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says', robo: '🤖 Robo Rumble', arms: '💥 Arms Race', dice: "🎲 Liar's Dice", turf: '🗺 Turf Wars' };
+const MODE_NAMES = { haul: '🛻 Haul', syd: '🏙 Surviving Sydney', cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says', robo: '🤖 Robo Rumble', arms: '💥 Arms Race', dice: "🎲 Liar's Dice", turf: '🗺 Turf Wars' };
 function renderPad() {
   const d = ctl.info; if (!d) return;
   $('#chip').style.background = d.color; $('#pname').textContent = 'P' + (d.slot + 1) + ' · ' + d.name; $('#pname').style.color = d.color;
@@ -12984,7 +13278,7 @@ function renderPad() {
     if (d.leader) {
       html = `<b>👑 You're the leader${picker ? ' · pick your character' : ''}</b>${picker}<div class="small">${d.count} player${d.count === 1 ? '' : 's'} joined · pick a game, then Start</div>
         <div class="row">${[['robo', '⚔ Strategy', 'strat'], ['bomb', '🎉 Party', 'social'], ['qdraw', '🤸 Active', 'active'], ['whosaid', '💬 Talk', 'talk'], ['cup', '🕹 Arcade', 'party'], ['shit', '🃏 Cards', 'cards'], ['arena', '➕ More', 'more']].map(([m, l, c]) => B('mode', l, m, (['party', 'cards', 'social', 'talk', 'active', 'strat'].includes(MODE_CAT[d.mode]) ? MODE_CAT[d.mode] : 'more') === c)).join('')}</div>
-        ${MODE_CAT[d.mode] === 'strat' ? `<div class="row">${[['syd', '🏙 Surviving Sydney'], ['robo', '🤖 Robo Rumble'], ['arms', '💥 Arms Race'], ['dice', "🎲 Liar's Dice"], ['turf', '🗺 Turf Wars']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
+        ${MODE_CAT[d.mode] === 'strat' ? `<div class="row">${[['haul', '🛻 Haul'], ['syd', '🏙 Surviving Sydney'], ['robo', '🤖 Robo Rumble'], ['arms', '💥 Arms Race'], ['dice', "🎲 Liar's Dice"], ['turf', '🗺 Turf Wars']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${d.mode === 'syd' ? `<div class="row">${B('cardopt', '🔁 Rounds: ' + d.sydRounds, 'sydmins', true)}</div>` : ''}
         ${MODE_CAT[d.mode] === 'active' ? `<div class="row">${[['qdraw', '🤠 Quick Draw'], ['shake', '📳 Shake Race'], ['head', '🤪 Forehead'], ['says', '📱 Phone Says']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
         ${MODE_CAT[d.mode] === 'talk' ? `<div class="row">${[['whosaid', '🕵 Who Said It?'], ['likely', '👉 Most Likely'], ['hot', '🌶 Hot Takes'], ['meld', '🧠 Mind Meld'], ['lie', '🤥 2 Truths 1 Lie']].map(([m, l]) => B('mode', l, m, d.mode === m)).join('')}</div>` : ''}
