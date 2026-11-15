@@ -6681,6 +6681,9 @@ function hostCmd(p, c, v) {
     case 'mode': if (host.phase === 'lobby' && MODES.includes(v)) { host.mode = v; SFX.click(); } break;
     case 'bombsnd': if (typeof v === 'string' && v.length < 600000 && (v === '' || v.startsWith('data:audio'))) { setBombSnd(p, v); return; } break;
     case 'bombtest': playBombSnd(p); return;
+    case 'bombpart': if (typeof v === 'string') { const [id, i, n, ...rest] = v.split('|'), k = +i, N = +n; if (!(N > 0 && N <= 120 && k >= 0 && k < N)) return;
+      const R = p.recv && p.recv.id === id ? p.recv : (p.recv = { id, n: N, parts: [], got: 0 }); if (R.parts[k] == null) { R.parts[k] = rest.join('|'); R.got++; }
+      if (R.got === R.n) { const url = R.parts.join(''); p.recv = null; if (url.startsWith('data:audio') || url.startsWith('data:video')) setBombSnd(p, url.replace(/^data:video/, 'data:audio')); } } return;
     case 'cardopt': if (host.phase === 'lobby' && (v === 'timer' || v === 'four')) { cardOpt(v); return; } break;
     case 'newnight': if (host.phase === 'lobby') { resetSession(); return; } break;
     case 'bots': if (host.phase === 'lobby') { host.botsFill = !host.botsFill; SFX.click(); } break;
@@ -12998,7 +13001,8 @@ function setupPadInput() {
     const parts = []; REC.mr = mr; mr.ondataavailable = e => e.data && e.data.size && parts.push(e.data);
     mr.onstop = () => { clearInterval(REC.timer); stream.getTracks().forEach(t => t.stop()); REC.mr = null; const blob = new Blob(parts, { type: mr.mimeType || type || 'audio/webm' });
       if (blob.size < 500) { btn.textContent = 'Too short, try again'; return; } if (REC.url) URL.revokeObjectURL(REC.url); REC.url = URL.createObjectURL(blob); try { new Audio(REC.url).play(); } catch (e) {}
-      const fr = new FileReader(); fr.onload = () => { ctlSend({ t: 'cmd', c: 'bombsnd', v: fr.result }); btn.textContent = 'Sent to the TV ✓'; }; fr.readAsDataURL(blob); };
+      const fr = new FileReader(); fr.onload = () => { const url = fr.result, id = Math.random().toString(36).slice(2, 7), CH = 6000, n = Math.ceil(url.length / CH); btn.textContent = 'Sending to the TV…';
+        for (let i = 0; i < n; i++) setTimeout(() => { ctlSend({ t: 'cmd', c: 'bombpart', v: id + '|' + i + '|' + n + '|' + url.slice(i * CH, (i + 1) * CH) }); if (i === n - 1) btn.textContent = 'Sent ✓ listen for it on the TV'; }, i * 45); }; fr.readAsDataURL(blob); };
     mr.start(); let left = 3; btn.classList.add('recording'); btn.textContent = '⏺ Recording… 3'; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {}
     REC.timer = setInterval(() => { left--; if (left <= 0) { try { mr.stop(); } catch (e) {} btn.classList.remove('recording'); } else btn.textContent = '⏺ Recording… ' + left + ' (tap to stop)'; }, 1000); }
   // drag to rearrange cards in a hand ([data-sort]); a plain tap still selects
