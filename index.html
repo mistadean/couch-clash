@@ -12840,16 +12840,16 @@ const SurvivingSydney = { title: 'Surviving Sydney', accent: '#2f8fd8', phones: 
   } };
 
 /* ---- 🛻 Haul: utes drive to the junk pile in the middle, grab something, haul it home and fill the garage ---- */
-const HAUL_LIGHT = [['🚲', 'bike'], ['🛒', 'trolley'], ['🪴', 'pot plant'], ['🧸', 'giant teddy'], ['📺', 'old telly'], ['🪑', 'armchair'], ['🎸', 'guitar'], ['🗿', 'garden statue']];
-const HAUL_HEAVY = [['🛋', 'couch'], ['🚗', 'old car'], ['🛶', 'canoe'], ['🛁', 'bathtub'], ['🎹', 'piano'], ['🏍', 'motorbike']];
+const HAUL_LIGHT = [['🚗', 'rusty hatchback'], ['🚕', 'old taxi'], ['🏎', 'racing car'], ['🛺', 'tuk-tuk'], ['🏍', 'motorbike'], ['🛵', 'scooter']];
+const HAUL_HEAVY = [['🚙', '4WD'], ['🚐', 'camper van'], ['🚌', 'old bus'], ['🚚', 'delivery truck'], ['🚜', 'tractor'], ['🚒', 'fire truck']];
 const HAUL_GOODS = { pie: ['🥧', 'Meat pie', '+2 to your roll'], slush: ['🥤', 'Slushie', 'Roll twice, keep the best'], tarp: ['⛺', 'Tarp', 'Your load can\'t be nicked'], straps: ['🪢', 'Straps', 'Heavy load at full speed'], oil: ['🛢', 'Oil can', 'Leave a slick behind you'] };
 const HAUL_WHEEL = [['goodie', '🎁 Goodie', 5, '#3ccf6e'], ['spin', '🌀 Spin out', 3, '#ff9a1f'], ['tow', '🚛 Tow home', 3, '#2f8fd8'], ['swap', '🔁 Swap trays', 2, '#b48cff'], ['flip', '🌉 Flip bridges', 3, '#ffc61a'],
-  ['jackpot', '🏆', 0.6, '#ff2d55'], ['goodie', '🎁 Goodie', 4, '#3ccf6e'], ['clean', '🧹 +3 junk', 3, '#2bb3a8'], ['nick', '😈 Nick anyone', 2, '#e8384f'], ['bog', '🟫 Bogged', 3, '#a0703f']];
+  ['jackpot', '🏆', 0.6, '#ff2d55'], ['goodie', '🎁 Goodie', 4, '#3ccf6e'], ['clean', '🧹 +3 wrecks', 3, '#2bb3a8'], ['nick', '😈 Nick anyone', 2, '#e8384f'], ['bog', '🟫 Bogged', 3, '#a0703f']];
 const HAUL_STYLES = { ute: '🛻 Ute', pickup: '💪 Big pickup', tradie: '🪜 Tradie' };
 const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 11,
-  rules: [['#8b5a3c', 'Drive to the junk pile in the middle, grab something and haul it home.'], ['#e8913a', 'Fill all 5 bays in your garage to win.'], ['#2f8fd8', 'Heavy junk fills 2 bays, but you drive 2 slower.'],
-    ['#e8384f', 'Stop next to a loaded ute with an empty tray and nick its load!'], ['#3ccf6e', 'Servos give free goodies. Switches flip the drawbridges.'], ['#b48cff', 'Land on The Big Spin and chase the jackpot.']],
-  how: 'Drive to the junk pile, grab something, haul it home. Heavy junk fills 2 bays but slows you down. Nick loads, flip bridges, spin the wheel. First to fill 5 bays wins.',
+  rules: [['#8b5a3c', 'Drive to the wreckers\' yard in the middle and tow a car home.'], ['#e8913a', 'Fill all 5 bays in your garage to win.'], ['#2f8fd8', 'Big wrecks fill 2 bays, but you drive 2 slower.'],
+    ['#e8384f', 'Stop next to someone towing a car and nick it!'], ['#3ccf6e', 'Servos give free goodies. Switches flip the drawbridges.'], ['#b48cff', 'Land on The Big Spin and chase the jackpot.']],
+  how: 'Drive to the wreckers\' yard, hook up a car and tow it home. Big wrecks fill 2 bays but slow you down. Nick loads, flip bridges, spin the wheel. First to fill 5 bays wins.',
   create(players) {
     const n = players.length, K = Math.max(4, Math.min(8, n)), CX = 640, CY = 380, RX = 470, RY = 270, TAU = Math.PI * 2;
     // ---------- the board: spokes from each garage to the pile, two ring roads, a river with bridges ----------
@@ -12857,12 +12857,25 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
     const ang = i => -Math.PI / 2 + i * TAU / K;
     const add = (r, a, type, ex) => { nodes.push(Object.assign({ x: CX + Math.cos(a) * RX * r, y: CY + Math.sin(a) * RY * r, r, a, type, adj: [] }, ex || {})); return nodes.length - 1; };
     const link = (a, b, br) => { edges.push({ a, b, br }); const e = edges.length - 1; nodes[a].adj.push([b, e]); nodes[b].adj.push([a, e]); };
-    const HUB = add(0, 0, 'hub'), G = [], O = [], I = [], BR = [];
-    for (let i = 0; i < K; i++) { const a = ang(i); G[i] = add(1, a, i < n ? 'garage' : 'servo', { owner: i < n ? i : -1 }); O[i] = add(0.79, a, 'road'); const M = add(0.64, a, 'road'); I[i] = add(0.39, a, 'road'); 
+    const OR = 0.82, MR = 0.64, IR = 0.38, RIV = 0.51, T = 24, PASTEL = ['#9fd3f0', '#f6b3cf', '#ffcf9e', '#ff9f9f', '#fdeb8f', '#a6e3ae', '#b8b0ef', '#d2ab86'];
+    const HUB = add(0, 0, 'hub'), G = [], O = [], I = [], BR = [], RING = { out: [], in: [] };
+    for (let i = 0; i < K; i++) { const a = ang(i); G[i] = add(1, a, i < n ? 'garage' : 'servo', { owner: i < n ? i : -1, spoke: i }); O[i] = add(OR, a, 'road', { grp: PASTEL[i % 8] }); const M = add(MR, a, 'road', { spoke: i }); I[i] = add(IR, a, 'road', { grp: PASTEL[(i + 4) % 8] });
       BR[i] = { draw: i % 2 === 0, up: i % 4 === 0, v: i % 4 === 0 ? 1 : 0, M, I: I[i] }; link(G[i], O[i]); link(O[i], M); link(M, I[i], i); link(I[i], HUB); }
+    const segO = Math.max(2, Math.round(24 / K)), segI = Math.max(2, Math.round(12 / K));
     for (let i = 0; i < K; i++) { const j = (i + 1) % K, a0 = ang(i), d = TAU / K;
-      const A = add(0.79, a0 + d / 3, i % 2 === 0 ? 'servo' : 'road'), B = add(0.79, a0 + 2 * d / 3, i % 2 === 1 ? 'spin' : 'road'); link(O[i], A); link(A, B); link(B, O[j]);
-      const C = add(0.39, a0 + d / 2, i % 2 === 0 ? 'switch' : i % 4 === 1 ? 'spin' : 'road'); link(I[i], C); link(C, I[j]); }
+      RING.out.push(O[i]); let prev = O[i]; for (let m = 1; m < segO; m++) { const ty = m === Math.ceil((segO - 1) / 2) ? (i % 2 === 0 ? 'servo' : 'spin') : 'road', id = add(OR, a0 + d * m / segO, ty, { grp: PASTEL[i % 8] }); RING.out.push(id); link(prev, id); prev = id; } link(prev, O[j]);
+      RING.in.push(I[i]); prev = I[i]; for (let m = 1; m < segI; m++) { const ty = m === 1 ? (i % 2 === 0 ? 'switch' : i % 4 === 1 ? 'spin' : 'road') : 'road', id = add(IR, a0 + d * m / segI, ty, { grp: PASTEL[(i + 4) % 8] }); RING.in.push(id); link(prev, id); prev = id; } link(prev, I[j]); }
+    // box shapes for every space: curved boxes on the rings, straight boxes on the spokes
+    function ringPolys(list, R) { const A = RX * R, B = RY * R, P = t => [CX + Math.cos(t) * A, CY + Math.sin(t) * B], Nm = t => { const x = Math.cos(t) * B, y = Math.sin(t) * A, l = Math.hypot(x, y); return [x / l, y / l]; }, spd = t => Math.hypot(A * Math.sin(t), B * Math.cos(t));
+      list.forEach((id, k) => { const nd = nodes[id], ap = nodes[list[(k - 1 + list.length) % list.length]].a, an = nodes[list[(k + 1) % list.length]].a, dp = ((nd.a - ap) % TAU + TAU) % TAU, dn = ((an - nd.a) % TAU + TAU) % TAU;
+        const a0 = nd.a - dp / 2, a1 = nd.a + dn / 2, g0 = a0 + 2.5 / spd(a0), g1 = a1 - 2.5 / spd(a1), out = [], inn = [], mid = [];
+        for (let s = 0; s <= 6; s++) { const t = g0 + (g1 - g0) * s / 6, p = P(t), nn = Nm(t); out.push([p[0] + nn[0] * T, p[1] + nn[1] * T]); inn.push([p[0] - nn[0] * T, p[1] - nn[1] * T]); mid.push([p[0] + nn[0] * T * 0.3, p[1] + nn[1] * T * 0.3]); }
+        nd.poly = out.concat(inn.reverse()); nd.band = out.concat(mid.reverse()); }); }
+    ringPolys(RING.out, OR); ringPolys(RING.in, IR);
+    function boxPoly(id, hl, hw) { const nd = nodes[id], l = Math.hypot(CX - nd.x, CY - nd.y) || 1, ux = (CX - nd.x) / l, uy = (CY - nd.y) / l, px = -uy, py = ux, c = (s, t) => [nd.x + ux * s + px * t, nd.y + uy * s + py * t];
+      nd.ux = ux; nd.uy = uy; nd.poly = [c(-hl, -hw), c(-hl, hw), c(hl, hw), c(hl, -hw)]; nd.band = [c(-hl, -hw), c(-hl, hw), c(-hl + hl * 0.6, hw), c(-hl + hl * 0.6, -hw)]; }
+    for (let i = 0; i < K; i++) { boxPoly(BR[i].M, 17, 22); boxPoly(G[i], 20, 24); }
+    nodes.forEach((nd, k) => { if (nd.ring == null && nd.grp == null && nd.spoke != null) nd.grp = nd.type === 'garage' ? shade(players[nd.owner].color, 0.35) : nd.type === 'servo' ? '#a6e3ae' : (nd.spoke < n ? shade(players[nd.spoke].color, 0.55) : '#dcdcdc'); });
     const HZ = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road' && !O.includes(k)); // where hazards can appear
     const openE = e => { const ed = edges[e]; return ed.br == null || !BR[ed.br].draw || !BR[ed.br].up; };
     const mk = heavy => { const L = heavy ? HAUL_HEAVY : HAUL_LIGHT, [e, name] = L[Math.floor(Math.random() * L.length)]; return { e, name, heavy }; };
@@ -12916,7 +12929,7 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
       o.goods.splice(i, 1); const [e, nm] = HAUL_GOODS[k]; float(o, e + ' ' + nm + '!', TOY.sun); SFX.pop();
       if (k === 'pie') o.boost += 2; if (k === 'slush') o.slush = true; if (k === 'tarp') o.tarp = true; if (k === 'straps') o.straps = true; if (k === 'oil') { g.oil.set(o.node, g.round + 2); log(o.p.name + ' left an oil slick'); } R(); }
     function giveGood(o) { const k = rnd(Object.keys(HAUL_GOODS)); if (o.goods.length >= 2) o.goods.shift(); o.goods.push(k); float(o, HAUL_GOODS[k][0] + ' ' + HAUL_GOODS[k][1], TOY.mint); sfx.grab(); log(o.p.name + ' grabbed ' + an(HAUL_GOODS[k][1].toLowerCase())); }
-    function dropLoad(o) { const opts = nodes[o.node].adj.map(([v]) => v).filter(v => nodes[v].type === 'road' && !g.drops.has(v) && !g.works.has(v)); if (!opts.length) return; const v = rnd(opts); g.drops.set(v, o.load); log(o.p.name + "'s " + o.load.name + ' fell off!'); float(o, 'IT FELL OFF!', TOY.coral); o.load = null; o.tarp = false; }
+    function dropLoad(o) { const opts = nodes[o.node].adj.map(([v]) => v).filter(v => nodes[v].type === 'road' && !g.drops.has(v) && !g.works.has(v)); if (!opts.length) return; const v = rnd(opts); g.drops.set(v, o.load); log(o.p.name + "'s " + o.load.name + ' came unhooked!'); float(o, 'UNHOOKED!', TOY.coral); o.load = null; o.tarp = false; }
     function spinOut(o) { o.spinT = 1.2; sfx.skid(); float(o, 'WHEEE!', '#9be7ff'); if (o.load && o.load.heavy && !o.straps && Math.random() < 0.5) dropLoad(o); }
     function unload(o) { o.bays.push(o.load); log(o.p.name + ' banked ' + an(o.load.name) + '!'); float(o, o.load.e + ' BANKED!', TOY.sun); o.load = null; o.tarp = false; sfx.bank(); SFX.cheer(); }
     function land(o) { const id = o.node, t = nodes[id];
@@ -12945,7 +12958,7 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
       else if (kind === 'tow') { o.node = o.garage; float(o, 'Free tow!', TOY.aqua); if (o.load) unload(o); }
       else if (kind === 'swap') { const L = o.load ? others.filter(q => !q.tarp) : others.filter(q => q.load && !q.tarp); if (L.length) { const q = rnd(L); [o.load, q.load] = [q.load, o.load]; log(o.p.name + ' swapped trays with ' + q.p.name); float(q, 'SWAPPED!', TOY.grape); } else float(o, 'Nobody to swap with', '#fff'); }
       else if (kind === 'flip') flip();
-      else if (kind === 'clean') { for (let k = 0; k < 3; k++) g.pile.push(mk(Math.random() < 0.38)); banner('COUNCIL CLEAN-UP: +3 JUNK', '#7ff0e4'); }
+      else if (kind === 'clean') { for (let k = 0; k < 3; k++) g.pile.push(mk(Math.random() < 0.38)); banner('3 MORE WRECKS ARRIVE!', '#7ff0e4'); }
       else if (kind === 'nick') { const L = others.filter(q => q.load && !q.tarp && q.node !== q.garage).sort((a, b) => (b.load.heavy ? 1 : 0) - (a.load.heavy ? 1 : 0)); if (!o.load && L.length) { const q = L[0]; o.load = q.load; q.load = null; float(q, 'NICKED!', TOY.coral); log(o.p.name + ' nicked ' + q.p.name + "'s " + o.load.name + ' from afar!'); SFX.bonk(); } else giveGood(o); }
       else if (kind === 'bog') { o.skip = true; sfx.splat(); float(o, 'Bogged next turn', '#c98a4b'); }
       else if (kind === 'jackpot') { o.bays.push({ e: '🏆', name: 'mystery jackpot', heavy: false }); log('JACKPOT! ' + o.p.name + ' got a mystery prize straight into the garage!'); banner('💰 JACKPOT! 💰', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer(); confetti(60, 1.2);
@@ -12970,23 +12983,23 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
       const R0 = w * 0.042; let s = `<svg viewBox="${x0} ${y0} ${w} ${h}" style="width:100%;max-height:38vh;background:#8fd16e;border-radius:14px;border:3px solid #1b1f5e;touch-action:manipulation">`;
       s += `<ellipse cx="${CX}" cy="${CY}" rx="${RX * 0.515}" ry="${RY * 0.515}" fill="none" stroke="#4fb3ec" stroke-width="26"/>`;
       for (const [k, e] of edges.entries()) { const a = nodes[e.a], b = nodes[e.b], op = openE(k); s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${op ? '#f2e3c2' : '#e8384f'}" stroke-width="${op ? 16 : 8}" ${op ? '' : 'stroke-dasharray="10 8"'} stroke-linecap="round"/>`; }
-      const ic = k => { const nd = nodes[k]; return k === HUB ? '🗑' : k === o.garage ? '🏠' : nd.type === 'garage' ? '🏚' : g.works.has(k) ? '🚧' : g.drops.has(k) ? g.drops.get(k).e : g.oil.has(k) ? '🛢' : g.mud.has(k) ? '🟫' : nd.type === 'servo' ? '⛽' : nd.type === 'spin' ? '🎡' : nd.type === 'switch' ? '🔀' : ''; };
-      nodes.forEach((nd, k) => { const t = ic(k); s += `<circle cx="${nd.x}" cy="${nd.y}" r="${R0 * 0.45}" fill="#fff" stroke="#1b1f5e" stroke-width="2"/>`; if (t) s += `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 0.8}" text-anchor="middle" dominant-baseline="central">${t}</text>`; });
+      const ic = k => { const nd = nodes[k]; return k === HUB ? '🚧' : k === o.garage ? '🏠' : nd.type === 'garage' ? '🏚' : g.works.has(k) ? '🚧' : g.drops.has(k) ? g.drops.get(k).e : g.oil.has(k) ? '🛢' : g.mud.has(k) ? '🟫' : nd.type === 'servo' ? '⛽' : nd.type === 'spin' ? '🎡' : nd.type === 'switch' ? '🔀' : ''; };
+      nodes.forEach((nd, k) => { const t = ic(k); if (nd.poly) s += `<polygon points="${nd.poly.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}" fill="#fffaf0" stroke="#1b1f5e" stroke-width="2"/>`; if (t) s += `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 0.8}" text-anchor="middle" dominant-baseline="central">${t}</text>`; });
       for (const q of g.ps) if (q !== o) { const nd = nodes[q.node]; s += `<circle cx="${nd.x}" cy="${nd.y - R0 * 0.6}" r="${R0 * 0.35}" fill="${q.p.color}" stroke="#1b1f5e" stroke-width="2"/>`; }
-      for (const k of g.cands) { const nd = nodes[k], t = ic(k); s += `<g data-c="pp" data-v="go:${k}" style="cursor:pointer"><circle cx="${nd.x}" cy="${nd.y}" r="${R0}" fill="${o.p.color}" fill-opacity=".85" stroke="#fff" stroke-width="4"/>${t ? `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 1.05}" text-anchor="middle" dominant-baseline="central">${t}</text>` : ''}</g>`; }
+      for (const k of g.cands) { const nd = nodes[k], t = ic(k); s += `<g data-c="pp" data-v="go:${k}" style="cursor:pointer"><rect x="${nd.x - R0}" y="${nd.y - R0}" width="${R0 * 2}" height="${R0 * 2}" rx="${R0 * 0.3}" fill="${o.p.color}" fill-opacity=".88" stroke="#fff" stroke-width="4"/>${t ? `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 1.05}" text-anchor="middle" dominant-baseline="central">${t}</text>` : ''}</g>`; }
       const me = nodes[o.node]; s += `<text x="${me.x}" y="${me.y}" font-size="${R0 * 1.3}" text-anchor="middle" dominant-baseline="central">🛻</text></svg>`; return s; }
     g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
       if (g.state === 'custom') return `<b>🛻 Pick your ride</b><div class="small">Your colour is your seat colour</div>${Object.entries(HAUL_STYLES).map(([k, l]) => `<button class="pbtn big ${o.style === k ? 'go' : ''}" data-c="pp" data-v="style:${k}">${l}</button>`).join('')}<button class="pbtn big ${o.ready ? '' : 'go'}" data-c="pp" data-v="ready">${o.ready ? '✅ Ready! Waiting…' : "Let's haul!"}</button>`;
-      const tray = o.load ? `${o.load.e} ${esc(o.load.name)}${o.load.heavy ? ' <b style="display:inline;color:#e8384f">heavy</b>' : ''}${o.tarp ? ' ⛺' : ''}` : 'empty';
-      const head = `<div class="small" style="opacity:1">Your garage (${filled(o)}/5)</div>${bayHTML(o)}<div style="font-size:15px;margin:2px 0">🛻 Tray: <b style="display:inline">${tray}</b>${o.goods.length ? ' · ' + o.goods.map(k => HAUL_GOODS[k][0]).join(' ') : ''}</div>`;
+      const tray = o.load ? `${o.load.e} ${esc(o.load.name)}${o.load.heavy ? ' <b style="display:inline;color:#e8384f">heavy</b>' : ''}${o.tarp ? ' ⛺' : ''}` : 'nothing';
+      const head = `<div class="small" style="opacity:1">Your garage (${filled(o)}/5)</div>${bayHTML(o)}<div style="font-size:15px;margin:2px 0">🪝 Towing: <b style="display:inline">${tray}</b>${o.goods.length ? ' · ' + o.goods.map(k => HAUL_GOODS[k][0]).join(' ') : ''}</div>`;
       if (g.state === 'end') return head + `<b>${g.winner === o ? '🏆 Your garage is full. You win!' : esc(g.winner.p.name) + ' filled their garage'}</b>`;
       if (o !== cur()) return head + `<b>${esc(cur().p.name)} is driving…</b>`;
       if (g.phase === 'pre') return head + `<b>⭐ Your turn</b>${o.stuck ? '<div class="small" style="opacity:1">🟫 Bogged! Roll 4 or more to get out</div>' : ''}${o.goods.map(k => `<button class="pbtn" data-c="pp" data-v="use:${k}">${HAUL_GOODS[k][0]} ${HAUL_GOODS[k][1]}: ${HAUL_GOODS[k][2]}</button>`).join('')}<button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`;
-      if (g.phase === 'choose') { const q = []; if (g.cands.includes(HUB)) q.push(['to:' + HUB, '🗑 Drive to the pile']); if (g.cands.includes(o.garage)) q.push(['to:' + o.garage, '🏠 Drive home']);
-        if (!q.length) q.push(['best', o.load ? '➡ Head for home' : '➡ Head for the junk']); for (const [ty, l] of [['servo', '⛽ Servo'], ['spin', '🎡 Big Spin'], ['switch', '🔀 Bridge switch']]) { const c = g.cands.find(k => nodes[k].type === ty); if (c != null) q.push(['to:' + c, l]); }
+      if (g.phase === 'choose') { const q = []; if (g.cands.includes(HUB)) q.push(['to:' + HUB, '🚧 Drive to the yard']); if (g.cands.includes(o.garage)) q.push(['to:' + o.garage, '🏠 Drive home']);
+        if (!q.length) q.push(['best', o.load ? '➡ Head for home' : '➡ Head for the yard']); for (const [ty, l] of [['servo', '⛽ Servo'], ['spin', '🎡 Big Spin'], ['switch', '🔀 Bridge switch']]) { const c = g.cands.find(k => nodes[k].type === ty); if (c != null) q.push(['to:' + c, l]); }
         return head + `<b>Move up to ${g.steps}. Tap a spot</b>${phoneMap(o)}<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${q.map(([v, l]) => `<button class="pbtn" style="flex:1 1 45%;margin:0" data-c="pp" data-v="${v}">${l}</button>`).join('')}</div>`; }
       if (g.phase === 'pick') { const seen = new Set(), B = []; g.pile.forEach((it, k) => { if (seen.has(it.name) || B.length >= 6) return; seen.add(it.name); B.push(`<button class="pbtn" data-c="pp" data-v="pick:${k}">${it.e} ${esc(it.name)}${it.heavy ? ' · <b style="display:inline;color:#e8384f">heavy</b> (2 bays, 2 slower)' : ' · 1 bay'}</button>`); });
-        return head + '<b>🗑 Grab something!</b>' + B.join(''); }
+        return head + '<b>🚧 Pick a car to tow</b>' + B.join(''); }
       if (g.phase === 'nick') return head + '<b>😈 Nick a load?</b>' + g.nickList.map(q => `<button class="pbtn big go" data-c="pp" data-v="nick:${q.i}">Nick ${esc(q.p.name)}'s ${q.load.e} ${esc(q.load.name)}</button>`).join('') + '<button class="pbtn" data-c="pp" data-v="nonick">Leave it</button>';
       if (g.phase === 'switch') return head + '<b>🔀 Bridge switch</b><div class="small" style="opacity:1">Flip every drawbridge? Open ones close, closed ones open.</div><button class="pbtn big go" data-c="pp" data-v="flip">🌉 Flip them</button><button class="pbtn big" data-c="pp" data-v="leave">Leave them</button>';
       if (g.phase === 'spin') return head + '<b>🎡 The Big Spin!</b><button class="pbtn big go" data-c="pp" data-v="spin">SPIN IT</button>';
@@ -13035,19 +13048,28 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
     function lerpAng(a, b, f) { let d = ((b - a) % TAU + TAU * 1.5) % TAU - TAU / 2; return a + d * f; }
     // ---------- TV drawing ----------
     const emo = (t, x, y, px) => { ctx.font = px + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y); };
-    const NODECOL = { road: '#ffffff', servo: '#3ccf6e', spin: '#b48cff', switch: '#ffc61a', hub: '#8b5a3c', garage: '#ffffff' };
+    const polyPath = (P, x) => { x = x || ctx; x.beginPath(); P.forEach(([px, py], k) => k ? x.lineTo(px, py) : x.moveTo(px, py)); x.closePath(); };
     let bg = null; const board = () => { if (bg) return bg; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-      const gr = x.createRadialGradient(CX, CY, 60, CX, CY, 760); gr.addColorStop(0, '#a8e07f'); gr.addColorStop(1, '#6cc24f'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
-      for (let i = 0; i < 90; i++) { const tx = Math.random() * W, ty = Math.random() * H; x.fillStyle = `rgba(40,120,50,${0.1 + Math.random() * 0.12})`; x.beginPath(); x.arc(tx, ty, 6 + Math.random() * 18, 0, 7); x.fill(); }
-      for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, r = 1.08 + Math.random() * 0.4, tx = CX + Math.cos(a) * RX * r, ty = CY + Math.sin(a) * RY * r; if (tx < 20 || tx > W - 20 || ty < 20 || ty > H - 20) continue;
+      const gr = x.createRadialGradient(CX, CY, 60, CX, CY, 760); gr.addColorStop(0, '#b4e391'); gr.addColorStop(1, '#79c95c'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < 80; i++) { const tx = Math.random() * W, ty = Math.random() * H; x.fillStyle = `rgba(40,120,50,${0.07 + Math.random() * 0.1})`; x.beginPath(); x.arc(tx, ty, 6 + Math.random() * 18, 0, 7); x.fill(); }
+      for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, r = 1.1 + Math.random() * 0.4, tx = CX + Math.cos(a) * RX * r, ty = CY + Math.sin(a) * RY * r; if (tx < 20 || tx > W - 20 || ty < 20 || ty > H - 20) continue;
         x.fillStyle = 'rgba(0,0,0,.18)'; x.beginPath(); x.ellipse(tx + 3, ty + 12, 14, 5, 0, 0, 7); x.fill(); x.fillStyle = '#2f9e44'; x.beginPath(); x.arc(tx, ty, 14, 0, 7); x.fill(); x.fillStyle = '#51c26a'; x.beginPath(); x.arc(tx - 4, ty - 4, 8, 0, 7); x.fill(); }
-      x.lineCap = 'round'; x.lineJoin = 'round';
-      for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = '#1b1f5e'; x.lineWidth = 32; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); }
-      for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = '#f2e3c2'; x.lineWidth = 24; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); }
-      x.setLineDash([8, 10]); x.strokeStyle = 'rgba(27,31,94,.22)'; x.lineWidth = 2.5; for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); } x.setLineDash([]);
-      x.strokeStyle = '#2c8fd0'; x.lineWidth = 40; x.beginPath(); x.ellipse(CX, CY, RX * 0.515, RY * 0.515, 0, 0, TAU); x.stroke(); x.strokeStyle = '#4fb3ec'; x.lineWidth = 32; x.stroke();
-      x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 2; for (let i = 0; i < 40; i++) { const a = i / 40 * TAU, px = CX + Math.cos(a) * RX * 0.515, py = CY + Math.sin(a) * RY * 0.515; x.beginPath(); x.moveTo(px - 6, py); x.quadraticCurveTo(px, py - 3, px + 6, py); x.stroke(); }
-      x.fillStyle = '#c69a62'; x.beginPath(); x.ellipse(CX, CY, 74, 46, 0, 0, TAU); x.fill(); x.lineWidth = 4; x.strokeStyle = '#1b1f5e'; x.stroke();
+      // the board itself: a cream disc with the river and the yard
+      x.fillStyle = 'rgba(0,0,0,.15)'; x.beginPath(); x.ellipse(CX + 6, CY + 10, RX * (OR + 0.1), RY * (OR + 0.12), 0, 0, TAU); x.fill();
+      x.fillStyle = '#d7efc4'; x.beginPath(); x.ellipse(CX, CY, RX * (OR + 0.1), RY * (OR + 0.12), 0, 0, TAU); x.fill(); x.lineWidth = 5; x.strokeStyle = TOY.navy; x.stroke();
+      x.lineCap = 'round'; for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = TOY.navy; x.lineWidth = 26; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); x.strokeStyle = '#efe6cf'; x.lineWidth = 19; x.stroke(); }
+      x.strokeStyle = '#2c8fd0'; x.lineWidth = 30; x.beginPath(); x.ellipse(CX, CY, RX * RIV, RY * RIV, 0, 0, TAU); x.stroke(); x.strokeStyle = '#6cc3f2'; x.lineWidth = 23; x.stroke();
+      x.strokeStyle = 'rgba(255,255,255,.45)'; x.lineWidth = 2; for (let i = 0; i < 44; i++) { const a = i / 44 * TAU, px = CX + Math.cos(a) * RX * RIV, py = CY + Math.sin(a) * RY * RIV; x.beginPath(); x.moveTo(px - 5, py); x.quadraticCurveTo(px, py - 3, px + 5, py); x.stroke(); }
+      x.fillStyle = '#c9a777'; x.beginPath(); x.ellipse(CX, CY, 80, 50, 0, 0, TAU); x.fill(); x.lineWidth = 4; x.strokeStyle = TOY.navy; x.stroke(); x.setLineDash([4, 4]); x.strokeStyle = '#8d97ad'; x.lineWidth = 3; x.beginPath(); x.ellipse(CX, CY, 72, 43, 0, 0, TAU); x.stroke(); x.setLineDash([]);
+      // the boxes
+      const ICON = { servo: '⛽', spin: '🎡', switch: '🔀' };
+      nodes.forEach((nd, k) => { if (!nd.poly) return; x.fillStyle = 'rgba(0,0,0,.18)'; x.save(); x.translate(2, 3); polyPath(nd.poly, x); x.fill(); x.restore();
+        polyPath(nd.poly, x); x.fillStyle = '#fffaf0'; x.fill();
+        const band = nd.type === 'servo' ? '#7ed99a' : nd.type === 'switch' ? '#ffd23f' : nd.grp;
+        if (nd.type === 'spin') { const gg = x.createLinearGradient(nd.x - 24, nd.y, nd.x + 24, nd.y); ['#ff8fa3', '#ffd27a', '#fff59a', '#9be7a8', '#9fd3f0', '#c3b4f3'].forEach((cc, i) => gg.addColorStop(i / 5, cc)); x.fillStyle = gg; } else x.fillStyle = band;
+        polyPath(nd.band, x); x.fill(); polyPath(nd.poly, x); x.lineWidth = 2.5; x.strokeStyle = TOY.navy; x.stroke();
+        if (nd.type === 'switch') { x.save(); polyPath(nd.band, x); x.clip(); x.strokeStyle = TOY.navy; x.lineWidth = 3; for (let s = -40; s < 40; s += 9) { x.beginPath(); x.moveTo(nd.x + s, nd.y - 40); x.lineTo(nd.x + s + 30, nd.y + 40); x.stroke(); } x.restore(); polyPath(nd.poly, x); x.stroke(); }
+        if (ICON[nd.type]) { x.font = '19px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; const ix = nd.ux != null ? nd.x + nd.ux * 4 : CX + (nd.x - CX) * 0.985, iy = nd.uy != null ? nd.y + nd.uy * 4 : CY + (nd.y - CY) * 0.97; x.fillText(ICON[nd.type], ix, iy); } });
       return bg = c; };
     function truck(o, x, y, h, sc) { ctx.save(); ctx.translate(x, y); ctx.rotate(h); ctx.scale(sc, sc); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy;
       ctx.fillStyle = 'rgba(0,0,0,.22)'; rr(-24, -9, 52, 26, 9); ctx.fill();
@@ -13060,7 +13082,8 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
       if (o.style === 'pickup') { ctx.fillStyle = '#c9ced8'; rr(26, -11, 4, 22, 2); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 1.5; ctx.stroke(); }
       if (o.style === 'ute') { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(-25, -2, 51, 4); }
       ctx.restore();
-      if (o.load) { const lx = x + Math.cos(h) * -10 * sc, ly = y + Math.sin(h) * -10 * sc; emo(o.load.e, lx, ly - 2, o.load.heavy ? 26 : 20); if (o.tarp) emo('⛺', lx + 12, ly - 14, 12); } }
+      if (o.load) { const bx = x - Math.cos(h) * 50 * sc, by = y - Math.sin(h) * 50 * sc; ctx.strokeStyle = '#3a3f5c'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - Math.cos(h) * 24 * sc, y - Math.sin(h) * 24 * sc); ctx.lineTo(bx + Math.cos(h) * 12, by + Math.sin(h) * 12); ctx.stroke();
+        ctx.save(); ctx.translate(bx, by); if (Math.cos(h) > 0) ctx.scale(-1, 1); emo(o.load.e, 0, -2, o.load.heavy ? 30 : 24); ctx.restore(); if (o.tarp) emo('⛺', bx + 12, by - 16, 12); } }
     function garage(o) { const nd = nodes[o.garage], ux = Math.cos(nd.a), uy = Math.sin(nd.a), bw = 136, bh = 50, bx = Math.max(bw / 2 + 6, Math.min(W - bw / 2 - 6, nd.x + ux * 84)), by = Math.max(bh / 2 + 4, Math.min(H - bh / 2 - 2, nd.y + uy * 42));
       const f = filled(o); ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.2)'; rr(bx - bw / 2 + 3, by - bh / 2 + 5, bw, bh, 10); ctx.fill(); rr(bx - bw / 2, by - bh / 2, bw, bh, 10); ctx.fillStyle = '#fff8e7'; ctx.fill(); ctx.lineWidth = o === cur() && g.state !== 'end' ? 4 : 3; ctx.strokeStyle = o === cur() && g.state !== 'end' ? TOY.sun : TOY.navy; ctx.stroke();
       ctx.save(); rr(bx - bw / 2, by - bh / 2, bw, bh, 10); ctx.clip(); ctx.fillStyle = o.p.color; ctx.fillRect(bx - bw / 2, by - bh / 2, bw, 18); ctx.restore();
@@ -13082,30 +13105,27 @@ const Haul = { title: 'Haul', accent: '#e8913a', phones: true, minPhones: 1, bot
       if (w.label) { const k = Math.min(1, w.resT * 5); ctx.save(); ctx.translate(640, 660); ctx.scale(k, k); headline(w.label, 0, 0, 44, '#fff', HAUL_WHEEL[w.k][3]); ctx.restore(); } }
     g.draw = () => { ctx.drawImage(board(), 0, 0, W, H);
       // bridges
-      BR.forEach((b, i) => { const a = nodes[b.M], c = nodes[b.I], mx = (a.x + c.x) / 2, my = (a.y + c.y) / 2, h = Math.atan2(c.y - a.y, c.x - a.x), L = 64;
-        ctx.save(); ctx.translate(mx, my); ctx.rotate(h);
-        if (!b.draw) { rr(-L / 2, -15, L, 30, 4); ctx.fillStyle = '#b07a45'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.strokeStyle = 'rgba(27,31,94,.3)'; ctx.lineWidth = 2; for (let k = -L / 2 + 8; k < L / 2; k += 8) { ctx.beginPath(); ctx.moveTo(k, -13); ctx.lineTo(k, 13); ctx.stroke(); } }
-        else { const v = b.v, half = L / 2 * (1 - v * 0.62); for (const sgn of [-1, 1]) { ctx.save(); ctx.translate(sgn * L / 2, 0); ctx.fillStyle = 'rgba(0,0,0,' + (0.25 * v) + ')'; rr(sgn > 0 ? -half - 4 : 4, -11, half, 30, 4); ctx.fill();
-            rr(sgn > 0 ? -half : 0, -15 - v * 6, half, 30, 4); ctx.fillStyle = v > 0.5 ? '#9aa6bf' : '#7d8aa6'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
-            ctx.fillStyle = TOY.sun; for (let k = 0; k < 3; k++) { const xx = sgn > 0 ? -half + 3 + k * 7 : half - 9 - k * 7; ctx.fillRect(xx, -13 - v * 6, 4, 26); } ctx.restore(); }
-          for (const sgn of [-1, 1]) { ctx.fillStyle = '#5d6b8a'; rr(-6, sgn * 21 - 6, 12, 12, 3); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; ctx.beginPath(); ctx.arc(0, sgn * 21, 3.5, 0, 7); ctx.fill(); } }
+      BR.forEach(b => { const m = nodes[b.M], c = nodes[b.I], dx = c.x - m.x, dy = c.y - m.y, l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, p1 = [m.x + ux * 17, m.y + uy * 17], p2 = [c.x - ux * (T - 2), c.y - uy * (T - 2)], L2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), h = Math.atan2(uy, ux);
+        ctx.save(); ctx.translate((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2); ctx.rotate(h); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy;
+        if (!b.draw) { rr(-L2 / 2 - 2, -16, L2 + 4, 32, 3); ctx.fillStyle = '#c99a66'; ctx.fill(); ctx.stroke(); ctx.strokeStyle = 'rgba(27,31,94,.28)'; ctx.lineWidth = 2; for (let k = -L2 / 2 + 6; k < L2 / 2; k += 7) { ctx.beginPath(); ctx.moveTo(k, -14); ctx.lineTo(k, 14); ctx.stroke(); } }
+        else { const v = b.v, half = (L2 / 2 + 2) * (1 - v * 0.62); for (const sgn of [-1, 1]) { ctx.save(); ctx.translate(sgn * (L2 / 2 + 2), 0);
+            if (v > 0.05) { ctx.fillStyle = 'rgba(0,0,0,' + (0.22 * v) + ')'; rr(sgn > 0 ? -half - 3 : 3, -12, half, 32, 3); ctx.fill(); }
+            rr(sgn > 0 ? -half : 0, -16 - v * 6, half, 32, 3); ctx.fillStyle = '#b9c3d6'; ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = '#ffd23f'; for (let k = 0; k < 2; k++) { const xx = sgn > 0 ? -half + 3 + k * 7 : half - 7 - k * 7; ctx.fillRect(xx, -14 - v * 6, 4, 28); } ctx.restore(); }
+          for (const sgn of [-1, 1]) { ctx.fillStyle = '#6c7a99'; rr(-5, sgn * 22 - 5, 10, 10, 3); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; ctx.beginPath(); ctx.arc(0, sgn * 22, 3, 0, 7); ctx.fill(); } }
         ctx.restore(); });
-      // spaces
-      const hl = new Set(g.phase === 'choose' ? g.cands : []), C = cur();
-      nodes.forEach((nd, k) => { if (k === HUB || nd.type === 'garage') return; const col = NODECOL[nd.type], R0 = nd.type === 'road' ? 11 : 17;
-        if (hl.has(k)) { ctx.save(); ctx.globalAlpha = 0.55 + Math.sin(g.t * 6) * 0.25; ctx.fillStyle = C.p.color; ctx.beginPath(); ctx.arc(nd.x, nd.y, R0 + 9, 0, TAU); ctx.fill(); ctx.restore(); }
-        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(nd.x, nd.y, R0, 0, TAU); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke();
-        if (nd.type === 'servo') emo('⛽', nd.x, nd.y + 1, 18); else if (nd.type === 'spin') emo('🎡', nd.x, nd.y + 1, 18); else if (nd.type === 'switch') emo('🔀', nd.x, nd.y + 1, 16);
-        if (g.mud.has(k)) { ctx.fillStyle = '#8b5a2b'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 22, 14, 0.3, 0, TAU); ctx.fill(); ctx.fillStyle = '#a8743f'; ctx.beginPath(); ctx.ellipse(nd.x - 5, nd.y - 3, 8, 4, 0.3, 0, TAU); ctx.ellipse(nd.x + 8, nd.y + 4, 5, 3, 0, 0, TAU); ctx.fill(); }
-        if (g.oil.has(k)) { const gr = ctx.createRadialGradient(nd.x, nd.y, 2, nd.x, nd.y, 22); gr.addColorStop(0, '#1d1d2b'); gr.addColorStop(0.6, '#3a2f5b'); gr.addColorStop(0.8, 'rgba(120,220,255,.8)'); gr.addColorStop(0.9, 'rgba(255,120,220,.7)'); gr.addColorStop(1, 'rgba(255,240,120,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 24, 16, -0.2, 0, TAU); ctx.fill(); }
+      // spaces: highlight where you can drive, then the hazards
+      const hl = new Set(g.phase === 'choose' ? g.cands : []), C = cur(), pulse = 0.5 + Math.sin(g.t * 6) * 0.5;
+      nodes.forEach((nd, k) => { if (k === HUB || !nd.poly) return;
+        if (hl.has(k)) { polyPath(nd.poly); ctx.save(); ctx.globalAlpha = 0.25 + pulse * 0.3; ctx.fillStyle = C.p.color; ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 4 + pulse * 2; ctx.strokeStyle = C.p.color; ctx.stroke(); ctx.restore(); }
+        if (g.mud.has(k)) { ctx.fillStyle = '#8b5a2b'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 19, 12, 0.3, 0, TAU); ctx.fill(); ctx.fillStyle = '#a8743f'; ctx.beginPath(); ctx.ellipse(nd.x - 5, nd.y - 3, 7, 3.5, 0.3, 0, TAU); ctx.ellipse(nd.x + 7, nd.y + 4, 4, 2.5, 0, 0, TAU); ctx.fill(); }
+        if (g.oil.has(k)) { const gr = ctx.createRadialGradient(nd.x, nd.y, 2, nd.x, nd.y, 20); gr.addColorStop(0, '#1d1d2b'); gr.addColorStop(0.6, '#3a2f5b'); gr.addColorStop(0.8, 'rgba(120,220,255,.85)'); gr.addColorStop(0.9, 'rgba(255,120,220,.75)'); gr.addColorStop(1, 'rgba(255,240,120,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 21, 14, -0.2, 0, TAU); ctx.fill(); }
         if (g.works.has(k)) emo('🚧', nd.x, nd.y - 2, 26);
-        if (g.drops.has(k)) { const b = Math.sin(g.t * 4 + k) * 3; emo(g.drops.get(k).e, nd.x, nd.y - 6 + b, 24); }
-        if (hl.has(k) && g.phase === 'choose') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(nd.x, nd.y, 4, 0, TAU); ctx.fill(); } });
-      // the junk pile
-      { const nd = nodes[HUB]; if (hl.has(HUB)) { ctx.save(); ctx.globalAlpha = 0.55 + Math.sin(g.t * 6) * 0.25; ctx.fillStyle = C.p.color; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 86, 58, 0, 0, TAU); ctx.fill(); ctx.restore(); }
-        ctx.fillStyle = '#8b6a45'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y + 6, 58, 30, 0, 0, TAU); ctx.fill(); const show = g.pile.slice(0, 11);
-        show.forEach((it, k) => { const a = k * 2.4, r = 10 + (k % 4) * 11; emo(it.e, nd.x + Math.cos(a) * r * 1.5, nd.y + Math.sin(a) * r * 0.55 - (k < 4 ? 14 : 0), it.heavy ? 26 : 20); });
-        rr(nd.x - 34, nd.y + 30, 68, 20, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(g.pile.length + ' left', nd.x, nd.y + 40, 12, TOY.navy, 'center', null); }
+        if (g.drops.has(k)) { const bo = Math.sin(g.t * 4 + k) * 2; emo(g.drops.get(k).e, nd.x, nd.y - 4 + bo, 26); } });
+      // the wreckers' yard
+      { const nd = nodes[HUB]; if (hl.has(HUB)) { ctx.save(); ctx.globalAlpha = 0.3 + pulse * 0.3; ctx.fillStyle = C.p.color; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 92, 62, 0, 0, TAU); ctx.fill(); ctx.restore(); }
+        const show = g.pile.slice(0, 12); show.forEach((it, k) => { const col = k % 4, row = Math.floor(k / 4); emo(it.e, nd.x - 45 + col * 30 + (row % 2) * 12, nd.y - 22 + row * 20, it.heavy ? 24 : 20); });
+        rr(nd.x - 40, nd.y + 34, 80, 20, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(g.pile.length + ' wrecks', nd.x, nd.y + 44, 12, TOY.navy, 'center', null); }
       for (const o of g.ps) garage(o);
       // utes
       for (const o of g.ps) { const isC = o === C && g.state === 'turn', moving = isC && g.phase === 'moving', by = moving ? -Math.abs(Math.sin(o.bounce)) * 3 : 0, spin = o.spinT > 0 ? (1.2 - o.spinT) / 1.2 * TAU * 2 : 0;
