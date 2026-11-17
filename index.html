@@ -13314,213 +13314,214 @@ const NightMarket = { title: 'Night Market', accent: '#ff8a3d', phones: true, mi
     startTurn(); return g;
   } };
 
-/* ---- 🧌 Troll Toll: quest round a fantasy realm, collect all 5 relics, hire trolls to tax the bridges ---- */
-const TT_RELICS = [['👑', 'Crown', '#ffd23f', 'Old Ruins'], ['🗡', 'Sword', '#c9d3e6', 'Armoury'], ['🔮', 'Orb', '#b48cff', 'Wizard Tower'], ['🥚', 'Dragon Egg', '#ff9a6b', 'Dragon Nest'], ['💎', 'Rune Gem', '#5fd3ff', 'Crystal Cave']];
-const TT_ITEMS = { boots: ['👢', 'Boots of Haste', '+3 to your move'], horse: ['🐴', 'Swift Horse', 'Roll twice, keep the better pair'], shield: ['🛡', 'Shield', 'Blocks one theft or goblin raid'],
-  bait: ['🍖', 'Troll Bait', 'Cross troll bridges free this turn'], scroll: ['📜', 'Rune Scroll', 'Flip every drawbridge'] };
-const TT_WHEEL = [['gold', '💰 +5 gold', 5, '#ffc61a'], ['item', '🎁 Free item', 4, '#3ccf6e'], ['steal', '😈 Steal a relic', 2, '#e8384f'], ['flip', '🌉 Flip bridges', 3, '#2f8fd8'],
-  ['jackpot', '🏆', 0.7, '#ff2d55'], ['troll', '🧌 Free troll', 3, '#5fae4b'], ['fire', '🐉 Dragon fire', 2, '#ff6a2a'], ['swamp', '🟫 Swamped', 3, '#a0703f'], ['gold', '💰 +5 gold', 4, '#ffc61a']];
-const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 11,
-  rules: [['#ffd23f', 'Collect all 5 relics: Crown, Sword, Orb, Dragon Egg and Rune Gem.'], ['#b48cff', 'Dig for them at their sites, then carry them home to your keep to bank them.'],
-    ['#5fae4b', 'Trolls guard the bridges. Pay the toll or get thrown in the river. Hire a troll and the tolls come to you.'], ['#e8384f', 'Stop next to someone carrying relics and steal one!'],
-    ['#2f8fd8', 'Roll two dice and move up to that many spaces. Treasure, goblins, portals and magic along the way.'], ['#ff6a2a', 'The Dragon\'s Hoard in the middle gives a free relic, if the dragon stays asleep.']],
-  how: 'Roll and move up to your roll. Dig relics at their sites, carry them home, dodge goblins and trolls, hire trolls to tax bridges, steal from rivals. First to bank all 5 relics wins.',
+/* ---- 🧌 Troll Toll: start at the Kingdom Gates, quest out into five realms for five relics, survive, bank them back at the gates ---- */
+const TT_REALMS = [ // relic, name, centre, tint, danger
+  { e: '👑', relic: 'Crown', name: 'Whisperwood', x: 165, y: 330, col: '#4caf50', tint: '#bfe6b5', dz: ['🐺', 'Wolves bite'], deco: '🌲' },
+  { e: '🔮', relic: 'Orb', name: 'Witch Swamp', x: 330, y: 118, col: '#8d6cc4', tint: '#d7c8ef', dz: ['🐍', 'Snake bite'], deco: '🍄' },
+  { e: '🗡', relic: 'Sword', name: 'Frost Peaks', x: 640, y: 84, col: '#5fb8e8', tint: '#d6effa', dz: ['❄', 'Frostbite'], deco: '🏔' },
+  { e: '💎', relic: 'Rune Gem', name: 'Crystal Caves', x: 950, y: 118, col: '#3fc1c9', tint: '#c8f0f2', dz: ['🦇', 'Bat swarm'], deco: '💠' },
+  { e: '🥚', relic: 'Dragon Egg', name: 'Dragon Volcano', x: 1115, y: 330, col: '#ff7043', tint: '#ffd3c2', dz: ['🔥', 'Lava burn'], deco: '🌋' }];
+const TT_ITEMS = { boots: ['👢', 'Boots of Haste', '+3 to your move'], shield: ['🛡', 'Shield', 'Blocks the next hit or theft'], potion: ['🧪', 'Potion', 'Heal 1 heart'],
+  bomb: ['💣', 'Bomb', 'Hit anyone within 4 spaces'], bait: ['🍖', 'Troll Bait', 'Cross troll bridges free this turn'], scroll: ['📜', 'Rune Scroll', 'Flip every drawbridge'] };
+const TT_WHEEL = [['gold', '💰 +5 gold', 5, '#ffc61a'], ['item', '🎁 Free item', 4, '#3ccf6e'], ['heal', '❤ Full heal', 3, '#ff6b8a'], ['flip', '🌉 Flip bridges', 3, '#2f8fd8'],
+  ['jackpot', '🏆', 0.7, '#ff2d55'], ['troll', '🧌 Free troll', 3, '#5fae4b'], ['fire', '🐉 Dragon fire', 2, '#ff6a2a'], ['home', '🏰 Back to gates', 2, '#8a92b8'], ['gold', '💰 +5 gold', 4, '#ffc61a']];
+const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 12,
+  rules: [['#ffd23f', 'Everyone starts at the Kingdom Gates. Quest out to the five realms for their relics.'], ['#4caf50', 'Roll the die and walk any path you like, up to your roll. The paths cross everywhere.'],
+    ['#ff6b8a', 'You have 3 hearts. Lose them all and you drop what you carry and restart at the gates.'], ['#b48cff', 'Squares: 🌀 move again, ✨ ability, ⚔ attack, ❤ heal, 💰 gold. Realms bite back.'],
+    ['#5fae4b', 'Trolls guard bridges. Pay the toll or get clubbed. Hire a troll and the tolls come to you.'], ['#ff7043', 'Bring relics home to the gates to bank them. First to bank all 5 wins.']],
+  how: 'Start at the Kingdom Gates. Walk any path up to your roll, grab each realm\'s relic, survive monsters, trolls and rivals, and bank all five back at the gates.',
   create(players) {
-    const n = players.length, K = Math.max(4, Math.min(8, n)), CX = 640, CY = 380, RX = 470, RY = 270, TAU = Math.PI * 2;
-    const nodes = [], edges = [];
-    const ang = i => -Math.PI / 2 + i * TAU / K;
-    const add = (r, a, type, ex) => { nodes.push(Object.assign({ x: CX + Math.cos(a) * RX * r, y: CY + Math.sin(a) * RY * r, r, a, type, adj: [] }, ex || {})); return nodes.length - 1; };
-    const link = (a, b, br) => { edges.push({ a, b, br }); const e = edges.length - 1; nodes[a].adj.push([b, e]); nodes[b].adj.push([a, e]); };
-    const OR = 0.82, MR = 0.64, IR = 0.38, RIV = 0.51, T = 24, PAST = ['#c9e7b0', '#d9cbf2', '#bfe0f0', '#f2d9b0', '#e7c9e0', '#cfe9d6', '#e9e1b8', '#d0d8ee'];
-    // ---------- the realm: keeps on the edge, two ring roads, a river with troll bridges and drawbridges, the dragon in the middle ----------
-    const HUB = add(0, 0, 'hub'), G = [], O = [], I = [], BR = [], RING = { out: [], in: [] }, OUTMID = [], INMID = [];
-    for (let i = 0; i < K; i++) { const a = ang(i); G[i] = add(1, a, i < n ? 'keep' : 'chest', { owner: i < n ? i : -1, spoke: i }); O[i] = add(OR, a, 'road', { grp: PAST[i % 8] }); const M = add(MR, a, 'road', { spoke: i }); I[i] = add(IR, a, 'road', { grp: PAST[(i + 4) % 8] });
-      const draw = i % 2 === 0; BR[i] = { draw, up: draw && i % 4 === 0, v: draw && i % 4 === 0 ? 1 : 0, M, I: I[i], troll: draw ? null : { owner: -1 } }; link(G[i], O[i]); link(O[i], M); link(M, I[i], i); link(I[i], HUB); }
-    const MAXR = 16; const segO = Math.max(2, Math.round(24 / K)), segI = Math.max(2, Math.round(12 / K));
-    for (let i = 0; i < K; i++) { const j = (i + 1) % K, a0 = ang(i), d = TAU / K;
-      RING.out.push(O[i]); let prev = O[i]; for (let m = 1; m < segO; m++) { const id = add(OR, a0 + d * m / segO, 'road', { grp: PAST[i % 8] }); RING.out.push(id); OUTMID.push(id); link(prev, id); prev = id; } link(prev, O[j]);
-      RING.in.push(I[i]); prev = I[i]; for (let m = 1; m < segI; m++) { const id = add(IR, a0 + d * m / segI, 'road', { grp: PAST[(i + 4) % 8] }); RING.in.push(id); INMID.push(id); link(prev, id); prev = id; } link(prev, I[j]); }
-    // what sits on each space
-    const Mo = OUTMID.length, used = new Set();
-    for (let j = 0; j < 10; j++) { let k = Math.floor((j + 0.5) * Mo / 10) % Mo; while (used.has(k)) k = (k + 1) % Mo; used.add(k); Object.assign(nodes[OUTMID[k]], { type: 'site', relic: [0, 2, 4, 1, 3][j % 5] }); }
-    const PORT = []; for (const want of [0, Math.floor(Mo / 2)]) { let k = want; while (used.has(k)) k = (k + 1) % Mo; used.add(k); nodes[OUTMID[k]].type = 'portal'; PORT.push(OUTMID[k]); }
-    const PAT = ['gold', 'chest', 'road', 'wheel', 'gold', 'goblin', 'road', 'chest', 'gold', 'road']; let pi = 0;
-    for (let k = 0; k < Mo; k++) if (!used.has(k)) nodes[OUTMID[k]].type = PAT[pi++ % PAT.length];
-    INMID.forEach((id, k) => { nodes[id].type = ['rune', 'gold', 'wheel', 'rune', 'goblin', 'gold'][k % 6]; });
-    // box shapes for every space
-    function ringPolys(list, R) { const A = RX * R, B = RY * R, P = t => [CX + Math.cos(t) * A, CY + Math.sin(t) * B], Nm = t => { const x = Math.cos(t) * B, y = Math.sin(t) * A, l = Math.hypot(x, y); return [x / l, y / l]; }, spd = t => Math.hypot(A * Math.sin(t), B * Math.cos(t));
-      list.forEach((id, k) => { const nd = nodes[id], ap = nodes[list[(k - 1 + list.length) % list.length]].a, an = nodes[list[(k + 1) % list.length]].a, dp = ((nd.a - ap) % TAU + TAU) % TAU, dn = ((an - nd.a) % TAU + TAU) % TAU;
-        const a0 = nd.a - dp / 2, a1 = nd.a + dn / 2, g0 = a0 + 2.5 / spd(a0), g1 = a1 - 2.5 / spd(a1), out = [], inn = [], mid = [];
-        for (let s = 0; s <= 6; s++) { const t = g0 + (g1 - g0) * s / 6, p = P(t), nn = Nm(t); out.push([p[0] + nn[0] * T, p[1] + nn[1] * T]); inn.push([p[0] - nn[0] * T, p[1] - nn[1] * T]); mid.push([p[0] + nn[0] * T * 0.3, p[1] + nn[1] * T * 0.3]); }
-        nd.poly = out.concat(inn.reverse()); nd.band = out.concat(mid.reverse()); }); }
-    ringPolys(RING.out, OR); ringPolys(RING.in, IR);
-    function boxPoly(id, hl, hw) { const nd = nodes[id], l = Math.hypot(CX - nd.x, CY - nd.y) || 1, ux = (CX - nd.x) / l, uy = (CY - nd.y) / l, px = -uy, py = ux, c = (s, t) => [nd.x + ux * s + px * t, nd.y + uy * s + py * t];
-      nd.ux = ux; nd.uy = uy; nd.poly = [c(-hl, -hw), c(-hl, hw), c(hl, hw), c(hl, -hw)]; nd.band = [c(-hl, -hw), c(-hl, hw), c(-hl + hl * 0.6, hw), c(-hl + hl * 0.6, -hw)]; }
-    for (let i = 0; i < K; i++) { boxPoly(BR[i].M, 17, 22); boxPoly(G[i], 20, 24); }
-    nodes.forEach(nd => { if (nd.grp == null && nd.spoke != null) nd.grp = nd.type === 'keep' ? shade(players[nd.owner].color, 0.35) : nd.spoke < n ? shade(players[nd.spoke].color, 0.55) : '#dcdcdc'; });
-    const HZ = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road' && !O.includes(k));
+    const n = players.length, TAU = Math.PI * 2, GX = 640, GY = 640, MAXR = n <= 4 ? 18 : n <= 6 ? 15 : 12;
+    // ---------- the map: paths from the gates to each realm, rungs linking them, a hub, a river with bridges ----------
+    const nodes = [], edges = [], key = new Map();
+    const add = (x, y, type, ex) => { nodes.push(Object.assign({ x, y, type, adj: [] }, ex || {})); return nodes.length - 1; };
+    const link = (a, b, br) => { if (a === b || nodes[a].adj.some(([v]) => v === b)) return; edges.push({ a, b, br }); const e = edges.length - 1; nodes[a].adj.push([b, e]); nodes[b].adj.push([a, e]); };
+    const GATE = add(GX, GY, 'gate'), PATH = [], BR = [];
+    TT_REALMS.forEach((rm, k) => { const SX = GX + (k - 2) * 50, SY = GY - 66, cx = 640 + (rm.x - 640) * 0.3, cy = 340, len = Math.hypot(rm.x - SX, rm.y - SY), N = Math.max(8, Math.round(len / 60)), P = [GATE];
+      for (let i = 1; i <= N; i++) { const t = (i - 1) / (N - 1), x = (1 - t) * (1 - t) * SX + 2 * t * (1 - t) * cx + t * t * rm.x, y = (1 - t) * (1 - t) * SY + 2 * t * (1 - t) * cy + t * t * rm.y; const id = add(x, y, i === N ? 'shrine' : 'road', { realm: i >= N - 2 ? k : -1, path: k, idx: i }); P.push(id); }
+      const bi = Math.round(N * 0.38); for (let i = 1; i < P.length; i++) { const br = i === bi ? BR.length : null; if (br != null) BR.push({ a: P[bi - 1], b: P[bi], draw: k % 2 === 1, up: k === 1, v: k === 1 ? 1 : 0, troll: k % 2 === 1 ? null : { owner: -1 } }); link(P[i - 1], P[i], br); }
+      PATH.push(P); });
+    const HUB = add(640, 352, 'wheel', { hub: true });
+    for (const P of PATH) { let best = null, bd = 1e9; for (let i = 4; i < P.length - 2; i++) { const d = Math.hypot(nodes[P[i]].x - 640, nodes[P[i]].y - 352); if (d < bd) { bd = d; best = P[i]; } } if (bd < 260) { if (bd > 120) { const m = add((nodes[best].x + 640) / 2, (nodes[best].y + 352) / 2, 'road'); link(best, m); link(m, HUB); } else link(best, HUB); } }
+    for (let k = 0; k < 4; k++) for (const f of [0.5, 0.78]) { const A = PATH[k], B = PATH[k + 1], a = A[Math.round(f * (A.length - 1))], b = B[Math.round(f * (B.length - 1))], d = Math.hypot(nodes[a].x - nodes[b].x, nodes[a].y - nodes[b].y);
+      if (d < 95) link(a, b); else { const steps = Math.max(1, Math.round(d / 75) - 1); let prev = a; for (let s = 1; s <= steps; s++) { const t = s / (steps + 1), id = add(nodes[a].x + (nodes[b].x - nodes[a].x) * t, nodes[a].y + (nodes[b].y - nodes[a].y) * t - Math.sin(t * Math.PI) * 14, 'road'); link(prev, id); prev = id; } link(prev, b); } }
+    // what sits on each square
+    const plain = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road' && nodes[k].realm < 0 && k !== GATE);
+    const shuffle = L => { for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; } return L; };
+    const pool = shuffle(plain.filter(k => nodes[k].idx > 2)), assign = (t, c) => { for (let i = 0; i < c && pool.length; i++) nodes[pool.pop()].type = t; };
+    assign('move', 4); assign('ability', 5); assign('attack', 4); assign('heal', 3); assign('gold', 6); assign('rune', 2); assign('trap', 2);
+    for (const k of plain) if (nodes[k].idx === 1) nodes[k].type = 'gold'; else if (nodes[k].idx === 2) nodes[k].type = nodes[k].path % 2 ? 'ability' : 'heal';
+    nodes.forEach(nd => { if (nd.realm >= 0 && nd.type === 'road') nd.type = 'danger'; });
+    const PORT = [PATH[0][PATH[0].length - 3], PATH[4][PATH[4].length - 3]]; for (const p of PORT) nodes[p].type = 'portal';
     const openE = e => { const ed = edges[e]; return ed.br == null || !BR[ed.br].draw || !BR[ed.br].up; };
     const g = { t: 0, done: false, panelGame: true, state: 'turn', turn: 0, phase: 'pre', phaseT: 25, botT: 1, dice: 1, dice2: 1, rollT: 0, round: 1, fx: [], log: [], winner: null, endT: 0,
-      turnNo: 0, cands: [], reach: null, stealList: [], wheel: null, works: new Set(), mud: new Set(), digRes: null };
-    g.ps = players.map((p, i) => { const nd = nodes[G[i]]; return { p, i, keep: G[i], node: G[i], x: nd.x, y: nd.y, carry: [], banked: [], gold: 4, items: [], boost: 0, horse: false, bait: false, stuck: false, skip: false, path: [], hop: 0, lockT: 0 }; });
-    const R = () => broadcastPhase(), cur = () => g.ps[g.turn], have = o => new Set(o.banked), need = o => [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r) && !o.carry.includes(r));
+      turnNo: 0, cands: [], reach: null, stealList: [], targets: [], wheel: null, loot: new Map(), mud: new Set() };
+    g.ps = players.map((p, i) => ({ p, i, node: GATE, x: GX + (i - (n - 1) / 2) * 14, y: GY, hp: 3, carry: [], banked: [], gold: 4, items: [], boost: 0, bait: false, skip: false, path: [], hop: 0, lockT: 0, safeT: 0, hurtT: 0 }));
+    const R = () => broadcastPhase(), cur = () => g.ps[g.turn], need = o => [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r) && !o.carry.includes(r));
     const log = m => { g.log.unshift(m); g.log.length = Math.min(3, g.log.length); };
     const float = (o, txt, col) => g.fx.push({ k: 'txt', x: o.x, y: o.y, txt, col: col || '#fff', t: 0 });
     const banner = (txt, col) => g.fx.push({ k: 'ban', txt, col: col || TOY.sun, t: 0 });
-    const rnd = L => L[Math.floor(Math.random() * L.length)], RN = r => TT_RELICS[r][1], RE = r => TT_RELICS[r][0];
+    const rnd = L => L[Math.floor(Math.random() * L.length)], RN = r => TT_REALMS[r].relic, RE = r => TT_REALMS[r].e;
     const sfx = { step: () => tone(300 + Math.random() * 60, 260, 0.05, 'triangle', 0.03), coin: () => { tone(1320, 1320, 0.05, 'square', 0.05); tone(1760, 1760, 0.1, 'square', 0.05, 0.05); },
       grab: () => { tone(500, 800, 0.08, 'triangle', 0.06); tone(800, 1200, 0.1, 'triangle', 0.05, 0.07); }, bank: () => { tone(660, 660, 0.08, 'square', 0.05); tone(880, 880, 0.08, 'square', 0.05, 0.08); tone(1320, 1320, 0.16, 'square', 0.05, 0.16); },
-      clank: () => { tone(220, 120, 0.18, 'square', 0.06); tone(160, 90, 0.2, 'square', 0.05, 0.12); }, tick: () => tone(1500, 1400, 0.02, 'square', 0.04), splash: () => { noise(0.5, 0.1, 900); tone(400, 120, 0.4, 'sine', 0.06); },
-      troll: () => { tone(110, 70, 0.4, 'sawtooth', 0.07); tone(90, 60, 0.4, 'sawtooth', 0.05, 0.15); }, roar: () => { noise(0.9, 0.12, 300); tone(160, 60, 0.9, 'sawtooth', 0.07); }, zap: () => { tone(400, 1600, 0.25, 'sine', 0.06); } };
-    // ---------- changing map: swamps and rockslides move each round ----------
+      clank: () => { tone(220, 120, 0.18, 'square', 0.06); tone(160, 90, 0.2, 'square', 0.05, 0.12); }, tick: () => tone(1500, 1400, 0.02, 'square', 0.04), hit: () => { noise(0.15, 0.1, 1200); tone(240, 90, 0.2, 'square', 0.06); },
+      heal: () => { tone(660, 990, 0.15, 'sine', 0.05); tone(990, 1320, 0.2, 'sine', 0.05, 0.12); }, troll: () => { tone(110, 70, 0.4, 'sawtooth', 0.07); tone(90, 60, 0.4, 'sawtooth', 0.05, 0.15); },
+      roar: () => { noise(0.9, 0.12, 300); tone(160, 60, 0.9, 'sawtooth', 0.07); }, zap: () => tone(400, 1600, 0.25, 'sine', 0.06), ko: () => { tone(400, 80, 0.7, 'sawtooth', 0.07); noise(0.4, 0.08, 600); } };
     const occupied = k => g.ps.some(o => o.node === k);
-    function roundEvents() { g.works.clear(); let guard = 0; while (g.works.size < (K > 5 ? 2 : 1) && guard++ < 50) { const k = rnd(HZ); if (!occupied(k) && !g.mud.has(k)) g.works.add(k); }
-      for (const k of [...g.mud]) if (Math.random() < 0.5) g.mud.delete(k); guard = 0; while (g.mud.size < (K > 5 ? 3 : 2) && guard++ < 50) { const k = rnd(HZ); if (!occupied(k) && !g.works.has(k)) g.mud.add(k); } }
+    const MUDOK = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road');
+    function roundEvents() { for (const k of [...g.mud]) if (Math.random() < 0.5) g.mud.delete(k); let guard = 0; while (g.mud.size < 2 && guard++ < 40) { const k = rnd(MUDOK); if (!occupied(k)) g.mud.add(k); } }
     roundEvents();
     // ---------- paths ----------
-    const enterable = (v, o) => !g.works.has(v) && !(nodes[v].type === 'keep' && v !== o.keep);
-    const terminal = (u, o) => u === HUB || u === o.keep || g.mud.has(u);
+    const terminal = (u, o) => u === GATE || g.mud.has(u) || (g.loot.has(u) && o.carry.length < 3) || nodes[u].type === 'shrine';
     function reach(o, s) { const from = o.node, dist = new Map([[from, 0]]), par = new Map(), q = [from];
       while (q.length) { const u = q.shift(), d = dist.get(u); if (d >= s || (u !== from && terminal(u, o))) continue;
-        for (const [v, e] of nodes[u].adj) { if (dist.has(v) || !openE(e) || !enterable(v, o)) continue; dist.set(v, d + 1); par.set(v, u); q.push(v); } }
+        for (const [v, e] of nodes[u].adj) { if (dist.has(v) || !openE(e)) continue; dist.set(v, d + 1); par.set(v, u); q.push(v); } }
       return { dist, par }; }
-    function field(src, o) { const dist = new Map([[src, 0]]), q = [src]; while (q.length) { const u = q.shift(); for (const [v, e] of nodes[u].adj) { if (dist.has(v) || !openE(e) || !enterable(v, o)) continue; dist.set(v, dist.get(u) + 1); q.push(v); } } return dist; }
+    function field(src) { const dist = new Map([[src, 0]]), q = [src]; while (q.length) { const u = q.shift(); for (const [v, e] of nodes[u].adj) { if (dist.has(v) || !openE(e)) continue; dist.set(v, dist.get(u) + 1); q.push(v); } } return dist; }
     function pathTo(v) { const P = []; let c = v; while (c != null && c !== cur().node) { P.unshift(c); c = g.reach.par.get(c); } return P; }
-    const stealable = o => o.carry.length >= 3 ? [] : g.ps.filter(q => q !== o && q.carry.length && q.node !== q.keep && !(q.safeT > g.turnNo) && !(q.lockT > g.turnNo) && (q.node === o.node || nodes[o.node].adj.some(([v, e]) => v === q.node && openE(e))));
-    const sitesOf = r => nodes.map((nd, k) => k).filter(k => nodes[k].type === 'site' && nodes[k].relic === r);
-    function targetFor(o) { const N = need(o); if (o.carry.length && (o.carry.length >= 3 || !N.length || o.carry.length >= 2 || field(o.node, o).get(o.keep) <= 4)) return o.keep;
-      const near = field(o.node, o), opts = N.flatMap(sitesOf); if (N.length) opts.push(HUB); for (const q of g.ps) if (q !== o && q.carry.length && q.node !== q.keep) opts.push(q.node);
-      if (!opts.length) return o.keep; let best = o.keep, bd = 1e9; for (const k of opts) { const d = (near.get(k) ?? 99) + (k === HUB ? 2 : 0); if (d < bd) { bd = d; best = k; } } return best; }
-    function bestToward(o, tgt) { const f = field(tgt, o); let best = null, bd = 1e9; for (const c of g.cands) { const d = (f.get(c) ?? 99) + Math.random() * 0.1; if (d < bd) { bd = d; best = c; } } return best; }
-    // ---------- turn flow ----------
-    function startTurn() { const o = cur(); if (o.skip) { o.skip = false; log(o.p.name + ' is stuck in the swamp and misses a turn'); float(o, 'SWAMPED!', '#c98a4b'); endTurn(); return; }
-      g.phase = 'pre'; g.phaseT = 25; g.botT = 0.9; R(); }
-    const hireable = o => BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i && (BR[i].M === o.node || BR[i].I === o.node));
-    function hire(o, i) { if (g.phase !== 'pre' || !hireable(o).includes(i) || o.gold < 5) return; o.gold -= 5; const old = BR[i].troll.owner; BR[i].troll = { owner: o.i, t: g.t }; sfx.troll(); SFX.pop();
-      float(o, '🧌 Troll hired!', TOY.mint); log(o.p.name + (old >= 0 ? ' bribed ' + g.ps[old].p.name + "'s troll over to their side!" : ' hired a troll to guard a bridge')); R(); }
-    function roll(o) { if (g.phase !== 'pre') return; const d6 = () => 1 + Math.floor(Math.random() * 6); g.dice = d6(); g.dice2 = d6(); if (o.horse) { const a = d6(), b = d6(); if (a + b > g.dice + g.dice2) { g.dice = a; g.dice2 = b; } o.horse = false; } g.rollT = 0.8; g.phase = 'rolling'; R(); }
-    function doneRoll() { const o = cur(), d = g.dice + g.dice2;
-      if (o.stuck) { if (d < 7) { float(o, 'Still stuck!', '#c98a4b'); log(o.p.name + ' is still stuck in the swamp'); endTurn(); return; } o.stuck = false; float(o, 'Free!', TOY.mint); }
-      g.steps = d + o.boost; o.boost = 0; g.reach = reach(o, g.steps); g.cands = [...g.reach.dist.keys()].filter(k => k !== o.node);
-      if (!g.cands.length) { float(o, 'Boxed in!', TOY.coral); endTurn(); return; }
-      g.phase = 'choose'; g.phaseT = 25; g.botT = 1; R(); }
-    function go(o, id) { if (g.phase !== 'choose' || !g.cands.includes(id)) return; o.path = pathTo(id); o.from = o.node; g.phase = 'moving'; g.cands = []; R(); }
-    function useItem(o, k) { if (g.phase !== 'pre') return; const i = o.items.indexOf(k); if (i < 0 || k === 'shield') return; o.items.splice(i, 1); const [e, nm] = TT_ITEMS[k]; float(o, e + ' ' + nm + '!', TOY.sun); SFX.pop();
-      if (k === 'boots') o.boost += 3; if (k === 'horse') o.horse = true; if (k === 'bait') o.bait = true; if (k === 'scroll') flip(); R(); }
-    function giveItem(o, k) { k = k || rnd(Object.keys(TT_ITEMS)); if (o.items.length >= 3) o.items.shift(); o.items.push(k); float(o, TT_ITEMS[k][0] + ' ' + TT_ITEMS[k][1], TOY.mint); sfx.grab(); log(o.p.name + ' found ' + TT_ITEMS[k][1]); }
+    const shrineOf = r => PATH[r][PATH[r].length - 1];
+    const near = (o, q, d) => { if (q.node === GATE) return false; const f = field(o.node); return (f.get(q.node) ?? 99) <= d; };
+    const stealable = o => o.carry.length >= 3 || o.node === GATE ? [] : g.ps.filter(q => q !== o && q.carry.length && q.node !== GATE && !(q.safeT > g.turnNo) && !(q.lockT > g.turnNo) && (q.node === o.node || nodes[o.node].adj.some(([v, e]) => v === q.node && openE(e))));
+    function targetFor(o) { const N = need(o); if (o.hp <= 1) { const f = field(o.node), h = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'heal').sort((a, b) => (f.get(a) ?? 99) - (f.get(b) ?? 99))[0]; if (h != null && (f.get(h) ?? 99) < (f.get(GATE) ?? 99)) return h; return GATE; }
+      if (o.carry.length && (o.carry.length >= 2 || !N.length)) return GATE;
+      const f = field(o.node), opts = N.map(shrineOf); for (const [k] of g.loot) if (o.carry.length < 3) opts.push(k);
+      if (!opts.length) return GATE; let best = GATE, bd = 1e9; for (const k of opts) { const d = f.get(k) ?? 99; if (d < bd) { bd = d; best = k; } } return best; }
+    function bestToward(o, tgt) { const f = field(tgt); let best = null, bd = 1e9; for (const c of g.cands) { const d = (f.get(c) ?? 99) + Math.random() * 0.1; if (d < bd) { bd = d; best = c; } } return best; }
+    // ---------- hearts ----------
+    function hurt(o, dmg, why) { if (o.node === GATE) return; if (useShield(o)) return; o.hp -= dmg; o.hurtT = g.t; sfx.hit(); float(o, '-' + dmg + ' ❤', '#ff6b8a'); log(o.p.name + ': ' + why);
+      if (o.hp <= 0) ko(o); }
+    function ko(o) { const at = o.node; if (o.carry.length && at !== GATE) { const pile = g.loot.get(at) || []; pile.push(...o.carry); g.loot.set(at, pile); log(o.p.name + ' was knocked out and dropped ' + o.carry.map(RE).join(' ')); }
+      else log(o.p.name + ' was knocked out!'); o.carry = []; o.hp = 3; o.node = GATE; o.path = []; sfx.ko(); g.fx.push({ k: 'ko', x: o.x, y: o.y, t: 0 }); banner('💫 ' + o.p.name.toUpperCase() + ' IS KNOCKED OUT', '#ff8fa3'); }
     const useShield = o => { const i = o.items.indexOf('shield'); if (i < 0) return false; o.items.splice(i, 1); float(o, '🛡 Blocked!', '#9fd3f0'); SFX.bonk(); return true; };
-    function loseRelic(o, why) { if (!o.carry.length) return null; const k = Math.floor(Math.random() * o.carry.length), r = o.carry.splice(k, 1)[0]; float(o, RE(r) + ' lost!', TOY.coral); log(o.p.name + ' lost the ' + RN(r) + ' ' + why); return r; }
+    // ---------- turn flow ----------
+    function startTurn() { const o = cur(); if (o.skip) { o.skip = false; log(o.p.name + ' is tangled up and misses a turn'); float(o, 'STUCK!', '#c98a4b'); endTurn(); return; } g.phase = 'pre'; g.phaseT = 25; g.botT = 0.9; R(); }
+    const hireable = o => BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i && (BR[i].a === o.node || BR[i].b === o.node));
+    function hire(o, i) { if (g.phase !== 'pre' || !hireable(o).includes(i) || o.gold < 5) return; o.gold -= 5; const old = BR[i].troll.owner; BR[i].troll = { owner: o.i }; sfx.troll(); SFX.pop();
+      float(o, '🧌 Troll hired!', TOY.mint); log(o.p.name + (old >= 0 ? ' bribed ' + g.ps[old].p.name + "'s troll over to their side!" : ' hired a troll to guard a bridge')); R(); }
+    function roll(o) { if (g.phase !== 'pre') return; g.dice = 1 + Math.floor(Math.random() * 6); g.dice2 = 0; g.rollT = 0.8; g.phase = 'rolling'; R(); }
+    function doneRoll() { const o = cur(); let d = g.dice + g.dice2;
+      if (g.mud.has(o.node)) { if (d < 4) { float(o, 'Still stuck in the mud!', '#c98a4b'); endTurn(); return; } float(o, 'Free!', TOY.mint); }
+      startMove(o, d + o.boost); o.boost = 0; }
+    function startMove(o, s) { g.steps = s; g.reach = reach(o, s); g.cands = [...g.reach.dist.keys()].filter(k => k !== o.node); if (!g.cands.length) { float(o, 'Nowhere to go!', TOY.coral); endTurn(); return; } g.phase = 'choose'; g.phaseT = 25; g.botT = 1; R(); }
+    function go(o, id) { if (g.phase !== 'choose' || !g.cands.includes(id)) return; o.path = pathTo(id); g.phase = 'moving'; g.cands = []; R(); }
+    function useItem(o, k) { if (g.phase !== 'pre') return; const i = o.items.indexOf(k); if (i < 0 || k === 'shield') return;
+      if (k === 'bomb') { const T = g.ps.filter(q => q !== o && near(o, q, 4)); if (!T.length) { float(o, 'Nobody in range', '#fff'); return; } o.items.splice(i, 1); const q = T.sort((a, b) => b.carry.length - a.carry.length || a.hp - b.hp)[0]; g.fx.push({ k: 'boom', x: q.x, y: q.y, t: 0 }); hurt(q, 1, 'hit by ' + o.p.name + "'s bomb"); R(); return; }
+      if (k === 'potion' && o.hp >= 3) { float(o, 'Already full hearts', '#fff'); return; }
+      o.items.splice(i, 1); const [e, nm] = TT_ITEMS[k]; float(o, e + ' ' + nm + '!', TOY.sun); SFX.pop();
+      if (k === 'boots') o.boost += 3; if (k === 'bait') o.bait = true; if (k === 'scroll') flip(); if (k === 'potion') { o.hp = Math.min(3, o.hp + 1); sfx.heal(); } R(); }
+    function giveItem(o, k) { k = k || rnd(Object.keys(TT_ITEMS)); if (o.items.length >= 3) o.items.shift(); o.items.push(k); float(o, TT_ITEMS[k][0] + ' ' + TT_ITEMS[k][1], TOY.mint); sfx.grab(); log(o.p.name + ' found ' + TT_ITEMS[k][1]); }
     function crossBridge(o, br) { const b = BR[br]; if (!b.troll || b.troll.owner === o.i) return; const own = b.troll.owner, toll = own >= 0 ? 3 : 2;
-      if (o.bait) { float(o, '🍖 The troll is busy eating', '#fff'); return; }
-      b.troll.angry = g.t; sfx.troll();
+      if (o.bait) { float(o, '🍖 The troll is busy eating', '#fff'); return; } b.troll.angry = g.t; sfx.troll();
       if (o.gold >= toll) { o.gold -= toll; if (own >= 0) { g.ps[own].gold += toll; float(g.ps[own], '+' + toll + ' toll', TOY.sun); } float(o, '-' + toll + ' gold toll', '#ffd23f'); sfx.coin(); log(o.p.name + ' paid the troll ' + toll + ' gold' + (own >= 0 ? ' (to ' + g.ps[own].p.name + ')' : '')); return; }
-      const paid = o.gold; o.gold = 0; if (own >= 0) g.ps[own].gold += paid; sfx.splash(); float(o, 'SPLASH!', '#6cc3f2'); g.fx.push({ k: 'splash', x: o.x, y: o.y, t: 0 });
-      if (o.carry.length) loseRelic(o, 'in the river. The troll threw them in!'); else if (o.items.length) { const it = o.items.shift(); log(o.p.name + "'s " + TT_ITEMS[it][1] + ' washed away. Troll trouble!'); } else log(o.p.name + ' got a soaking from the troll'); }
+      if (own >= 0) g.ps[own].gold += o.gold; o.gold = 0; g.fx.push({ k: 'boom', x: o.x, y: o.y, t: 0 }); hurt(o, 1, "couldn't pay, so the troll clubbed them"); }
     function bank(o) { if (!o.carry.length) return; let dup = 0; for (const r of o.carry) { if (o.banked.includes(r)) dup++; else o.banked.push(r); } const nw = o.carry.length - dup; o.carry = [];
-      if (dup) { o.gold += dup * 3; float(o, '+' + dup * 3 + ' gold for spares', TOY.sun); } if (nw) { float(o, 'BANKED ' + nw + ' relic' + (nw > 1 ? 's' : '') + '!', TOY.sun); log(o.p.name + ' banked ' + nw + ' relic' + (nw > 1 ? 's' : '') + ' (' + o.banked.length + '/5)'); sfx.bank(); SFX.cheer(); } }
+      if (dup) { o.gold += dup * 3; float(o, '+' + dup * 3 + ' gold for spares', TOY.sun); } if (nw) { float(o, 'BANKED!', TOY.sun); log(o.p.name + ' banked ' + nw + ' relic' + (nw > 1 ? 's' : '') + ' (' + o.banked.length + '/5)'); sfx.bank(); SFX.cheer(); } }
     function land(o) { const id = o.node, t = nodes[id];
-      if (g.mud.has(id)) { o.stuck = true; noise(0.25, 0.08, 400); float(o, 'SWAMP!', '#c98a4b'); log(o.p.name + ' sank into a swamp. Roll 7+ to get out'); }
-      if (id === o.keep) bank(o);
-      if (id === HUB) { g.phase = 'hoard'; g.phaseT = 12; g.botT = 1; R(); return; }
-      if (t.type === 'site') { g.phase = 'dig'; g.phaseT = 12; g.botT = 0.9; R(); return; }
-      if (t.type === 'gold') { const v = 2 + Math.floor(Math.random() * 3); o.gold += v; sfx.coin(); float(o, '+' + v + ' gold', TOY.sun); }
-      if (t.type === 'chest') giveItem(o);
-      if (t.type === 'goblin') { if (!useShield(o)) { if (o.items.length) { const it = o.items.splice(Math.floor(Math.random() * o.items.length), 1)[0]; float(o, 'Goblins took your ' + TT_ITEMS[it][0], TOY.coral); log('Goblins mugged ' + o.p.name + ' for their ' + TT_ITEMS[it][1]); }
-        else { const v = Math.min(o.gold, 2); o.gold -= v; float(o, 'Goblins took ' + v + ' gold', TOY.coral); } SFX.bonk(); } }
-      if (t.type === 'portal') { const to = PORT.find(k => k !== id); o.node = to; sfx.zap(); g.fx.push({ k: 'zap', x: o.x, y: o.y, t: 0 }); float(o, 'WHOOSH!', '#d6c4ff'); log(o.p.name + ' jumped through the portal'); }
-      if (t.type === 'wheel') { g.phase = 'spin'; g.phaseT = 12; g.botT = 1; tone(500, 900, 0.15, 'triangle', 0.06); R(); return; }
-      if (t.type === 'rune') { g.phase = 'switch'; g.phaseT = 10; g.botT = 1; R(); return; }
+      if (id === GATE) { bank(o); if (o.hp < 3) { o.hp = 3; sfx.heal(); float(o, '❤ Rested at the gates', '#ff9fb4'); } return afterLand(o); }
+      if (g.mud.has(id)) { noise(0.25, 0.08, 400); float(o, 'MUD! Roll 4+ to leave', '#c98a4b'); }
+      if (g.loot.has(id) && o.carry.length < 3) { const pile = g.loot.get(id), take = pile.splice(0, 3 - o.carry.length); o.carry.push(...take); if (!pile.length) g.loot.delete(id); sfx.grab(); float(o, take.map(RE).join(' ') + ' Finders keepers!', TOY.mint); log(o.p.name + ' scooped up dropped relics'); }
+      if (t.type === 'shrine') { const r = t.realm; if (r === 4 && Math.random() < 0.3) { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 THE DRAGON WAKES!', '#ff6a2a'); hurt(o, 2, 'scorched by the dragon'); if (o.node !== id) return endTurn(); }
+        if (o.carry.length < 3) { o.carry.push(r); sfx.grab(); float(o, RE(r) + ' ' + RN(r) + '!', TOY.sun); log(o.p.name + ' claimed the ' + RN(r) + (o.banked.includes(r) ? ' (a spare)' : '') + ' in ' + TT_REALMS[r].name); g.fx.push({ k: 'relic', r, x: o.x, y: o.y, t: 0 }); } else float(o, 'Your bag is full!', TOY.coral); }
+      else if (t.type === 'danger') { const dz = TT_REALMS[t.realm].dz; if (Math.random() < 0.6) { g.fx.push({ k: 'emo', e: dz[0], x: o.x, y: o.y, t: 0 }); hurt(o, 1, dz[1] + ' in ' + TT_REALMS[t.realm].name); if (o.node !== id) return endTurn(); } else float(o, 'Snuck past the ' + dz[0], '#fff'); }
+      else if (t.type === 'gold') { const v = 2 + Math.floor(Math.random() * 3); o.gold += v; sfx.coin(); float(o, '+' + v + ' gold', TOY.sun); }
+      else if (t.type === 'ability') giveItem(o);
+      else if (t.type === 'heal') { if (o.hp < 3) { o.hp = 3; sfx.heal(); float(o, '❤ Fully healed!', '#ff9fb4'); } else { o.gold += 1; float(o, '+1 gold', TOY.sun); } }
+      else if (t.type === 'trap') { o.skip = true; float(o, '🕸 Caught in a web! Skip a turn', '#cfd2ff'); SFX.bonk(); }
+      else if (t.type === 'portal') { o.node = PORT.find(k => k !== id); sfx.zap(); g.fx.push({ k: 'zap', x: o.x, y: o.y, t: 0 }); float(o, 'WHOOSH!', '#d6c4ff'); log(o.p.name + ' jumped through the portal'); }
+      else if (t.type === 'move') { g.phase = 'gust'; g.phaseT = 10; g.botT = 0.9; float(o, '🌀 Tailwind!', '#9fe3ff'); R(); return; }
+      else if (t.type === 'attack') { g.targets = g.ps.filter(q => q !== o && near(o, q, 5)); if (g.targets.length) { g.phase = 'attack'; g.phaseT = 12; g.botT = 1; R(); return; } float(o, 'Nobody in range to attack', '#fff'); }
+      else if (t.type === 'wheel') { g.phase = 'spin'; g.phaseT = 12; g.botT = 1; tone(500, 900, 0.15, 'triangle', 0.06); R(); return; }
+      else if (t.type === 'rune') { g.phase = 'switch'; g.phaseT = 10; g.botT = 1; R(); return; }
       afterLand(o); }
     function afterLand(o) { if (checkEnd()) return; const N = stealable(o); if (N.length) { g.stealList = N; g.phase = 'steal'; g.phaseT = 10; g.botT = 0.9; R(); return; } endTurn(); }
-    function dig(o) { if (g.phase !== 'dig') return; const r = nodes[o.node].relic;
-      if (o.carry.length >= 3) { float(o, 'Your bag is full!', TOY.coral); return afterLand(o); }
-      if (Math.random() < 0.85) { o.carry.push(r); sfx.grab(); float(o, RE(r) + ' ' + RN(r) + '!', TOY.sun); log(o.p.name + ' dug up the ' + RN(r) + (o.banked.includes(r) ? ' (a spare)' : '')); g.fx.push({ k: 'relic', r, x: o.x, y: o.y, t: 0 }); }
-      else { o.gold += 1; float(o, 'Just dust... +1 gold', '#cfd2ff'); log(o.p.name + ' dug at the ' + TT_RELICS[r][3] + ' and found nothing'); }
-      afterLand(o); }
-    function hoard(o) { if (g.phase !== 'hoard') return; const N = need(o);
-      if (Math.random() < 0.3) { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 THE DRAGON WAKES!', '#ff6a2a'); const lost = o.carry.length; o.carry = []; o.node = o.keep; float(o, 'SCORCHED!', '#ff6a2a');
-        log('The dragon woke and blasted ' + o.p.name + ' home' + (lost ? ', burning ' + lost + ' relic' + (lost > 1 ? 's' : '') : '')); return endTurn(); }
-      if (o.carry.length >= 3) { float(o, 'Your bag is full!', TOY.coral); return afterLand(o); }
-      const r = N.length ? rnd(N) : Math.floor(Math.random() * 5); o.carry.push(r); sfx.grab(); float(o, RE(r) + ' from the hoard!', TOY.sun); log(o.p.name + ' crept past the dragon with the ' + RN(r)); g.fx.push({ k: 'relic', r, x: o.x, y: o.y, t: 0 }); afterLand(o); }
+    function gust(o) { if (g.phase !== 'gust') return; const d = 1 + Math.floor(Math.random() * 6); g.dice = d; g.dice2 = 0; float(o, 'Move again: ' + d, '#9fe3ff'); startMove(o, d); }
+    function attack(o, q, how) { if (g.phase !== 'attack' || !g.targets.includes(q)) return; g.fx.push({ k: 'bolt', x0: o.x, y0: o.y, x1: q.x, y1: q.y, t: 0 });
+      if (how === 'web') { if (!useShield(q)) { q.skip = true; float(q, '🕸 Webbed! Skips a turn', '#cfd2ff'); log(o.p.name + ' webbed ' + q.p.name + ' in place'); SFX.bonk(); } }
+      else hurt(q, 1, 'zapped by ' + o.p.name); afterLand(o); }
     function steal(o, q) { if (g.phase !== 'steal' || !q || !g.stealList.includes(q) || !q.carry.length) return; if (useShield(q)) { log(q.p.name + "'s shield stopped " + o.p.name); return endTurn(); }
-      const r = loseRelic(q, 'to ' + o.p.name + '!'); o.carry.push(r); o.lockT = g.turnNo + g.ps.length; q.safeT = g.turnNo + g.ps.length; float(o, RE(r) + ' Stolen!', TOY.mint); SFX.bonk(); sfx.grab(); endTurn(); }
+      const r = q.carry.splice(Math.floor(Math.random() * q.carry.length), 1)[0]; o.carry.push(r); o.lockT = g.turnNo + g.ps.length; q.safeT = g.turnNo + g.ps.length; float(q, RE(r) + ' stolen!', TOY.coral); float(o, RE(r) + ' Yoink!', TOY.mint); log(o.p.name + ' stole the ' + RN(r) + ' from ' + q.p.name); SFX.bonk(); sfx.grab(); endTurn(); }
     function flip() { for (const b of BR) if (b.draw) b.up = !b.up; sfx.clank(); banner('DRAWBRIDGES FLIPPED', TOY.sun); }
     function spinWheel(o) { if (g.phase !== 'spin') return; const tot = TT_WHEEL.reduce((s, w) => s + w[2], 0); let r = Math.random() * tot, k = 0; for (; k < TT_WHEEL.length; k++) { r -= TT_WHEEL[k][2]; if (r <= 0) break; } k = Math.min(k, TT_WHEEL.length - 1);
       let s = 0; const st = TT_WHEEL.map(w => { const a = s; s += w[2] / tot; return a; }), en = k + 1 < TT_WHEEL.length ? st[k + 1] : 1, J = TT_WHEEL.findIndex(w => w[0] === 'jackpot');
       let f = st[k] + (en - st[k]) * (0.15 + Math.random() * 0.7); if (k === J - 1 && Math.random() < 0.6) f = en - 0.004; if (k === J + 1 && Math.random() < 0.6) f = st[k] + 0.004;
       const from = g.wheel ? g.wheel.rot % TAU : 0, to = from + TAU * 6 + (((-f * TAU - from) % TAU) + TAU) % TAU; g.wheel = { rot: from, from, to, t: 0, dur: 3.6, k, st, show: 1, last: -1, resT: 0 }; g.phase = 'spinning'; R(); }
-    function wheelResult(o, kind) { const others = g.ps.filter(q => q !== o);
+    function wheelResult(o, kind) {
       if (kind === 'gold') { o.gold += 5; sfx.coin(); float(o, '+5 gold', TOY.sun); }
       else if (kind === 'item') giveItem(o);
-      else if (kind === 'steal') { const L = others.filter(q => q.carry.length && q.node !== q.keep); if (L.length && o.carry.length < 3) { const q = rnd(L); if (!useShield(q)) { const r = loseRelic(q, 'to a sneaky ' + o.p.name + '!'); o.carry.push(r); SFX.bonk(); } } else { o.gold += 3; float(o, 'Nobody to rob: +3 gold', TOY.sun); } }
+      else if (kind === 'heal') { o.hp = 3; sfx.heal(); float(o, '❤ Full hearts', '#ff9fb4'); }
       else if (kind === 'flip') flip();
-      else if (kind === 'troll') { const L = BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i); if (L.length) { const i = rnd(L); BR[i].troll = { owner: o.i, t: g.t }; sfx.troll(); log('A troll joins ' + o.p.name + ' for free'); banner('🧌 FREE TROLL FOR ' + o.p.name.toUpperCase(), '#a6e38a'); } else { o.gold += 3; } }
-      else if (kind === 'fire') { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 DRAGON FIRE! EVERYONE DROPS A RELIC', '#ff6a2a'); for (const q of g.ps) if (q.carry.length) loseRelic(q, 'to dragon fire'); }
-      else if (kind === 'swamp') { o.skip = true; float(o, 'Stuck next turn', '#c98a4b'); }
-      else if (kind === 'jackpot') { const N = [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r)); const r = N.length ? rnd(N) : 0; if (N.length) o.banked.push(r); log('JACKPOT! The ' + RN(r) + ' appears in ' + o.p.name + "'s keep!"); banner('🏆 JACKPOT! ' + RE(r) + ' 🏆', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer();
+      else if (kind === 'troll') { const L = BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i); if (L.length) { BR[rnd(L)].troll = { owner: o.i }; sfx.troll(); banner('🧌 FREE TROLL FOR ' + o.p.name.toUpperCase(), '#a6e38a'); } else o.gold += 3; }
+      else if (kind === 'fire') { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 DRAGON FIRE! EVERYONE OUT THERE TAKES A HIT', '#ff6a2a'); for (const q of g.ps) if (q.node !== GATE) hurt(q, 1, 'caught in dragon fire'); }
+      else if (kind === 'home') { o.node = GATE; float(o, 'Whisked home!', '#cfd2ff'); bank(o); }
+      else if (kind === 'jackpot') { const N = [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r)); const r = N.length ? rnd(N) : 0; if (N.length) o.banked.push(r); log('JACKPOT! The ' + RN(r) + ' appears in ' + o.p.name + "'s vault!"); banner('🏆 JACKPOT! ' + RE(r) + ' 🏆', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer();
         for (let k = 0; k < 6; k++) tone(700, 1100, 0.18, 'square', 0.05, k * 0.2); } }
     function checkEnd() { const w = g.ps.find(q => q.banked.length >= 5); if (w) { finish(w); return true; } return false; }
     function endTurn() { const o = cur(); o.bait = false; g.phase = 'pause'; g.phaseT = 0.8; g.cands = []; R(); }
     function nextPlayer() { g.turnNo++; g.turn = (g.turn + 1) % g.ps.length; if (g.turn === 0) { g.round++; roundEvents(); if (g.round > MAXR) return finish(null); if (g.round === MAXR) banner('FINAL ROUND! MOST RELICS WINS IF NOBODY GETS ALL 5', TOY.coral); } startTurn(); }
-    function finish(w) { if (g.state === 'end') return; g.phase = 'over'; g.state = 'end'; g.endT = 0; g.winner = w || g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.gold - a.gold)[0]; SFX.win(); SFX.cheer(); R(); }
+    function finish(w) { if (g.state === 'end') return; g.phase = 'over'; g.state = 'end'; g.endT = 0; g.winner = w || g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.carry.length - a.carry.length || b.gold - a.gold)[0]; SFX.win(); SFX.cheer(); R(); }
     // ---------- phone ----------
     g.onPick = (p, v) => { const o = g.ps.find(x => x.p === p); if (!o || g.state === 'end' || o !== cur()) return; v = String(v);
       if (v === 'roll') roll(o); else if (v.startsWith('use:')) useItem(o, v.slice(4)); else if (v.startsWith('hire:')) hire(o, +v.slice(5)); else if (v.startsWith('go:') || v.startsWith('to:')) go(o, +v.slice(3));
-      else if (v === 'best') go(o, bestToward(o, targetFor(o))); else if (v === 'dig') dig(o); else if (v === 'hoard') hoard(o); else if (v === 'flee' && g.phase === 'hoard') afterLand(o);
+      else if (v === 'best') go(o, bestToward(o, targetFor(o))); else if (v === 'gust') gust(o); else if (v === 'nogust' && g.phase === 'gust') afterLand(o);
+      else if (v.startsWith('zap:')) attack(o, g.ps[+v.slice(4)], 'zap'); else if (v.startsWith('web:')) attack(o, g.ps[+v.slice(4)], 'web'); else if (v === 'noatk' && g.phase === 'attack') afterLand(o);
       else if (v.startsWith('steal:')) steal(o, g.ps[+v.slice(6)]); else if (v === 'nosteal') { if (g.phase === 'steal') endTurn(); }
       else if (v === 'flip' && g.phase === 'switch') { flip(); afterLand(o); } else if (v === 'leave' && g.phase === 'switch') afterLand(o); else if (v === 'spin') spinWheel(o); };
-    const relicRow = o => `<div style="margin:4px 0">${TT_RELICS.map(([e, nm, col], r) => { const b = o.banked.includes(r), c = o.carry.includes(r); return `<span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin:2px;border-radius:10px;font-size:24px;background:${b ? col : c ? '#fff6d6' : '#eef1fb'};border:2.5px ${b ? 'solid #1b1f5e' : c ? 'dashed #e8913a' : 'dashed #b6bde0'};${b || c ? '' : 'filter:grayscale(1);opacity:.45'}">${e}</span>`; }).join('')}</div>`;
-    const ICON = k => { const nd = nodes[k]; return k === HUB ? '🐉' : nd.type === 'site' ? RE(nd.relic) : nd.type === 'keep' ? '🏰' : nd.type === 'gold' ? '💰' : nd.type === 'chest' ? '🎁' : nd.type === 'goblin' ? '👺' : nd.type === 'portal' ? '🌀' : nd.type === 'wheel' ? '🎡' : nd.type === 'rune' ? '⚡' : ''; };
+    const hearts = o => '❤'.repeat(Math.max(0, o.hp)) + '🖤'.repeat(Math.max(0, 3 - o.hp));
+    const relicRow = o => `<div style="margin:4px 0">${TT_REALMS.map((rm, r) => { const b = o.banked.includes(r), c = o.carry.includes(r); return `<span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin:2px;border-radius:10px;font-size:24px;background:${b ? rm.col : c ? '#fff6d6' : '#eef1fb'};border:2.5px ${b ? 'solid #1b1f5e' : c ? 'dashed #e8913a' : 'dashed #b6bde0'};${b || c ? '' : 'filter:grayscale(1);opacity:.45'}">${rm.e}</span>`; }).join('')}</div>`;
+    const ICON = k => { const nd = nodes[k]; return k === GATE ? '🏰' : ({ shrine: TT_REALMS[nd.realm] && TT_REALMS[nd.realm].e, gold: '💰', ability: '✨', attack: '⚔', heal: '❤', move: '🌀', trap: '🕸', portal: '🌌', wheel: '🎡', rune: '⚡', danger: nd.realm >= 0 ? TT_REALMS[nd.realm].dz[0] : '' })[nd.type] || ''; };
     function phoneMap(o) { const pts = [o.node, ...g.cands].map(k => nodes[k]); let x0 = Math.min(...pts.map(p => p.x)) - 70, x1 = Math.max(...pts.map(p => p.x)) + 70, y0 = Math.min(...pts.map(p => p.y)) - 70, y1 = Math.max(...pts.map(p => p.y)) + 70;
       let w = Math.max(420, x1 - x0), h = Math.max(300, y1 - y0); if (w / h < 1.25) w = h * 1.25; else h = Math.max(h, w / 1.6); const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; x0 = cx - w / 2; y0 = cy - h / 2;
-      const R0 = w * 0.042; let s = `<svg viewBox="${x0} ${y0} ${w} ${h}" style="width:100%;max-height:38vh;background:#3f6b3a;border-radius:14px;border:3px solid #1b1f5e;touch-action:manipulation">`;
-      s += `<ellipse cx="${CX}" cy="${CY}" rx="${RX * RIV}" ry="${RY * RIV}" fill="none" stroke="#4fb3ec" stroke-width="26"/>`;
-      for (const [k, e] of edges.entries()) { const a = nodes[e.a], b = nodes[e.b], op = openE(k); s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${op ? '#e9dcc0' : '#e8384f'}" stroke-width="${op ? 16 : 8}" ${op ? '' : 'stroke-dasharray="10 8"'} stroke-linecap="round"/>`;
+      const R0 = w * 0.04; let s = `<svg viewBox="${x0} ${y0} ${w} ${h}" style="width:100%;max-height:38vh;background:#5d8f4a;border-radius:14px;border:3px solid #1b1f5e;touch-action:manipulation">`;
+      for (const rm of TT_REALMS) s += `<circle cx="${rm.x}" cy="${rm.y}" r="120" fill="${rm.tint}" opacity=".55"/>`;
+      for (const [k, e] of edges.entries()) { const a = nodes[e.a], b = nodes[e.b], op = openE(k); s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${op ? '#e9dcc0' : '#e8384f'}" stroke-width="${op ? 14 : 7}" ${op ? '' : 'stroke-dasharray="10 8"'} stroke-linecap="round"/>`;
         if (e.br != null && BR[e.br].troll) s += `<text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2}" font-size="${R0 * 0.9}" text-anchor="middle" dominant-baseline="central">🧌</text>`; }
-      nodes.forEach((nd, k) => { const t = k === o.keep ? '🏰' : g.works.has(k) ? '🪨' : g.mud.has(k) ? '🟫' : ICON(k); if (nd.poly) s += `<polygon points="${nd.poly.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}" fill="#fbf3dc" stroke="#1b1f5e" stroke-width="2"/>`; if (t) s += `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 0.8}" text-anchor="middle" dominant-baseline="central">${t}</text>`; });
+      nodes.forEach((nd, k) => { const t = g.mud.has(k) ? '🟫' : g.loot.has(k) ? '🎒' : ICON(k); s += `<rect x="${nd.x - R0 * 0.6}" y="${nd.y - R0 * 0.6}" width="${R0 * 1.2}" height="${R0 * 1.2}" rx="${R0 * 0.25}" fill="#fbf3dc" stroke="#1b1f5e" stroke-width="2"/>`; if (t) s += `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 0.75}" text-anchor="middle" dominant-baseline="central">${t}</text>`; });
       for (const q of g.ps) if (q !== o) { const nd = nodes[q.node]; s += `<circle cx="${nd.x}" cy="${nd.y - R0 * 0.6}" r="${R0 * 0.35}" fill="${q.p.color}" stroke="#1b1f5e" stroke-width="2"/>`; }
-      for (const k of g.cands) { const nd = nodes[k], t = g.mud.has(k) ? '🟫' : ICON(k); s += `<g data-c="pp" data-v="go:${k}" style="cursor:pointer"><rect x="${nd.x - R0}" y="${nd.y - R0}" width="${R0 * 2}" height="${R0 * 2}" rx="${R0 * 0.3}" fill="${o.p.color}" fill-opacity=".88" stroke="#fff" stroke-width="4"/>${t ? `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 1.05}" text-anchor="middle" dominant-baseline="central">${t}</text>` : ''}</g>`; }
+      for (const k of g.cands) { const nd = nodes[k], t = g.mud.has(k) ? '🟫' : g.loot.has(k) ? '🎒' : ICON(k); s += `<g data-c="pp" data-v="go:${k}" style="cursor:pointer"><rect x="${nd.x - R0}" y="${nd.y - R0}" width="${R0 * 2}" height="${R0 * 2}" rx="${R0 * 0.3}" fill="${o.p.color}" fill-opacity=".88" stroke="#fff" stroke-width="4"/>${t ? `<text x="${nd.x}" y="${nd.y}" font-size="${R0 * 1.05}" text-anchor="middle" dominant-baseline="central">${t}</text>` : ''}</g>`; }
       const me = nodes[o.node]; s += `<circle cx="${me.x}" cy="${me.y}" r="${R0 * 0.7}" fill="${o.p.color}" stroke="#fff" stroke-width="4"/></svg>`; return s; }
     g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
-      const head = `<div class="small" style="opacity:1">Your relics (${o.banked.length}/5 banked${o.carry.length ? ', ' + o.carry.length + ' carried' : ''})</div>${relicRow(o)}<div style="font-size:15px;margin:2px 0">💰 <b style="display:inline">${o.gold}</b> gold${o.carry.length ? ' · 🎒 ' + o.carry.map(RE).join(' ') : ''}${o.items.length ? ' · ' + o.items.map(k => TT_ITEMS[k][0]).join(' ') : ''}</div>`;
-      if (g.state === 'end') return head + `<b>${g.winner === o ? '🏆 You hold all five relics. You rule the realm!' : esc(g.winner.p.name) + ' rules the realm'}</b>`;
+      const head = `<div style="font-size:22px;letter-spacing:2px">${hearts(o)}</div><div class="small" style="opacity:1">Relics banked: ${o.banked.length}/5${o.carry.length ? ' · carrying ' + o.carry.length : ''}</div>${relicRow(o)}<div style="font-size:15px;margin:2px 0">💰 <b style="display:inline">${o.gold}</b> gold${o.carry.length ? ' · 🎒 ' + o.carry.map(RE).join(' ') : ''}${o.items.length ? ' · ' + o.items.map(k => TT_ITEMS[k][0]).join(' ') : ''}</div>`;
+      if (g.state === 'end') return head + `<b>${g.winner === o ? '🏆 You rule the realm!' : esc(g.winner.p.name) + ' rules the realm'}</b>`;
       if (o !== cur()) return head + `<b>${esc(cur().p.name)} is questing…</b>`;
       if (g.phase === 'pre') { const H = hireable(o);
-        return head + `<b>⭐ Your turn</b>${o.stuck ? '<div class="small" style="opacity:1">🟫 Stuck in a swamp! Roll 7 or more to get out</div>' : ''}${H.map(i => `<button class="pbtn" ${o.gold < 5 ? 'disabled style="opacity:.45"' : ''} data-c="pp" data-v="hire:${i}">🧌 Hire this bridge's troll (5 gold)${BR[i].troll.owner >= 0 ? ': steal it from ' + esc(g.ps[BR[i].troll.owner].p.name) : ''}</button>`).join('')}${o.items.filter(k => k !== 'shield').map(k => `<button class="pbtn" data-c="pp" data-v="use:${k}">${TT_ITEMS[k][0]} ${TT_ITEMS[k][1]}: ${TT_ITEMS[k][2]}</button>`).join('')}<button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`; }
-      if (g.phase === 'choose') { const q = []; if (g.cands.includes(HUB)) q.push(['to:' + HUB, "🐉 Dragon's Hoard"]); if (g.cands.includes(o.keep) && o.carry.length) q.push(['to:' + o.keep, '🏰 Go home and bank']);
-        for (const r of need(o)) { const c = sitesOf(r).find(k => g.cands.includes(k)); if (c != null) q.push(['to:' + c, RE(r) + ' Dig for the ' + RN(r)]); }
-        if (q.length < 2) q.push(['best', '➡ Best way toward ' + (o.carry.length ? 'home' : 'a relic')]);
-        return head + `<b>Move up to ${g.steps}. Tap a space</b>${phoneMap(o)}<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${q.slice(0, 4).map(([v, l]) => `<button class="pbtn" style="flex:1 1 45%;margin:0" data-c="pp" data-v="${v}">${l}</button>`).join('')}</div>`; }
-      if (g.phase === 'dig') { const r = nodes[o.node].relic; return head + `<b>${RE(r)} ${TT_RELICS[r][3]}</b><div class="small" style="opacity:1">Dig for the ${RN(r)}?${o.banked.includes(r) ? ' You already have one. A spare is worth 3 gold at home.' : ''}</div><button class="pbtn big go" data-c="pp" data-v="dig">⛏ Dig</button>`; }
-      if (g.phase === 'hoard') return head + "<b>🐉 The Dragon's Hoard</b><div class='small' style='opacity:1'>Grab a relic you need. But if the dragon wakes, you lose everything you're carrying and get blasted home.</div><button class='pbtn big go' data-c='pp' data-v='hoard'>🤫 Sneak in</button><button class='pbtn big' data-c='pp' data-v='flee'>Back away slowly</button>";
+        return head + `<b>⭐ Your turn</b>${g.mud.has(o.node) ? '<div class="small" style="opacity:1">🟫 Stuck in mud! Roll 4 or more to get out</div>' : ''}${H.map(i => `<button class="pbtn" ${o.gold < 5 ? 'disabled style="opacity:.45"' : ''} data-c="pp" data-v="hire:${i}">🧌 Hire this bridge's troll (5 gold)${BR[i].troll.owner >= 0 ? ': steal it from ' + esc(g.ps[BR[i].troll.owner].p.name) : ''}</button>`).join('')}${o.items.filter(k => k !== 'shield').map(k => `<button class="pbtn" data-c="pp" data-v="use:${k}">${TT_ITEMS[k][0]} ${TT_ITEMS[k][1]}: ${TT_ITEMS[k][2]}</button>`).join('')}<button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`; }
+      if (g.phase === 'choose') { const q = []; if (g.cands.includes(GATE) && (o.carry.length || o.hp < 3)) q.push(['to:' + GATE, '🏰 Back to the gates']);
+        for (const r of need(o)) { const c = shrineOf(r); if (g.cands.includes(c)) q.push(['to:' + c, RE(r) + ' Claim the ' + RN(r)]); }
+        for (const [k] of g.loot) if (g.cands.includes(k)) q.push(['to:' + k, '🎒 Grab dropped relics']);
+        const hl = g.cands.find(k => nodes[k].type === 'heal'); if (hl != null && o.hp < 3) q.push(['to:' + hl, '❤ Heal up']);
+        if (q.length < 2) q.push(['best', '➡ Best way toward ' + (o.carry.length >= 2 ? 'the gates' : 'a relic')]);
+        return head + `<b>Move up to ${g.steps}. Tap a square</b>${phoneMap(o)}<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${q.slice(0, 4).map(([v, l]) => `<button class="pbtn" style="flex:1 1 45%;margin:0" data-c="pp" data-v="${v}">${l}</button>`).join('')}</div>`; }
+      if (g.phase === 'gust') return head + '<b>🌀 Tailwind!</b><div class="small" style="opacity:1">Roll one die and move again?</div><button class="pbtn big go" data-c="pp" data-v="gust">🎲 Move again</button><button class="pbtn big" data-c="pp" data-v="nogust">Stay here</button>';
+      if (g.phase === 'attack') return head + '<b>⚔ Attack!</b><div class="small" style="opacity:1">Zap takes a heart. Web makes them miss a turn.</div>' + g.targets.map(q => `<div style="display:flex;gap:4px"><button class="pbtn go" style="flex:1;margin:2px 0" data-c="pp" data-v="zap:${q.i}">⚡ Zap ${esc(q.p.name)} ${hearts(q)}${q.carry.length ? ' 🎒' + q.carry.map(RE).join('') : ''}</button><button class="pbtn" style="flex:0 0 30%;margin:2px 0" data-c="pp" data-v="web:${q.i}">🕸 Web</button></div>`).join('') + '<button class="pbtn" data-c="pp" data-v="noatk">Leave them be</button>';
       if (g.phase === 'steal') return head + '<b>😈 Steal a relic?</b>' + g.stealList.map(q => `<button class="pbtn big go" data-c="pp" data-v="steal:${q.i}">Rob ${esc(q.p.name)} (${q.carry.map(RE).join(' ')})</button>`).join('') + '<button class="pbtn" data-c="pp" data-v="nosteal">Leave them</button>';
       if (g.phase === 'switch') return head + '<b>⚡ Rune Stone</b><div class="small" style="opacity:1">Flip every drawbridge? Open ones rise, raised ones drop.</div><button class="pbtn big go" data-c="pp" data-v="flip">🌉 Flip them</button><button class="pbtn big" data-c="pp" data-v="leave">Leave them</button>';
       if (g.phase === 'spin') return head + '<b>🎡 Wheel of Fate!</b><button class="pbtn big go" data-c="pp" data-v="spin">SPIN IT</button>';
       return head + '<b>⭐ Your turn</b><div class="small">Watch the TV…</div>'; };
     g.ranking = () => g.ps.slice().sort((a, b) => (b === g.winner) - (a === g.winner) || b.banked.length - a.banked.length || b.gold - a.gold).map(o => o.p.slot);
     Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => Math.max(0, 3 - i)) });
-    g.resultLine = () => g.winner ? '🧌 ' + g.winner.p.name + ' collected all five relics' : '';
+    g.resultLine = () => g.winner ? '🧌 ' + g.winner.p.name + ' rules the realm' : '';
     g.bot = () => {};
     // ---------- bots ----------
     function botAct(o) {
       if (g.phase === 'pre') { const H = hireable(o); if (H.length && o.gold >= 8) return hire(o, H[0]);
-        const k = o.items.find(k => k === 'boots' || k === 'horse' || (k === 'bait' && o.gold < 3) || (k === 'scroll' && Math.random() < 0.3)); if (k) useItem(o, k); else roll(o); return; }
-      if (g.phase === 'choose') { const tgt = targetFor(o); go(o, bestToward(o, tgt)); return; }
-      if (g.phase === 'dig') { const r = nodes[o.node].relic; return (o.banked.includes(r) || o.carry.includes(r)) && o.carry.length >= 1 ? afterLand(o) : dig(o); }
-      if (g.phase === 'hoard') { if (o.carry.length >= 2) afterLand(o); else hoard(o); return; }
+        if (o.items.includes('potion') && o.hp <= 1) return useItem(o, 'potion'); if (o.items.includes('bomb') && g.ps.some(q => q !== o && q.carry.length && near(o, q, 4))) return useItem(o, 'bomb');
+        const k = o.items.find(k => k === 'boots' || (k === 'bait' && o.gold < 3) || (k === 'scroll' && Math.random() < 0.3)); if (k) useItem(o, k); else roll(o); return; }
+      if (g.phase === 'choose') { go(o, bestToward(o, targetFor(o))); return; }
+      if (g.phase === 'gust') return gust(o);
+      if (g.phase === 'attack') { const q = g.targets.slice().sort((a, b) => b.carry.length - a.carry.length || b.banked.length - a.banked.length || a.hp - b.hp)[0]; return attack(o, q, q.carry.length || q.hp === 1 ? 'zap' : 'web'); }
       if (g.phase === 'steal') return steal(o, g.stealList[0]);
       if (g.phase === 'switch') { if (Math.random() < 0.5) flip(); afterLand(o); return; }
       if (g.phase === 'spin') spinWheel(o); }
-    function timeout(o) { if (g.phase === 'pre') roll(o); else if (g.phase === 'choose') go(o, bestToward(o, targetFor(o))); else if (g.phase === 'dig') dig(o); else if (g.phase === 'hoard') afterLand(o); else if (g.phase === 'steal') endTurn(); else if (g.phase === 'switch') afterLand(o); else if (g.phase === 'spin') spinWheel(o); }
+    function timeout(o) { if (g.phase === 'pre') roll(o); else if (g.phase === 'choose') go(o, bestToward(o, targetFor(o))); else if (g.phase === 'gust' || g.phase === 'attack' || g.phase === 'switch') afterLand(o); else if (g.phase === 'steal') endTurn(); else if (g.phase === 'spin') spinWheel(o); }
     // ---------- update ----------
     g.update = dt => { g.t += dt; for (let i = g.fx.length - 1; i >= 0; i--) { g.fx[i].t += dt; if (g.fx[i].t > (g.fx[i].k === 'jack' || g.fx[i].k === 'fire' ? 3 : 2.2)) g.fx.splice(i, 1); }
       for (const b of BR) b.v += ((b.draw && b.up ? 1 : 0) - b.v) * Math.min(1, dt * 4);
       const mover = g.phase === 'moving' && g.state === 'turn' ? cur() : null;
-      for (const o of g.ps) { if (o === mover) continue; const here = g.ps.filter(q => q.node === o.node && q !== mover), k = here.indexOf(o), m = here.length, nd = nodes[o.node];
-        const tx = nd.x + (m > 1 ? (k - (m - 1) / 2) * 24 : 0), ty = nd.y + (m > 1 ? ((k % 2) - 0.5) * 10 : 0), f = 1 - Math.exp(-dt * 7); o.x += (tx - o.x) * f; o.y += (ty - o.y) * f; }
-      if (mover) { const o = mover, nd = nodes[o.node], dx = nd.x - o.x, dy = nd.y - o.y, d = Math.hypot(dx, dy), sp = 300 * dt; o.hop += dt * 14;
+      for (const o of g.ps) { if (o === mover) continue; const here = g.ps.filter(q => q.node === o.node && q !== mover), k = here.indexOf(o), m = here.length, nd = nodes[o.node], gap = o.node === GATE ? 30 : 22;
+        const tx = nd.x + (m > 1 ? (k - (m - 1) / 2) * gap : 0), ty = nd.y + (m > 1 ? ((k % 2) - 0.5) * 10 : 0), f = 1 - Math.exp(-dt * 7); o.x += (tx - o.x) * f; o.y += (ty - o.y) * f; }
+      if (mover) { const o = mover, nd = nodes[o.node], dx = nd.x - o.x, dy = nd.y - o.y, d = Math.hypot(dx, dy), sp = 280 * dt; o.hop += dt * 14;
         if (d > 2) { const s = Math.min(sp, d); o.x += dx / d * s; o.y += dy / d * s; }
-        else if (o.path.length) { const nx = o.path.shift(), e = nodes[o.node].adj.find(([v]) => v === nx); if (e && edges[e[1]].br != null) crossBridge(o, edges[e[1]].br); o.node = nx; sfx.step(); } else land(o); }
+        else if (o.path.length) { const nx = o.path.shift(), e = nodes[o.node].adj.find(([v]) => v === nx); o.node = nx; sfx.step(); if (e && edges[e[1]].br != null) { crossBridge(o, edges[e[1]].br); if (o.node === GATE && nx !== GATE) { endTurn(); } } } else land(o); }
       if (g.state === 'end') { g.endT += dt; if (g.endT > 7) g.done = true; return; }
       const o = cur();
       if (g.phase === 'moving') return;
@@ -13534,45 +13535,48 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       g.phaseT -= dt; if (g.phaseT <= 0) timeout(o); };
     // ---------- TV ----------
     const emo = (t, x, y, px, c) => { c = c || ctx; c.font = px + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, x, y); };
-    const polyPath = (P, x) => { x = x || ctx; x.beginPath(); P.forEach(([px, py], k) => k ? x.lineTo(px, py) : x.moveTo(px, py)); x.closePath(); };
-    const BAND = { site: nd => TT_RELICS[nd.relic][2], gold: () => '#ffd23f', chest: () => '#e3b98f', goblin: () => '#8fcf6a', portal: () => '#c3a6ff', wheel: null, rune: () => '#7fd6ff', keep: nd => nd.grp, road: nd => nd.grp };
+    const BAND = { shrine: nd => TT_REALMS[nd.realm].col, gold: () => '#ffd23f', ability: () => '#b48cff', attack: () => '#ff6b6b', heal: () => '#ff9fb4', move: () => '#7fd6ff', trap: () => '#b6bde0', portal: () => '#c3a6ff', rune: () => '#ffe066', danger: nd => TT_REALMS[nd.realm].col, road: nd => nd.realm >= 0 ? TT_REALMS[nd.realm].col : '#e3d6b6' };
+    const tileAng = k => { const nd = nodes[k]; let ax = 0, ay = 0; for (const [v] of nd.adj) { const dx = nodes[v].x - nd.x, dy = nodes[v].y - nd.y, l = Math.hypot(dx, dy) || 1; const a = Math.atan2(dy, dx) * 2; ax += Math.cos(a); ay += Math.sin(a); } return Math.atan2(ay, ax) / 2; };
     let bg = null; const board = () => { if (bg) return bg; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-      const gr = x.createRadialGradient(CX, CY, 80, CX, CY, 780); gr.addColorStop(0, '#3d6b45'); gr.addColorStop(1, '#1d2f3a'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
-      for (let i = 0; i < 70; i++) { const a = Math.random() * TAU, r = 1.08 + Math.random() * 0.5, tx = CX + Math.cos(a) * RX * r, ty = CY + Math.sin(a) * RY * r; if (tx < 10 || tx > W - 10 || ty < 10 || ty > H - 10) continue;
-        x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(tx + 3, ty + 14, 12, 4, 0, 0, 7); x.fill(); x.fillStyle = ['#1f5a3a', '#26704a', '#2f7d4f'][i % 3]; x.beginPath(); x.moveTo(tx, ty - 22); x.lineTo(tx + 12, ty + 10); x.lineTo(tx - 12, ty + 10); x.closePath(); x.fill(); }
-      for (let i = 0; i < 40; i++) { x.fillStyle = `rgba(255,255,220,${0.15 + Math.random() * 0.3})`; x.beginPath(); x.arc(Math.random() * W, Math.random() * H, Math.random() * 1.6 + 0.4, 0, 7); x.fill(); }
-      x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.ellipse(CX + 6, CY + 10, RX * (OR + 0.1), RY * (OR + 0.12), 0, 0, TAU); x.fill();
-      x.fillStyle = '#8fbf6e'; x.beginPath(); x.ellipse(CX, CY, RX * (OR + 0.1), RY * (OR + 0.12), 0, 0, TAU); x.fill(); x.lineWidth = 5; x.strokeStyle = TOY.navy; x.stroke();
-      for (let i = 0; i < 90; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 0.88; x.fillStyle = 'rgba(40,90,40,.18)'; x.beginPath(); x.arc(CX + Math.cos(a) * RX * r, CY + Math.sin(a) * RY * r, 4 + Math.random() * 10, 0, 7); x.fill(); }
-      x.lineCap = 'round'; for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = TOY.navy; x.lineWidth = 26; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); x.strokeStyle = '#d9c9a3'; x.lineWidth = 19; x.stroke(); }
-      x.strokeStyle = '#1f6fa8'; x.lineWidth = 32; x.beginPath(); x.ellipse(CX, CY, RX * RIV, RY * RIV, 0, 0, TAU); x.stroke(); x.strokeStyle = '#4fa8e0'; x.lineWidth = 25; x.stroke();
-      x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 2; for (let i = 0; i < 44; i++) { const a = i / 44 * TAU, px = CX + Math.cos(a) * RX * RIV, py = CY + Math.sin(a) * RY * RIV; x.beginPath(); x.moveTo(px - 5, py); x.quadraticCurveTo(px, py - 3, px + 5, py); x.stroke(); }
-      const hg = x.createRadialGradient(CX, CY - 6, 6, CX, CY, 84); hg.addColorStop(0, '#ffe58a'); hg.addColorStop(0.7, '#d9a43a'); hg.addColorStop(1, '#8a5a1e'); x.fillStyle = hg; x.beginPath(); x.ellipse(CX, CY, 80, 50, 0, 0, TAU); x.fill(); x.lineWidth = 4; x.strokeStyle = TOY.navy; x.stroke();
-      for (let i = 0; i < 40; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()); x.fillStyle = Math.random() < 0.5 ? '#ffe9a0' : '#f7c948'; x.beginPath(); x.ellipse(CX + Math.cos(a) * 66 * r, CY + Math.sin(a) * 38 * r, 5, 3, 0, 0, 7); x.fill(); }
-      nodes.forEach((nd, k) => { if (!nd.poly) return; x.fillStyle = 'rgba(0,0,0,.25)'; x.save(); x.translate(2, 3); polyPath(nd.poly, x); x.fill(); x.restore(); polyPath(nd.poly, x); x.fillStyle = '#fbf3dc'; x.fill();
-        if (nd.type === 'wheel') { const gg = x.createLinearGradient(nd.x - 24, nd.y, nd.x + 24, nd.y); ['#ff8fa3', '#ffd27a', '#fff59a', '#9be7a8', '#9fd3f0', '#c3b4f3'].forEach((cc, i) => gg.addColorStop(i / 5, cc)); x.fillStyle = gg; } else x.fillStyle = (BAND[nd.type] || BAND.road)(nd);
-        polyPath(nd.band, x); x.fill(); polyPath(nd.poly, x); x.lineWidth = 2.5; x.strokeStyle = TOY.navy; x.stroke();
-        const t = nd.type === 'keep' ? '' : ICON(k); if (t) { const ix = nd.ux != null ? nd.x + nd.ux * 4 : CX + (nd.x - CX) * 0.985, iy = nd.uy != null ? nd.y + nd.uy * 4 : CY + (nd.y - CY) * 0.97; emo(t, ix, iy, nd.type === 'site' ? 21 : 18, x); } });
+      const gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#2b4a3c'); gr.addColorStop(1, '#4f7a45'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < 120; i++) { x.fillStyle = `rgba(30,70,40,${0.12 + Math.random() * 0.12})`; x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 6 + Math.random() * 22, 0, 7); x.fill(); }
+      // realms
+      TT_REALMS.forEach(rm => { const rg = x.createRadialGradient(rm.x, rm.y, 10, rm.x, rm.y, 170); rg.addColorStop(0, rm.tint); rg.addColorStop(0.7, rm.tint + 'aa'); rg.addColorStop(1, rm.tint + '00'); x.fillStyle = rg; x.beginPath(); x.arc(rm.x, rm.y, 170, 0, TAU); x.fill();
+        for (let i = 0; i < 9; i++) { const a = i / 9 * TAU + 0.3, r = 95 + (i % 3) * 22; const px = rm.x + Math.cos(a) * r, py = rm.y + Math.sin(a) * r * 0.75; if (px > 10 && px < W - 10 && py > 10 && py < H - 10) emo(rm.deco, px, py, 22 + (i % 3) * 4, x); }
+        x.font = '700 13px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = 'rgba(27,31,94,.85)'; const lx = rm.y < 150 ? rm.x + (rm.x < 640 ? -110 : rm.x > 640 ? 110 : 105) : rm.x, ly = rm.y < 150 ? rm.y + 4 : rm.y - 62; x.strokeText(rm.name.toUpperCase(), lx, ly); x.fillStyle = '#fff'; x.fillText(rm.name.toUpperCase(), lx, ly); });
+      // the river: through every bridge midpoint
+      const mids = BR.map(b => [(nodes[b.a].x + nodes[b.b].x) / 2, (nodes[b.a].y + nodes[b.b].y) / 2]).sort((a, b) => a[0] - b[0]);
+      const rv = [[-20, mids[0][1] + 60], ...mids, [W + 20, mids[mids.length - 1][1] + 60]]; const riv = (lw, col) => { x.strokeStyle = col; x.lineWidth = lw; x.lineCap = 'round'; x.beginPath(); x.moveTo(rv[0][0], rv[0][1]); for (let i = 1; i < rv.length - 1; i++) { const mx = (rv[i][0] + rv[i + 1][0]) / 2, my = (rv[i][1] + rv[i + 1][1]) / 2; x.quadraticCurveTo(rv[i][0], rv[i][1], mx, my); } x.lineTo(rv[rv.length - 1][0], rv[rv.length - 1][1]); x.stroke(); };
+      riv(44, '#1b1f5e'); riv(38, '#2c8fd0'); riv(28, '#6cc3f2');
+      x.lineCap = 'round'; for (const e of edges) { const a = nodes[e.a], b = nodes[e.b]; x.strokeStyle = 'rgba(27,31,94,.9)'; x.lineWidth = 16; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); x.strokeStyle = '#e9dcc0'; x.lineWidth = 10; x.stroke(); }
+      riv(0.01, 'transparent'); for (const b of BR) { const A = nodes[b.a], B = nodes[b.b]; x.strokeStyle = '#6cc3f2'; x.lineWidth = 26; x.beginPath(); const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2; x.moveTo(mx - (B.x - A.x) * 0.18, my - (B.y - A.y) * 0.18); x.lineTo(mx + (B.x - A.x) * 0.18, my + (B.y - A.y) * 0.18); x.stroke(); }
+      // the gates
+      x.fillStyle = 'rgba(0,0,0,.3)'; rr(GX - 78 + 4, GY - 46 + 6, 156, 92, 12); x.fill(); x.save(); x.fillStyle = '#d9d2c2'; x.strokeStyle = TOY.navy; x.lineWidth = 4; x.beginPath(); x.roundRect ? x.roundRect(GX - 78, GY - 46, 156, 92, 10) : x.rect(GX - 78, GY - 46, 156, 92); x.fill(); x.stroke();
+      for (let k = 0; k < 7; k++) { x.fillStyle = '#d9d2c2'; x.fillRect(GX - 76 + k * 22, GY - 58, 14, 14); x.strokeRect(GX - 76 + k * 22, GY - 58, 14, 14); }
+      x.fillStyle = '#5a3d2b'; x.beginPath(); x.moveTo(GX - 24, GY + 46); x.lineTo(GX - 24, GY + 4); x.arc(GX, GY + 4, 24, Math.PI, 0); x.lineTo(GX + 24, GY + 46); x.closePath(); x.fill(); x.stroke(); x.restore();
+      x.font = '700 12px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.fillStyle = TOY.navy; x.fillText('KINGDOM GATES', GX, GY - 28);
+      // the squares
+      nodes.forEach((nd, k) => { if (k === GATE || k === HUB) return; const a = tileAng(k), sz = nd.type === 'shrine' ? 46 : 36;
+        x.save(); x.translate(nd.x, nd.y); x.rotate(a); x.fillStyle = 'rgba(0,0,0,.3)'; rrX(x, -sz / 2 + 2, -sz / 2 + 3, sz, sz, 7); x.fill(); rrX(x, -sz / 2, -sz / 2, sz, sz, 7); x.fillStyle = '#fbf3dc'; x.fill();
+        x.save(); rrX(x, -sz / 2, -sz / 2, sz, sz, 7); x.clip(); x.fillStyle = (BAND[nd.type] || BAND.road)(nd); x.fillRect(-sz / 2, -sz / 2, sz, sz * 0.3); x.restore(); rrX(x, -sz / 2, -sz / 2, sz, sz, 7); x.lineWidth = nd.type === 'shrine' ? 3.5 : 2.5; x.strokeStyle = TOY.navy; x.stroke(); x.restore();
+        const t = ICON(k); if (t) emo(t, nd.x, nd.y + 3, nd.type === 'shrine' ? 26 : 17, x); });
       return bg = c; };
+    function rrX(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
     function knight(o, x, y, sc, lift) { ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 16, 13, 4.5, 0, 0, 7); ctx.fill();
-      ctx.translate(0, -lift); ctx.fillStyle = o.p.color; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-11, 14); ctx.lineTo(11, 14); ctx.lineTo(7, -2); ctx.lineTo(-7, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.restore(); drawAvatar(x, y - 12 * sc - lift * sc, 13 * sc, o.p, { happy: true });
+      ctx.translate(0, -lift); if (g.t - o.hurtT < 0.6) ctx.translate(Math.sin(g.t * 60) * 3, 0); ctx.fillStyle = o.p.color; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-11, 14); ctx.lineTo(11, 14); ctx.lineTo(7, -2); ctx.lineTo(-7, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore(); drawAvatar(x, y - 12 * sc - lift * sc, 13 * sc, o.p, { happy: o.hp > 1 });
       ctx.strokeStyle = '#6b4f2e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 13 * sc, y + 12 * sc - lift * sc); ctx.lineTo(x + 13 * sc, y - 30 * sc - lift * sc); ctx.stroke();
       ctx.fillStyle = o.p.color; ctx.beginPath(); ctx.moveTo(x + 13 * sc, y - 30 * sc - lift * sc); ctx.lineTo(x + 26 * sc, y - 25 * sc - lift * sc); ctx.lineTo(x + 13 * sc, y - 20 * sc - lift * sc); ctx.closePath(); ctx.fill();
-      o.carry.forEach((r, k) => emo(RE(r), x - 14 * sc + k * 14 * sc, y - 36 * sc - lift * sc + Math.sin(g.t * 3 + k) * 2, 14 * sc)); }
-    function keep(o) { const nd = nodes[o.keep], ux = Math.cos(nd.a), uy = Math.sin(nd.a), bw = 150, bh = 52, bx = Math.max(bw / 2 + 6, Math.min(W - bw / 2 - 6, nd.x + ux * 88)), by = Math.max(bh / 2 + 4, Math.min(H - bh / 2 - 2, nd.y + uy * 44)), isC = o === cur() && g.state !== 'end';
-      ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.3)'; rr(bx - bw / 2 + 3, by - bh / 2 + 5, bw, bh, 10); ctx.fill();
-      ctx.fillStyle = '#e8e2d0'; for (let k = 0; k < 5; k++) ctx.fillRect(bx - bw / 2 + 6 + k * (bw - 12) / 5 + 4, by - bh / 2 - 7, (bw - 12) / 5 - 8, 9);
-      rr(bx - bw / 2, by - bh / 2, bw, bh, 8); ctx.fillStyle = '#efe8d6'; ctx.fill(); ctx.lineWidth = isC ? 4 : 3; ctx.strokeStyle = isC ? TOY.sun : TOY.navy; ctx.stroke();
-      ctx.save(); rr(bx - bw / 2, by - bh / 2, bw, bh, 8); ctx.clip(); ctx.fillStyle = o.p.color; ctx.fillRect(bx - bw / 2, by - bh / 2, bw, 18); ctx.restore();
-      toyText('🏰 ' + (o.p.name.length > 10 ? o.p.name.slice(0, 9) + '…' : o.p.name) + '  💰' + o.gold, bx, by - bh / 2 + 9, 12, '#fff', 'center', TOY.navy);
-      TT_RELICS.forEach(([e, , col], r) => { const sx = bx - 2.5 * 27 + r * 27 + 1, b = o.banked.includes(r); rr(sx, by - 3, 25, 24, 6); ctx.fillStyle = b ? col : 'rgba(27,31,94,.1)'; ctx.fill(); if (b) { ctx.lineWidth = 1.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
-        ctx.save(); if (!b) ctx.globalAlpha = 0.22; emo(e, sx + 12.5, by + 9, 16); ctx.restore(); });
-      ctx.restore(); }
-    function troll(b, mx, my, h) { const own = b.troll.owner, ang = b.troll.angry && g.t - b.troll.angry < 1.2, bob = Math.sin(g.t * 2 + mx) * 1.5 + (ang ? Math.sin(g.t * 30) * 2 : 0);
+      o.carry.forEach((r, k) => emo(RE(r), x - 14 * sc + k * 14 * sc, y - 38 * sc - lift * sc + Math.sin(g.t * 3 + k) * 2, 14 * sc)); }
+    function troll(b, mx, my) { const own = b.troll.owner, ang = b.troll.angry && g.t - b.troll.angry < 1.2, bob = Math.sin(g.t * 2 + mx) * 1.5 + (ang ? Math.sin(g.t * 30) * 2 : 0);
       if (own >= 0) { ctx.fillStyle = g.ps[own].p.color; ctx.beginPath(); ctx.arc(mx, my + 2, 17, 0, TAU); ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
-      emo('🧌', mx, my + bob, ang ? 30 : 26); if (own >= 0) toyText(g.ps[own].p.name.slice(0, 8), mx, my + 24, 10, '#fff', 'center', TOY.navy); else toyText('wild', mx, my + 22, 9, '#e6ffd9', 'center', TOY.navy); }
-    function die(x, y, v, s, rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); rr(-s / 2, -s / 2, s, s, s * 0.2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = TOY.navy;
+      emo('🧌', mx, my + bob, ang ? 30 : 26); toyText(own >= 0 ? g.ps[own].p.name.slice(0, 8) : 'wild', mx, my + 23, 10, own >= 0 ? '#fff' : '#e6ffd9', 'center', TOY.navy); }
+    function card(o, x, y, w) { const isC = o === cur() && g.state !== 'end'; ctx.save(); rr(x, y, w, 60, 12); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.lineWidth = isC ? 4 : 2.5; ctx.strokeStyle = isC ? TOY.sun : TOY.navy; ctx.stroke();
+      drawAvatar(x + 18, y + 18, 12, o.p, { happy: o.hp > 1 }); toyText(o.p.name.length > 8 ? o.p.name.slice(0, 7) + '…' : o.p.name, x + 34, y + 13, 12, TOY.navy, 'left', null); toyText('💰' + o.gold, x + w - 8, y + 13, 11, '#8a6a00', 'right', null);
+      ctx.font = '12px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(hearts(o), x + 34, y + 28);
+      TT_REALMS.forEach((rm, r) => { const sx = x + 6 + r * ((w - 12) / 5), b = o.banked.includes(r), sw = (w - 12) / 5 - 3; rr(sx, y + 38, sw, 17, 5); ctx.fillStyle = b ? rm.col : 'rgba(27,31,94,.08)'; ctx.fill(); ctx.save(); if (!b) ctx.globalAlpha = 0.25; emo(rm.e, sx + sw / 2, y + 47, 12); ctx.restore(); });
+      ctx.restore(); }
+    function die(x, y, v, s, rot) { if (!v) return; ctx.save(); ctx.translate(x, y); ctx.rotate(rot); rr(-s / 2, -s / 2, s, s, s * 0.2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.fillStyle = TOY.navy;
       const P = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[v];
       for (const [a, b] of P) { ctx.beginPath(); ctx.arc(a * s * 0.26, b * s * 0.26, s * 0.09, 0, 7); ctx.fill(); } ctx.restore(); }
     function drawWheel() { const w = g.wheel; if (!w || !w.show) return; const tot = TT_WHEEL.reduce((s, x) => s + x[2], 0), Rw = 230, x0 = 640, y0 = 380;
@@ -13584,42 +13588,45 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 34, 0, TAU); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = TOY.navy; ctx.stroke(); emo('🧌', 0, 2, 30); ctx.restore();
       ctx.fillStyle = TOY.coral; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x0 - 20, y0 - Rw - 30); ctx.lineTo(x0 + 20, y0 - Rw - 30); ctx.lineTo(x0, y0 - Rw + 6); ctx.closePath(); ctx.fill(); ctx.stroke();
       if (w.label) { const k = Math.min(1, w.resT * 5); ctx.save(); ctx.translate(640, 660); ctx.scale(k, k); headline(w.label, 0, 0, 44, '#fff', TT_WHEEL[w.k][3]); ctx.restore(); } }
-    g.draw = () => { ctx.drawImage(board(), 0, 0, W, H);
-      BR.forEach(b => { const m = nodes[b.M], c = nodes[b.I], dx = c.x - m.x, dy = c.y - m.y, l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, p1 = [m.x + ux * 17, m.y + uy * 17], p2 = [c.x - ux * (T - 2), c.y - uy * (T - 2)], L2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), h = Math.atan2(uy, ux), mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2;
+    g.draw = () => { ctx.drawImage(board(), 0, 0, W, H); const C = cur(), pulse = 0.5 + Math.sin(g.t * 6) * 0.5;
+      BR.forEach(b => { const A = nodes[b.a], B = nodes[b.b], dx = B.x - A.x, dy = B.y - A.y, l = Math.hypot(dx, dy), h = Math.atan2(dy, dx), mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, L2 = l * 0.5;
         ctx.save(); ctx.translate(mx, my); ctx.rotate(h); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy;
-        if (!b.draw) { rr(-L2 / 2 - 2, -17, L2 + 4, 34, 4); ctx.fillStyle = '#9aa0ad'; ctx.fill(); ctx.stroke(); ctx.strokeStyle = 'rgba(27,31,94,.3)'; ctx.lineWidth = 1.5; for (let k = -L2 / 2 + 7; k < L2 / 2; k += 9) { ctx.beginPath(); ctx.moveTo(k, -15); ctx.lineTo(k, 15); ctx.stroke(); } }
-        else { const v = b.v, half = (L2 / 2 + 2) * (1 - v * 0.62); for (const sgn of [-1, 1]) { ctx.save(); ctx.translate(sgn * (L2 / 2 + 2), 0); if (v > 0.05) { ctx.fillStyle = 'rgba(0,0,0,' + (0.22 * v) + ')'; rr(sgn > 0 ? -half - 3 : 3, -12, half, 32, 3); ctx.fill(); }
-            rr(sgn > 0 ? -half : 0, -16 - v * 6, half, 32, 3); ctx.fillStyle = '#a77a4c'; ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1.5; for (let k = 6; k < half; k += 7) { const xx = sgn > 0 ? -half + k : k; ctx.beginPath(); ctx.moveTo(xx, -14 - v * 6); ctx.lineTo(xx, 14 - v * 6); ctx.stroke(); } ctx.restore(); }
-          for (const sgn of [-1, 1]) { ctx.fillStyle = '#6c7a99'; rr(-5, sgn * 22 - 5, 10, 10, 3); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; ctx.beginPath(); ctx.arc(0, sgn * 22, 3, 0, 7); ctx.fill(); } }
-        ctx.restore(); if (b.troll) troll(b, mx, my, h); });
-      const hl = new Set(g.phase === 'choose' ? g.cands : []), C = cur(), pulse = 0.5 + Math.sin(g.t * 6) * 0.5;
-      nodes.forEach((nd, k) => { if (k === HUB || !nd.poly) return;
-        if (hl.has(k)) { polyPath(nd.poly); ctx.save(); ctx.globalAlpha = 0.25 + pulse * 0.3; ctx.fillStyle = C.p.color; ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 4 + pulse * 2; ctx.strokeStyle = C.p.color; ctx.stroke(); ctx.restore(); }
-        if (g.mud.has(k)) { ctx.fillStyle = '#5d4a2a'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 19, 12, 0.3, 0, TAU); ctx.fill(); ctx.fillStyle = '#7d9a4a'; ctx.beginPath(); ctx.ellipse(nd.x - 5, nd.y - 3, 7, 3.5, 0.3, 0, TAU); ctx.ellipse(nd.x + 7, nd.y + 4, 4, 2.5, 0, 0, TAU); ctx.fill(); }
-        if (g.works.has(k)) emo('🪨', nd.x, nd.y - 2, 28); });
-      { const nd = nodes[HUB]; if (hl.has(HUB)) { ctx.save(); ctx.globalAlpha = 0.3 + pulse * 0.3; ctx.fillStyle = C.p.color; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 92, 62, 0, 0, TAU); ctx.fill(); ctx.restore(); }
-        const br = Math.sin(g.t * 1.6); emo('🐉', nd.x, nd.y - 4 + br * 2, 52 + br * 2); toyText('z z z', nd.x + 34, nd.y - 30 - (g.t * 10 % 12), 13, '#fff', 'center', TOY.navy); toyText("DRAGON'S HOARD", nd.x, nd.y + 40, 11, '#fff', 'center', TOY.navy); }
-      for (const o of g.ps) keep(o);
-      for (const o of g.ps) { const isC = o === C && g.state === 'turn', moving = isC && g.phase === 'moving', lift = moving ? Math.abs(Math.sin(o.hop)) * 6 : 0;
-        if (isC) { ctx.save(); ctx.globalAlpha = 0.5; ctx.strokeStyle = TOY.sun; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(o.x, o.y + 8, 22, 10, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
-        knight(o, o.x, o.y, isC ? 1.05 : 0.88, lift); if (o.stuck) emo('🟫', o.x + 16, o.y + 10, 14); }
+        if (!b.draw) { rr(-L2 / 2, -14, L2, 28, 4); ctx.fillStyle = '#9aa0ad'; ctx.fill(); ctx.stroke(); }
+        else { const v = b.v, half = L2 / 2 * (1 - v * 0.62); for (const sgn of [-1, 1]) { ctx.save(); ctx.translate(sgn * L2 / 2, 0); rr(sgn > 0 ? -half : 0, -14 - v * 6, half, 28, 3); ctx.fillStyle = '#a77a4c'; ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); }
+          for (const sgn of [-1, 1]) { ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; ctx.beginPath(); ctx.arc(0, sgn * 20, 4, 0, 7); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 1.5; ctx.stroke(); } }
+        ctx.restore(); if (b.troll) troll(b, mx, my); });
+      const hl = new Set(g.phase === 'choose' ? g.cands : []);
+      nodes.forEach((nd, k) => { if (hl.has(k)) { ctx.save(); ctx.translate(nd.x, nd.y); ctx.rotate(tileAng(k)); const sz = nd.type === 'shrine' ? 52 : k === GATE ? 70 : 42; rrX(ctx, -sz / 2, -sz / 2, sz, sz, 8); ctx.globalAlpha = 0.25 + pulse * 0.3; ctx.fillStyle = C.p.color; ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 4 + pulse * 2; ctx.strokeStyle = C.p.color; ctx.stroke(); ctx.restore(); }
+        if (g.mud.has(k)) { ctx.fillStyle = '#5d4a2a'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y, 17, 11, 0.3, 0, TAU); ctx.fill(); ctx.fillStyle = '#7d9a4a'; ctx.beginPath(); ctx.ellipse(nd.x - 5, nd.y - 3, 6, 3, 0.3, 0, TAU); ctx.fill(); }
+        if (g.loot.has(k)) { const L = g.loot.get(k); L.forEach((r, j) => emo(RE(r), nd.x - (L.length - 1) * 8 + j * 16, nd.y - 6 + Math.sin(g.t * 4 + j) * 2, 18)); } });
+      { const nd = nodes[HUB]; ctx.save(); ctx.translate(nd.x, nd.y); const s = 1 + Math.sin(g.t * 2) * 0.03; ctx.scale(s, s); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(2, 4, 26, 0, TAU); ctx.fill(); const gg = ctx.createConicGradient ? ctx.createConicGradient(g.t, 0, 0) : null; if (gg) { ['#ff8fa3', '#ffd27a', '#fff59a', '#9be7a8', '#9fd3f0', '#c3b4f3', '#ff8fa3'].forEach((c, i) => gg.addColorStop(i / 6, c)); ctx.fillStyle = gg; } else ctx.fillStyle = '#ffd27a';
+        ctx.beginPath(); ctx.arc(0, 0, 26, 0, TAU); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.restore(); emo('🎡', nd.x, nd.y, 24); if (hl.has(HUB)) { ctx.lineWidth = 5; ctx.strokeStyle = C.p.color; ctx.beginPath(); ctx.arc(nd.x, nd.y, 32 + pulse * 3, 0, TAU); ctx.stroke(); } }
+      // player cards along the bottom, either side of the gates
+      const half = Math.ceil(g.ps.length / 2), cw = Math.min(140, 520 / Math.max(half, 1));
+      g.ps.forEach((o, k) => { const left = k < half, j = left ? k : k - half, x = left ? 548 - (j + 1) * cw : 732 + j * cw; card(o, x + 3, 652, cw - 6); });
+      for (const o of g.ps) { const isC = o === C && g.state === 'turn', lift = isC && g.phase === 'moving' ? Math.abs(Math.sin(o.hop)) * 6 : 0;
+        if (isC) { ctx.save(); ctx.globalAlpha = 0.6; ctx.strokeStyle = TOY.sun; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(o.x, o.y + 8, 22, 10, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
+        knight(o, o.x, o.y, isC ? 1 : 0.82, lift); }
       if (g.state === 'turn') { rr(14, 12, 270, 92, 18); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); drawAvatar(50, 50, 22, C.p, { happy: true }); toyText(C.p.name, 82, 40, 20, TOY.navy, 'left', null);
-        const ph = { pre: 'Getting ready', rolling: 'Rolling…', choose: 'Choosing a route', moving: 'On the move…', dig: 'Digging…', hoard: 'Sneaking past the dragon…', steal: 'Rob them?', switch: 'At the Rune Stone', spin: 'Wheel of Fate!', spinning: 'Spinning…', pause: '' }[g.phase] || '';
+        const ph = { pre: 'Getting ready', rolling: 'Rolling…', choose: 'Choosing a path', moving: 'On the move…', gust: 'Tailwind!', attack: 'Choosing a target…', steal: 'Rob them?', switch: 'At the Rune Stone', spin: 'Wheel of Fate!', spinning: 'Spinning…', pause: '' }[g.phase] || '';
         toyText(ph, 82, 64, 14, '#55608f', 'left', null); toyText('Round ' + g.round + ' of ' + MAXR, 82, 86, 12, '#8a92b8', 'left', null);
-        const rolling = g.phase === 'rolling'; die(206, 58, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice, 42, rolling ? Math.random() * 0.6 - 0.3 : -0.06); die(254, 58, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice2, 42, 0.1); }
+        const rolling = g.phase === 'rolling'; die(g.dice2 ? 206 : 236, 58, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice, 42, rolling ? Math.random() * 0.6 - 0.3 : -0.06); if (g.dice2) die(254, 58, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice2, 42, 0.1); }
       g.log.slice(0, 2).forEach((m, k) => toyText(m, W - 18, 26 + k * 24, k ? 13 : 16, k ? '#dfe6ff' : '#fff', 'right', TOY.navy));
-      for (const f of g.fx) { if (f.k === 'txt') { ctx.globalAlpha = Math.max(0, 1 - f.t / 1.8); headline(f.txt, f.x, f.y - 46 - f.t * 36, 22, f.col, TOY.navy); ctx.globalAlpha = 1; }
-        if (f.k === 'ban' && g.phase !== 'spinning') { const a = Math.max(0, Math.min(1, f.t * 5, (2.2 - f.t) * 3)); ctx.globalAlpha = a; headline(f.txt, 640, 150, 38, f.col, TOY.navy); ctx.globalAlpha = 1; }
-        if (f.k === 'relic') { const a = Math.max(0, 1 - f.t / 1.6), s = 1 + f.t * 1.5; ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = TT_RELICS[f.r][2]; ctx.beginPath(); ctx.arc(f.x, f.y - 20, 18 * s, 0, TAU); ctx.globalAlpha = a * 0.4; ctx.fill(); ctx.globalAlpha = a; emo(RE(f.r), f.x, f.y - 30 - f.t * 30, 34); ctx.restore(); }
-        if (f.k === 'splash') for (let k = 0; k < 8; k++) { const an = k / 8 * TAU, d = f.t * 60; ctx.fillStyle = 'rgba(120,200,255,' + Math.max(0, 1 - f.t) + ')'; ctx.beginPath(); ctx.arc(f.x + Math.cos(an) * d, f.y + Math.sin(an) * d * 0.6 - Math.sin(f.t * 3) * 20, 5, 0, TAU); ctx.fill(); }
+      for (const f of g.fx) { if (f.k === 'txt') { ctx.globalAlpha = Math.max(0, 1 - f.t / 1.8); headline(f.txt, f.x, f.y - 46 - f.t * 36, 21, f.col, TOY.navy); ctx.globalAlpha = 1; }
+        if (f.k === 'ban' && g.phase !== 'spinning') { const a = Math.max(0, Math.min(1, f.t * 5, (2.2 - f.t) * 3)); ctx.globalAlpha = a; headline(f.txt, 640, 200, 36, f.col, TOY.navy); ctx.globalAlpha = 1; }
+        if (f.k === 'relic') { const a = Math.max(0, 1 - f.t / 1.6); ctx.save(); ctx.globalAlpha = a * 0.4; ctx.fillStyle = TT_REALMS[f.r].col; ctx.beginPath(); ctx.arc(f.x, f.y - 20, 18 * (1 + f.t * 1.5), 0, TAU); ctx.fill(); ctx.globalAlpha = a; emo(RE(f.r), f.x, f.y - 30 - f.t * 30, 34); ctx.restore(); }
+        if (f.k === 'emo') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4); emo(f.e, f.x + Math.sin(f.t * 20) * 6, f.y - 20, 36 + f.t * 10); ctx.restore(); }
+        if (f.k === 'boom') for (let k = 0; k < 10; k++) { const an = k / 10 * TAU, d = f.t * 70; ctx.fillStyle = 'rgba(255,' + (150 + k * 8) + ',60,' + Math.max(0, 1 - f.t) + ')'; ctx.beginPath(); ctx.arc(f.x + Math.cos(an) * d, f.y + Math.sin(an) * d * 0.7, 6, 0, TAU); ctx.fill(); }
+        if (f.k === 'bolt' && f.t < 0.6) { ctx.save(); ctx.globalAlpha = 1 - f.t / 0.6; ctx.strokeStyle = '#fff36a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(f.x0, f.y0 - 20); for (let s = 1; s <= 6; s++) { const u = s / 6; ctx.lineTo(f.x0 + (f.x1 - f.x0) * u + (s < 6 ? (Math.random() - 0.5) * 24 : 0), f.y0 - 20 + (f.y1 - f.y0) * u + (s < 6 ? (Math.random() - 0.5) * 24 : 0)); } ctx.stroke(); ctx.restore(); }
+        if (f.k === 'ko') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1.8); emo('💫', f.x, f.y - 30 - f.t * 20, 40); ctx.restore(); }
         if (f.k === 'zap') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.strokeStyle = '#d6c4ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(f.x, f.y, 10 + f.t * 60, 0, TAU); ctx.stroke(); ctx.restore(); }
-        if (f.k === 'fire') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.45 - f.t * 0.15); const fg = ctx.createRadialGradient(CX, CY, 20, CX, CY, 700); fg.addColorStop(0, '#ffdd55'); fg.addColorStop(0.4, '#ff6a2a'); fg.addColorStop(1, 'rgba(120,0,0,0)'); ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+        if (f.k === 'fire') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.45 - f.t * 0.15); const fg = ctx.createRadialGradient(1115, 330, 20, 1115, 330, 900); fg.addColorStop(0, '#ffdd55'); fg.addColorStop(0.4, '#ff6a2a'); fg.addColorStop(1, 'rgba(120,0,0,0)'); ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H); ctx.restore(); }
         if (f.k === 'jack') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.35 - f.t * 0.1) * (Math.floor(f.t * 8) % 2); ctx.fillStyle = Math.floor(f.t * 4) % 2 ? '#ff2d55' : '#ffd23f'; ctx.fillRect(0, 0, W, H); ctx.restore(); } }
       if (g.phase === 'spinning') drawWheel();
-      if (g.state === 'end' && g.winner) { ctx.fillStyle = 'rgba(20,24,50,.7)'; ctx.fillRect(0, 0, W, H); headline(g.winner.p.name.toUpperCase() + ' RULES THE REALM!', 640, 230, 48, TOY.sun, '#5fae4b');
-        knight(g.winner, 640, 320, 2.2, Math.abs(Math.sin(g.t * 4)) * 6); emo(TT_RELICS.map(r => r[0]).join(' '), 640, 400, 34);
-        g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.gold - a.gold).slice(0, 6).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ·  ' + q.banked.length + '/5  ' + q.banked.map(RE).join(''), 640, 450 + k * 32, k ? 20 : 26, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
-    banner('QUEST BEGINS! COLLECT ALL 5 RELICS', TOY.sun); startTurn(); return g;
+      if (g.state === 'end' && g.winner) { ctx.fillStyle = 'rgba(20,24,50,.72)'; ctx.fillRect(0, 0, W, H); headline(g.winner.p.name.toUpperCase() + ' RULES THE REALM!', 640, 220, 48, TOY.sun, '#5fae4b');
+        knight(g.winner, 640, 310, 2.2, Math.abs(Math.sin(g.t * 4)) * 6); emo(TT_REALMS.map(r => r.e).join(' '), 640, 392, 34);
+        g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.gold - a.gold).slice(0, 6).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ·  ' + q.banked.length + '/5  ' + q.banked.map(RE).join(''), 640, 440 + k * 32, k ? 20 : 26, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
+    banner('QUEST BEGINS! BRING ALL 5 RELICS HOME', TOY.sun); startTurn(); return g;
   } };
 
 const GAMES = { troll: TrollToll, night: NightMarket, haul: Haul, syd: SurvivingSydney, robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
