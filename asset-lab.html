@@ -157,7 +157,7 @@ function poly(x, P, dy = 0) { x.beginPath(); P.forEach((p, i) => i ? x.lineTo(p[
 function drawSpaces(x, t) {
   for (const s of SPACES) { poly(x, s.P, 2.5); x.fillStyle = 'rgba(0,0,0,.22)'; x.fill();
     const key = s.type === 'bridge' ? 'shared_space_planks' : s.a > 0.6 ? 'shared_space_basalt' : 'shared_space_stone';
-    poly(x, s.P); if (PAT[key]) { PAT[key].setTransform(new DOMMatrix().scale(0.5)); x.fillStyle = PAT[key]; x.fill(); if (s.a > 0.25 && s.a <= 0.6) { x.fillStyle = 'rgba(160,120,80,.35)'; x.fill(); } }
+    poly(x, s.P); if (PAT[key]) { { const ta = MANIFEST.assets.find(a => a.id === key); PAT[key].setTransform(new DOMMatrix().scale((ta && ta.w || 128) / ART[key].w)); } x.fillStyle = PAT[key]; x.fill(); if (s.a > 0.25 && s.a <= 0.6) { x.fillStyle = 'rgba(160,120,80,.35)'; x.fill(); } }
     else { x.fillStyle = s.type === 'bridge' ? '#9a6a3e' : s.a > 0.6 ? '#4d3d38' : s.a > 0.25 ? '#c9b48e' : '#efe3c9'; x.fill(); }
     x.strokeStyle = 'rgba(255,255,255,' + (s.a > .6 ? .12 : .45) + ')'; x.lineWidth = 1.4; x.beginPath(); s.P.slice(0, 5).forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke();
     if (INL[s.type]) { const art = ART['shared_inlay_' + s.type]; if (art) x.drawImage(art.img, s.x - 12, s.y - 9.5, 24, 19);
@@ -179,22 +179,22 @@ function drawPawn(x, px, py, col, ch, outline) { x.save(); x.translate(px, py);
 const PARTS = [];
 function fx(x, dt, t) {
   // lava: body + flowing highlight (texture strip if supplied)
-  const path = () => { x.beginPath(); LAVA.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); };
+  const LV = LAVA.filter(p => p[1] > (MANIFEST.lavaFrom || 0)); const path = () => { x.beginPath(); LV.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); };
   x.lineCap = x.lineJoin = 'round';
   x.globalAlpha = .22 + .08 * Math.sin(t * 2.6); path(); x.strokeStyle = '#ff7a1a'; x.lineWidth = 34; x.stroke(); x.globalAlpha = 1;
   path(); x.strokeStyle = '#4a2a1e'; x.lineWidth = 22; x.stroke(); path(); x.strokeStyle = '#ff6a1a'; x.lineWidth = 16; x.stroke();
   if (PAT.a_lava_flow) { PAT.a_lava_flow.setTransform(new DOMMatrix().translate(0, -t * 30).scale(0.5)); path(); x.strokeStyle = PAT.a_lava_flow; x.lineWidth = 14; x.stroke(); }
   else { path(); x.setLineDash([26, 14]); x.lineDashOffset = -t * 37; x.strokeStyle = '#ffd23f'; x.lineWidth = 6; x.stroke(); x.setLineDash([]); }
-  // crater glow
-  x.save(); x.globalCompositeOperation = 'lighter'; const gr = x.createRadialGradient(1086, 95, 2, 1086, 95, 46); gr.addColorStop(0, 'rgba(255,220,120,.9)'); gr.addColorStop(1, 'rgba(255,90,20,0)'); x.globalAlpha = .7 + .3 * Math.sin(t * 2.4); x.fillStyle = gr; x.beginPath(); x.ellipse(1086, 95, 46, 14, 0, 0, Math.PI * 2); x.fill(); x.restore();
+  if (!MANIFEST.lavaFrom) { // crater glow (only for the drawn cone)
+  x.save(); x.globalCompositeOperation = 'lighter'; const gr = x.createRadialGradient(1086, 95, 2, 1086, 95, 46); gr.addColorStop(0, 'rgba(255,220,120,.9)'); gr.addColorStop(1, 'rgba(255,90,20,0)'); x.globalAlpha = .7 + .3 * Math.sin(t * 2.4); x.fillStyle = gr; x.beginPath(); x.ellipse(1086, 95, 46, 14, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
 }
 function airFx(x, dt, t) { const sm = MANIFEST.assets.find(a => a.layer === 'fx'), art = sm && ART[sm.id];
   if (sm && ANIM) for (const [ex, ey, rate] of sm.emit) if (Math.random() < rate * dt * 2 && PARTS.length < (DENS === 1 ? 30 : 80)) PARTS.push({ x: ex + Math.random() * 10 - 5, y: ey, vx: -8 - Math.random() * 10, vy: -26 - Math.random() * 10, life: 0, max: 5 + Math.random() * 2, s: rate > 1 ? 1 : 0.5 });
-  if (ANIM && Math.random() < dt * 6) { const p = at(LAVA, Math.random() * LAVA[LAVA.length - 1][2]); PARTS.push({ x: p.x, y: p.y, vx: Math.random() * 10 - 5, vy: -30, life: 0, max: 2.5, ember: 1 }); }
+  if (ANIM && Math.random() < dt * 6) { const p = at(LAVA, Math.random() * LAVA[LAVA.length - 1][2]); if (p.y > (MANIFEST.lavaFrom || 0)) PARTS.push({ x: p.x, y: p.y, vx: Math.random() * 10 - 5, vy: -30, life: 0, max: 2.5, ember: 1 }); }
   for (let i = PARTS.length - 1; i >= 0; i--) { const p = PARTS[i]; p.life += dt; if (p.life > p.max) { PARTS.splice(i, 1); continue; } p.x += p.vx * dt; p.y += p.vy * dt; const u = p.life / p.max;
     if (p.ember) { x.globalAlpha = 1 - u; x.fillStyle = '#ffd23f'; x.beginPath(); x.arc(p.x, p.y, 1.8, 0, Math.PI * 2); x.fill(); continue; }
     const sz = sm.w * p.s * (0.5 + u * 1.4); x.globalAlpha = Math.min(1, u * 6) * (1 - u) * 0.85;
-    if (art) { const f = Math.min(sm.frames - 1, Math.floor(u * sm.frames)), fw = art.w / sm.frames; x.drawImage(art.img, f * fw, 0, fw, art.h, p.x - sz / 2, p.y - sz / 2, sz, sz); }
+    if (art) { const f = Math.min((sm.frames || 1) - 1, Math.floor(u * sm.frames)), fw = art.w / (sm.frames || 1); x.drawImage(art.img, f * fw, 0, fw, art.h, p.x - sz / 2, p.y - sz / 2, sz, sz); }
     else { x.fillStyle = '#8f8683'; x.beginPath(); x.arc(p.x, p.y, sz / 2.4, 0, Math.PI * 2); x.fill(); } }
   x.globalAlpha = 1; }
 function signs(x) { const a = MANIFEST.assets.find(a => a.layer === 'signs'); if (!a) return;
