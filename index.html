@@ -13325,26 +13325,28 @@ const TT_ITEMS = { boots: ['👢', 'Boots of Haste', '+3 steps'], shield: ['🛡
   bait: ['🍖', 'Troll Bait', 'Cross troll bridges free this turn'], scroll: ['📜', 'Rune Scroll', 'Flip every drawbridge'] };
 const TT_CARDS = [ // [id, title, text, targeted?]
   ['curse', '🐸 Curse', 'Choose a player. They lose a heart.', 1], ['web', '🕸 Web', 'Choose a player. They miss their next turn.', 1], ['swap', '🌀 Swap', 'Swap places with any player.', 1],
-  ['pick', '🫳 Pickpocket', 'Choose a player. Take 2 of their coins.', 1], ['storm', '⛈ Storm', 'Everyone else moves 2 fewer next turn.', 0], ['dragon', '🐉 Dragon Flyover', 'Everyone else out in the open loses a heart.', 0],
-  ['tax', '🪙 Taxman', 'Everyone pays you 1 coin.', 0], ['fog', '🌫 Fog', 'Everyone else can move at most 5 next turn.', 0]];
+  ['pick', '🫳 Pickpocket', 'Choose a player. Take 2 of their coins.', 1], ['pick', '🫳 Pickpocket', 'Choose a player. Take 2 of their coins.', 1],
+  ['mud', '🟤 Mud Pie', 'Choose a player. They move 3 fewer next turn.', 1], ['mud', '🟤 Mud Pie', 'Choose a player. They move 3 fewer next turn.', 1],
+  ['storm', '⛈ Storm', 'Everyone else moves 2 fewer next turn.', 0], ['dragon', '🐉 Dragon Flyover', 'Everyone else out in the open loses a heart (never the last one).', 0],
+  ['tax', '🪙 Taxman', 'Everyone pays you 1 coin.', 0], ['tax', '🪙 Taxman', 'Everyone pays you 1 coin.', 0], ['fog', '🌫 Fog', 'Everyone else can move at most 5 next turn.', 0]];
 const TT_WHEEL = [['gold', '💰 +5 coins', 5, '#ffc61a'], ['item', '🎁 Free item', 4, '#3ccf6e'], ['heal', '❤ Full heal', 3, '#ff6b8a'], ['flip', '🌉 Flip bridges', 3, '#2f8fd8'],
   ['jackpot', '🏆', 0.7, '#ff2d55'], ['troll', '🧌 Free troll', 3, '#5fae4b'], ['card', '🃏 Hindrance card', 3, '#9a6ad8'], ['home', '🏰 Back to base', 2, '#8a92b8'], ['gold', '💰 +5 coins', 4, '#ffc61a']];
 const TT_SHOP = { shield: 4, potion: 3, boots: 3, bait: 2, scroll: 3 };
 const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 13,
-  rules: [['#ffd23f', 'Collect all 5 relics and bank them on your plinth in the Kingdom, right in the middle.'], ['#b48cff', 'Your secret quest card gives you an order. Follow it for bonus coins.'],
+  rules: [['#ffd23f', 'Bank 5 relics on your plinth in the Kingdom (4 with 5+ players). If nobody does by the last round, most relics wins.'], ['#b48cff', 'Your secret quest card gives you an order. Follow it for bonus coins.'],
     ['#4caf50', 'Roll two dice and walk the winding roads. Stop early and cash unused steps into coins.'], ['#ffc61a', 'Spend coins on shortcuts: the Goblin Tunnel, the Ferry and the Eagle. Or take the long road free.'],
     ['#ff6b8a', '3 hearts. Monsters, trolls, eruptions and rivals hurt. Lose them all and you drop your relics.'], ['#e8384f', 'Hindrance squares draw a card. Land on someone and you can challenge them to a duel.']],
   how: 'Walk winding roads out from the Kingdom to five realms. Follow your quest, dodge eruptions and floods, pay for shortcuts, duel rivals, and bank all five relics on your plinth.',
   create(players) {
-    const n = players.length, TAU = Math.PI * 2, HW = 14, TL = 31, MAXR = n <= 4 ? 20 : n <= 6 ? 17 : 14;
+    const n = players.length, TAU = Math.PI * 2, HW = 11, TL = 31, MAXR = host.ttCap || (n <= 4 ? 20 : n <= 6 ? 17 : 14), GOAL = host.ttGoal || (n <= 4 ? 5 : 4);
     // ---------- the island: terrain first, then roads laid into it ----------
     const J = { B: [640, 330], W: [408, 350], NW: [474, 238], N: [640, 198], NE: [806, 238], E: [872, 350], MC: [640, 478], MK: [370, 566], DW: [786, 566], DE: [1030, 528] };
     TT_REALMS.forEach((rm, k) => J['S' + k] = [rm.x, rm.y]);
     const JNAME = { W: 'Old Inn', NW: 'Ruined Tower', N: 'Frost Waystation', NE: 'Watchtower', E: 'Ember Bridgehouse', MC: 'Market Cross', MK: 'Goblin Market', DW: 'West Dock', DE: 'East Dock' };
     const ROADS = [['B', 'W', [[522, 346]]], ['B', 'NW', [[552, 272]]], ['B', 'N', [[646, 258]]], ['B', 'NE', [[730, 272]]], ['B', 'E', [[760, 346]]], ['B', 'MC', [[630, 410]]],
       ['W', 'NW', [[418, 292]]], ['NW', 'N', [[552, 206]]], ['N', 'NE', [[728, 206]]], ['NE', 'E', [[862, 292]]], ['E', 'MC', [[842, 432], [742, 472]]], ['MC', 'W', [[538, 472], [438, 432]]],
-      ['W', 'S0', [[340, 388], [276, 334], [222, 378]]], ['NW', 'S1', [[432, 196], [396, 214], [366, 172]]], ['N', 'S2', [[706, 176], [586, 130]]],
-      ['NE', 'S3', [[880, 214], [906, 170]]], ['E', 'S4', [[956, 372], [1032, 326]]],
+      ['W', 'S0', [[340, 388], [276, 334], [222, 378]]], ['NW', 'S1', [[432, 196], [396, 214], [366, 172]]], ['N', 'S2', [[712, 182], [600, 160], [690, 118]]],
+      ['NE', 'S3', [[868, 250], [936, 232], [904, 186], [920, 150]]], ['E', 'S4', [[956, 372], [1032, 326]]],
       ['S0', 'S1', [[140, 262], [204, 182], [262, 150]]], ['S1', 'S2', [[430, 100], [540, 76]]], ['S2', 'S3', [[740, 76], [850, 100]]], ['S3', 'S4', [[1052, 176], [1116, 250]]],
       ['MC', 'MK', [[520, 542]]], ['MK', 'S0', [[250, 542], [166, 458]]], ['MC', 'DW', [[720, 548]]], ['DE', 'S4', [[1110, 472], [1142, 402]]]];
     const EXPRESS = [['MK', 'NW', 2, '🕳', 'Goblin Tunnel'], ['DW', 'DE', 2, '⛵', 'Ferry'], ['MC', 'S2', 3, '🦅', 'Eagle Flight']];
@@ -13381,8 +13383,8 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
     const shuffle = L => { for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; } return L; };
     const free = shuffle(ROADTILES.filter(k => nodes[k].type === 'road' && nodes[k].realm < 0 && !nodes[k].adj.includes(BASE)));
     const assign = (t, cnt) => { let placed = 0; for (const k of free) { if (placed >= cnt) break; if (nodes[k].type !== 'road' || nodes[k].adj.some(v => nodes[v].type !== 'road' && nodes[v].type !== 'junction')) continue; nodes[k].type = t; placed++; } };
-    assign('heal', 8); assign('ability', 10); assign('hex', 13); assign('move', 6); assign('gold', 16); assign('rune', 3); assign('wheel', 2);
-    for (const id of ROADTILES) { const nd = nodes[id]; if (nd.realm >= 0 && nd.type === 'road' && Math.random() < 0.45) nd.type = 'danger'; }
+    assign('heal', 8); assign('ability', 9); assign('hex', 16); assign('move', 6); assign('gold', 11); assign('rune', 3); assign('wheel', 2);
+    for (const id of ROADTILES) { const nd = nodes[id]; if (nd.realm >= 0 && nd.type === 'road') { const r = Math.random(); if (r < 0.07 && !nd.adj.some(v => nodes[v].type === 'hex')) nd.type = 'hex'; else if (r < 0.45) nd.type = 'danger'; } }
     // timed events: a gate, a waterfall and the volcano, each every 4 rounds
     const onRoad = (rd, f) => { const L = ROADTILES.filter(k => nodes[k].road === rd); return L[Math.min(L.length - 1, Math.floor(L.length * f))]; };
     const EV = [{ k: 'gate', e: '🚧', name: 'The Frost Gate', off: 2, tiles: [onRoad('NS2', 0.45)] },
@@ -13420,7 +13422,7 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       if (o.hp <= 1) { const h = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'heal').sort((a, b) => (f.get(a) ?? 99) - (f.get(b) ?? 99))[0]; if (h != null && (f.get(h) ?? 99) < (f.get(BASE) ?? 99)) return h; return BASE; }
       const N = need(o), opts = N.map(r => SHRINE[r]);
       if (o.coins >= 7 && o.items.length < 2 && !o.carry.length && (f.get(JN.MK) ?? 99) <= 9) return JN.MK;
-      if (o.carry.length && (o.carry.length >= 3 || !N.length || o.banked.length + o.carry.length >= 5 || (o.carry.length >= 2 && Math.min(...opts.map(k => f.get(k) ?? 99)) > (f.get(BASE) ?? 99)))) return BASE;
+      if (o.carry.length && (o.carry.length >= 3 || !N.length || o.banked.length + o.carry.length >= GOAL || (o.carry.length >= 2 && Math.min(...opts.map(k => f.get(k) ?? 99)) > (f.get(BASE) ?? 99)))) return BASE;
       const q = nextQuest(o); if (q != null && (f.get(SHRINE[q]) ?? 99) < 40) return SHRINE[q];
       for (const [k] of g.loot) if (o.carry.length < 3) opts.push(k); let best = BASE, bd = 1e9; for (const k of opts) { const d = f.get(k) ?? 99; if (d < bd) { bd = d; best = k; } } return best; }
     // ---------- hearts ----------
@@ -13438,10 +13440,10 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
     function hire(o, i) { if (g.phase !== 'pre' || !hireable(o).includes(i) || o.coins < 5) return; o.coins -= 5; const old = BR[i].troll.owner; BR[i].troll = { owner: o.i }; sfx.troll(); SFX.pop();
       float(o, '🧌 Troll hired!', TOY.mint); log(o.p.name + (old >= 0 ? ' bribed ' + g.ps[old].p.name + "'s troll over to their side!" : ' hired a troll to guard a bridge')); R(); }
     function roll(o) { if (g.phase !== 'pre') return; g.dice = 1 + Math.floor(Math.random() * 6); g.dice2 = 1 + Math.floor(Math.random() * 6); g.rollT = 0.8; g.phase = 'rolling'; R(); }
-    function doneRoll() { const o = cur(); let d = Math.max(1, Math.min(o.cap, g.dice + g.dice2 + o.boost - o.minus)); if (o.minus) float(o, '⛈ Storm: -' + o.minus, '#cfd2ff'); if (o.cap < 99) float(o, '🌫 Fog: max ' + o.cap, '#cfd2ff'); o.boost = 0; o.minus = 0; o.cap = 99; startWalk(o, d); }
+    function doneRoll() { const o = cur(); let d = Math.max(1, Math.min(o.cap, g.dice + g.dice2 + o.boost - o.minus)); if (o.minus) float(o, '🐌 Slowed: -' + o.minus, '#cfd2ff'); if (o.cap < 99) float(o, '🌫 Fog: max ' + o.cap, '#cfd2ff'); o.boost = 0; o.minus = 0; o.cap = 99; startWalk(o, d); }
     function startWalk(o, s) { g.left = s; g.walkQ = []; g.landNext = false; o.walked = 0; g.phase = 'walk'; g.phaseT = 30; g.botT = 0.5; R(); }
     function stepTo(o, v) { if (g.phase !== 'walk' || g.left <= 0 || g.walkQ.length || g.landNext) return; if (!nodes[o.node].adj.includes(v) || !canStep(o, o.node, v)) return; g.walkQ.push(v); }
-    function autoWalk(o, tgt) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; const P = pathFrom(o.node, tgt, o), Q = []; for (const v of P) { if (Q.length >= g.left) break; Q.push(v); if (stops(v, o)) break; } g.walkQ = Q; if (!Q.length) stopWalk(o, true); }
+    function autoWalk(o, tgt) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; const P = pathFrom(o.node, tgt, o), Q = []; for (const v of P) { if (Q.length >= g.left) break; Q.push(v); if (stops(v, o)) break; } if (o.p.kind === 'bot' && Q.length && Q[Q.length - 1] !== tgt) { for (let j = Q.length - 1; j >= Math.max(0, Q.length - 3); j--) if (nodes[Q[j]].type === 'hex' && !g.ps.some(q => q !== o && q.node === Q[j])) { Q.length = j + 1; o.stopHere = Q[j]; break; } } g.walkQ = Q; if (!Q.length) stopWalk(o, true); }
     function stopWalk(o, force) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; if (!o.walked && !force) return; const c = Math.floor(g.left / 2); if (c > 0) { o.coins += c; sfx.coin(); float(o, '+' + c + ' coin' + (c > 1 ? 's' : '') + ' (cashed out)', TOY.sun); } g.left = 0; g.phase = 'landing'; land(o); }
     function arrive(o, v) { const from = o.node, ex = expOf(from, v); o.prev = from; o.node = v; o.walked++; g.left--; sfx.step();
       if (ex) { o.coins -= ex.c; sfx.coin(); float(o, ex.e + ' ' + ex.nm + ' -' + ex.c + '🪙', TOY.sun); log(o.p.name + ' took the ' + ex.nm); g.fx.push({ k: 'zap', x: nodes[from].x, y: nodes[from].y, t: 0 }); }
@@ -13480,13 +13482,14 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       if (c[3]) { g.targets = g.ps.filter(q => q !== o && !(c[0] === 'pick' && q.coins < 1)); if (!g.targets.length) { float(o, 'Nobody to target', '#fff'); return afterLand(o); } g.phase = 'hex'; g.phaseT = 14; g.botT = 1.6; R(); return; }
       const others = g.ps.filter(q => q !== o);
       if (c[0] === 'storm') for (const q of others) q.minus = 2; if (c[0] === 'fog') for (const q of others) q.cap = 5;
-      if (c[0] === 'dragon') { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); for (const q of others) if (q.node !== BASE) hurt(q, 1, 'scorched by the dragon flyover'); }
+      if (c[0] === 'dragon') { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); for (const q of others) if (q.node !== BASE && q.hp > 1) hurt(q, 1, 'scorched by the dragon flyover'); }
       if (c[0] === 'tax') { let got = 0; for (const q of others) if (q.coins > 0) { q.coins--; got++; } o.coins += got; sfx.coin(); float(o, '+' + got + ' coins tax', TOY.sun); }
       g.phase = 'cardshow'; g.phaseT = 1.8; R(); }
     function hex(o, q) { if (g.phase !== 'hex' || !g.targets.includes(q)) return; const c = g.card.c[0]; g.fx.push({ k: 'bolt', x0: o.x, y0: o.y, x1: q.x, y1: q.y, t: 0 });
       if (c === 'curse') hurt(q, 1, 'cursed by ' + o.p.name);
       else if (c === 'web') { if (!useShield(q)) { q.skip = true; float(q, '🕸 Webbed!', '#cfd2ff'); log(o.p.name + ' webbed ' + q.p.name); } }
       else if (c === 'swap') { const a = o.node; o.node = q.node; q.node = a; sfx.zap(); log(o.p.name + ' swapped places with ' + q.p.name); }
+      else if (c === 'mud') { if (!useShield(q)) { q.minus = (q.minus || 0) + 3; float(q, '🟤 Muddy boots!', '#d9b38c'); log(o.p.name + ' mud-pied ' + q.p.name); } }
       else if (c === 'pick') { const v = Math.min(2, q.coins); q.coins -= v; o.coins += v; sfx.coin(); float(o, '+' + v + ' pinched', TOY.sun); log(o.p.name + ' pickpocketed ' + q.p.name); }
       g.card = null; afterLand(o); }
     function duel(o, q) { if (g.phase !== 'duelask' || !g.targets.includes(q)) return; g.duel = { a: o, b: q, ra: 1 + Math.floor(Math.random() * 6), rb: 1 + Math.floor(Math.random() * 6), t: 0, done: false }; g.phase = 'duel'; SFX.go(); log(o.p.name + ' challenged ' + q.p.name + ' to a duel!'); R(); }
@@ -13506,7 +13509,7 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       else if (kind === 'home') { o.node = BASE; float(o, 'Whisked home!', '#cfd2ff'); bank(o); }
       else if (kind === 'jackpot') { const N = [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r)); const r = N.length ? rnd(N) : 0; if (N.length) o.banked.push(r); log('JACKPOT! The ' + RN(r) + ' appears on ' + o.p.name + "'s plinth!"); banner('🏆 JACKPOT! ' + RE(r) + ' 🏆', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer();
         for (let k = 0; k < 6; k++) tone(700, 1100, 0.18, 'square', 0.05, k * 0.2); } }
-    function checkEnd() { const w = g.ps.find(q => q.banked.length >= 5); if (w) { finish(w); return true; } return false; }
+    function checkEnd() { const w = g.ps.find(q => q.banked.length >= GOAL); if (w) { finish(w); return true; } return false; }
     function endTurn() { const o = cur(); o.bait = false; g.phase = 'pause'; g.phaseT = 0.8; g.walkQ = []; g.card = null; R(); }
     function nextPlayer() { g.turnNo++; g.turn = (g.turn + 1) % g.ps.length; if (g.turn === 0) { g.round++; if (g.round > MAXR) return finish(null); roundEvents(); if (g.round === MAXR) banner('FINAL ROUND! MOST RELICS WINS', TOY.coral); } startTurn(); }
     function finish(w) { if (g.state === 'end') return; g.phase = 'over'; g.state = 'end'; g.endT = 0; g.winner = w || g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.carry.length - a.carry.length || b.coins - a.coins)[0]; SFX.win(); SFX.cheer(); R(); }
@@ -13555,7 +13558,7 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
     function botAct(o) {
       if (g.phase === 'pre') { const H = hireable(o); if (H.length && o.coins >= 8) return hire(o, H[0]); if (o.items.includes('potion') && o.hp <= 1) return useItem(o, 'potion');
         const k = o.items.find(k => k === 'boots' || (k === 'bait' && o.coins < 3) || (k === 'scroll' && Math.random() < 0.3)); if (k) useItem(o, k); else roll(o); return; }
-      if (g.phase === 'walk') { if (!g.walkQ.length && !g.landNext) { if (o.walked && g.left > 0 && o.node === targetFor(o)) return stopWalk(o); autoWalk(o, targetFor(o)); } return; }
+      if (g.phase === 'walk') { if (!g.walkQ.length && !g.landNext) { if (o.walked && g.left > 0 && (o.node === targetFor(o) || o.stopHere === o.node)) { o.stopHere = -1; return stopWalk(o); } autoWalk(o, targetFor(o)); } return; }
       if (g.phase === 'gust') return g.onPick(o.p, 'gust');
       if (g.phase === 'hex') { const c = g.card.c[0], T = g.targets.slice().sort((a, b) => b.banked.length + b.carry.length - a.banked.length - a.carry.length || b.coins - a.coins); return hex(o, c === 'swap' ? T.find(q => q.carry.length || q.banked.length > o.banked.length) || T[0] : T[0]); }
       if (g.phase === 'duelask') { const q = g.targets.find(q => q.carry.length) || g.targets[0]; return Math.random() < 0.7 ? duel(o, q) : endTurn(); }
@@ -13728,7 +13731,7 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       if (g.state === 'end' && g.winner) { ctx.fillStyle = 'rgba(20,24,50,.72)'; ctx.fillRect(0, 0, W, H); headline(g.winner.p.name.toUpperCase() + ' RULES THE REALM!', 640, 220, 48, TOY.sun, '#5fae4b');
         knight(g.winner, 640, 310, 2.2, Math.abs(Math.sin(g.t * 4)) * 6); emo(TT_REALMS.map(r => r.e).join(' '), 640, 392, 34);
         g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.coins - a.coins).slice(0, 6).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ·  ' + q.banked.length + '/5  ' + q.banked.map(RE).join(''), 640, 440 + k * 32, k ? 20 : 26, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
-    { const f = field(BASE, null); g.stats = { tiles: ROADTILES.length, shrine: SHRINE.map(k => f.get(k)), bridges: BR.length, specials: ROADTILES.filter(k => nodes[k].type !== 'road' && nodes[k].type !== 'bridge').length }; }
+    { const f = field(BASE, null); g.stats = { hex: ROADTILES.filter(k => nodes[k].type === 'hex').length, tiles: ROADTILES.length, shrine: SHRINE.map(k => f.get(k)), bridges: BR.length, specials: ROADTILES.filter(k => nodes[k].type !== 'road' && nodes[k].type !== 'bridge').length }; }
     banner('QUEST BEGINS! CHECK YOUR SECRET QUEST', TOY.sun); startTurn(); return g;
   } };
 
