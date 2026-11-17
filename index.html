@@ -13314,60 +13314,83 @@ const NightMarket = { title: 'Night Market', accent: '#ff8a3d', phones: true, mi
     startTurn(); return g;
   } };
 
-/* ---- 🧌 Troll Toll: a board of touching squares. Start at the Kingdom Gates, walk out to five realms for five relics, survive, bank them back home ---- */
+/* ---- 🧌 Troll Toll: wind out from the Kingdom to five realms, collect five relics, bank them on your plinth ---- */
 const TT_REALMS = [
-  { e: '👑', relic: 'Crown', name: 'Whisperwood', c: 1, r: 9, col: '#4caf50', tint: '#cdeec4', dz: ['🐺', 'Wolves bite'], deco: '🌲' },
-  { e: '🔮', relic: 'Orb', name: 'Witch Swamp', c: 9, r: 2, col: '#8d6cc4', tint: '#e2d6f5', dz: ['🐍', 'Snake bite'], deco: '🍄' },
-  { e: '🗡', relic: 'Sword', name: 'Frost Peaks', c: 18, r: 0, col: '#5fb8e8', tint: '#dff2fb', dz: ['❄', 'Frostbite'], deco: '🏔' },
-  { e: '💎', relic: 'Rune Gem', name: 'Crystal Caves', c: 28, r: 2, col: '#3fc1c9', tint: '#d3f3f4', dz: ['🦇', 'Bat swarm'], deco: '💠' },
-  { e: '🥚', relic: 'Dragon Egg', name: 'Dragon Volcano', c: 35, r: 9, col: '#ff7043', tint: '#ffdccd', dz: ['🔥', 'Lava burn'], deco: '🌋' }];
-const TT_ITEMS = { boots: ['👢', 'Boots of Haste', '+4 steps'], shield: ['🛡', 'Shield', 'Blocks the next hit or theft'], potion: ['🧪', 'Potion', 'Heal 1 heart'],
-  bomb: ['💣', 'Bomb', 'Hit anyone within 8 squares'], bait: ['🍖', 'Troll Bait', 'Cross troll bridges free this turn'], scroll: ['📜', 'Rune Scroll', 'Flip every drawbridge'] };
-const TT_WHEEL = [['gold', '💰 +5 gold', 5, '#ffc61a'], ['item', '🎁 Free item', 4, '#3ccf6e'], ['heal', '❤ Full heal', 3, '#ff6b8a'], ['flip', '🌉 Flip bridges', 3, '#2f8fd8'],
-  ['jackpot', '🏆', 0.7, '#ff2d55'], ['troll', '🧌 Free troll', 3, '#5fae4b'], ['fire', '🐉 Dragon fire', 2, '#ff6a2a'], ['home', '🏰 Back to gates', 2, '#8a92b8'], ['gold', '💰 +5 gold', 4, '#ffc61a']];
-const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 12,
-  rules: [['#ffd23f', 'Everyone starts at the Kingdom Gates. Walk out to the five realms for their relics.'], ['#4caf50', 'Roll three dice, then walk square by square in any direction with the arrows on your phone.'],
-    ['#ff6b8a', 'You have 3 hearts. Lose them all and you drop what you carry and restart at the gates.'], ['#b48cff', 'Squares: 🌀 move again, ✨ ability, ⚔ attack, ❤ heal, 💰 gold. Realms bite back.'],
-    ['#5fae4b', 'Trolls guard bridges. Pay the toll or get clubbed. Hire a troll and the tolls come to you.'], ['#ff7043', 'Bring relics home to the gates to bank them. First to bank all 5 wins.']],
-  how: 'Start at the Kingdom Gates. Roll three dice and walk square by square in any direction, grab each realm\'s relic, survive monsters, trolls and rivals, and bank all five back at the gates.',
+  { e: '👑', relic: 'Crown', name: 'Whisperwood', x: 118, y: 330, col: '#4caf50', tint: '#cdeec4', dz: ['🐺', 'Wolves bite'], deco: '🌲' },
+  { e: '🔮', relic: 'Orb', name: 'Witch Swamp', x: 335, y: 118, col: '#8d6cc4', tint: '#e2d6f5', dz: ['🐍', 'Snake bite'], deco: '🍄' },
+  { e: '🗡', relic: 'Sword', name: 'Frost Peaks', x: 640, y: 58, col: '#5fb8e8', tint: '#dff2fb', dz: ['❄', 'Frostbite'], deco: '🏔' },
+  { e: '💎', relic: 'Rune Gem', name: 'Crystal Caves', x: 945, y: 118, col: '#3fc1c9', tint: '#d3f3f4', dz: ['🦇', 'Bat swarm'], deco: '💠' },
+  { e: '🥚', relic: 'Dragon Egg', name: 'Dragon Volcano', x: 1162, y: 330, col: '#ff7043', tint: '#ffdccd', dz: ['🔥', 'Lava burn'], deco: '🌋' }];
+const TT_ITEMS = { boots: ['👢', 'Boots of Haste', '+3 steps'], shield: ['🛡', 'Shield', 'Blocks the next hit'], potion: ['🧪', 'Potion', 'Heal 1 heart'],
+  bait: ['🍖', 'Troll Bait', 'Cross troll bridges free this turn'], scroll: ['📜', 'Rune Scroll', 'Flip every drawbridge'] };
+const TT_CARDS = [ // [id, title, text, targeted?]
+  ['curse', '🐸 Curse', 'Choose a player. They lose a heart.', 1], ['web', '🕸 Web', 'Choose a player. They miss their next turn.', 1], ['swap', '🌀 Swap', 'Swap places with any player.', 1],
+  ['pick', '🫳 Pickpocket', 'Choose a player. Take 2 of their coins.', 1], ['storm', '⛈ Storm', 'Everyone else moves 2 fewer next turn.', 0], ['dragon', '🐉 Dragon Flyover', 'Everyone else out in the open loses a heart.', 0],
+  ['tax', '🪙 Taxman', 'Everyone pays you 1 coin.', 0], ['fog', '🌫 Fog', 'Everyone else can move at most 5 next turn.', 0]];
+const TT_WHEEL = [['gold', '💰 +5 coins', 5, '#ffc61a'], ['item', '🎁 Free item', 4, '#3ccf6e'], ['heal', '❤ Full heal', 3, '#ff6b8a'], ['flip', '🌉 Flip bridges', 3, '#2f8fd8'],
+  ['jackpot', '🏆', 0.7, '#ff2d55'], ['troll', '🧌 Free troll', 3, '#5fae4b'], ['card', '🃏 Hindrance card', 3, '#9a6ad8'], ['home', '🏰 Back to base', 2, '#8a92b8'], ['gold', '💰 +5 coins', 4, '#ffc61a']];
+const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPhones: 1, botsOk: true, panelGame: true, introT: 13,
+  rules: [['#ffd23f', 'Collect all 5 relics and bank them on your plinth in the Kingdom, right in the middle.'], ['#b48cff', 'Your secret quest card gives you an order. Follow it for bonus coins.'],
+    ['#4caf50', 'Roll two dice and walk the winding roads. Stop early and cash unused steps into coins.'], ['#ffc61a', 'Spend coins on shortcuts: the Goblin Tunnel, the Ferry and the Eagle. Or take the long road free.'],
+    ['#ff6b8a', '3 hearts. Monsters, trolls, eruptions and rivals hurt. Lose them all and you drop your relics.'], ['#e8384f', 'Hindrance squares draw a card. Land on someone and you can challenge them to a duel.']],
+  how: 'Walk winding roads out from the Kingdom to five realms. Follow your quest, dodge eruptions and floods, pay for shortcuts, duel rivals, and bank all five relics on your plinth.',
   create(players) {
-    const n = players.length, TAU = Math.PI * 2, CS = 34, OX = 11, OY = 4, COLS = 37, ROWS = 18, RIVER = 12, MAXR = n <= 4 ? 22 : n <= 6 ? 18 : 15;
-    // ---------- carve the board on a grid of touching squares ----------
-    const cell = new Map(), K = (c, r) => c + ',' + r;
-    const put = (c, r) => { if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return; if (!cell.has(K(c, r))) cell.set(K(c, r), { c, r }); };
-    const line = (a, b) => { let [c, r] = a; put(c, r); while (c !== b[0]) { c += Math.sign(b[0] - c); put(c, r); } while (r !== b[1]) { r += Math.sign(b[1] - r); put(c, r); } };
-    const route = (...pts) => { for (let i = 1; i < pts.length; i++) line(pts[i - 1], pts[i]); };
-    const GC = [18, 17];
-    route([6, 14], [6, 6], [30, 6], [30, 14], [6, 14]);                 // the great ring
-    route([18, 6], [18, 14]); route([6, 10], [30, 10]);                // the crossroads
-    route(GC, [18, 14]); route([18, 16], [10, 16], [10, 14]); route([18, 16], [26, 16], [26, 14]); // out of the gates
-    route([6, 10], [1, 10], [1, 9]); route([3, 10], [3, 15], [6, 15], [6, 14]);   // Whisperwood
-    route([12, 6], [12, 2], [9, 2]); route([3, 10], [3, 4], [12, 4]);              // Witch Swamp
-    route([18, 6], [18, 0]); route([12, 2], [24, 2]);                              // Frost Peaks + the high road
-    route([24, 6], [24, 2], [28, 2]); route([33, 10], [33, 4], [24, 4]);           // Crystal Caves
-    route([30, 10], [35, 10], [35, 9]); route([33, 10], [33, 15], [30, 15], [30, 14]); // Dragon Volcano
-    // nodes
-    const nodes = [], at = new Map();
-    for (const { c, r } of cell.values()) { at.set(K(c, r), nodes.length); nodes.push({ c, r, x: OX + c * CS + CS / 2, y: OY + r * CS + CS / 2, type: 'road', adj: [], realm: -1 }); }
-    nodes.forEach((nd, k) => { for (const [dc, dr] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) { const j = at.get(K(nd.c + dc, nd.r + dr)); if (j != null) nd.adj.push(j); } });
-    const idx = (c, r) => at.get(K(c, r)), GATE = idx(...GC), HUB = idx(18, 10);
-    nodes[GATE].type = 'gate'; nodes[HUB].type = 'wheel';
-    TT_REALMS.forEach((rm, k) => { const s = idx(rm.c, rm.r); nodes[s].type = 'shrine'; nodes[s].realm = k; rm.node = s; nodes.forEach(nd => { if (nd.realm < 0 && nd.type === 'road' && Math.abs(nd.c - rm.c) + Math.abs(nd.r - rm.r) <= 4) nd.realm = k; }); });
-    // bridges where paths cross the river
-    const BR = []; nodes.forEach((nd, k) => { if (nd.r === RIVER) { const i = BR.length, draw = nd.c === 18 || nd.c === 3 || nd.c === 33; BR.push({ node: k, draw, up: nd.c === 18, v: nd.c === 18 ? 1 : 0, troll: draw ? null : { owner: -1 } }); nd.type = 'bridge'; nd.br = i; } });
-    // what sits on each square
+    const n = players.length, TAU = Math.PI * 2, HW = 15, TL = 38, MAXR = n <= 4 ? 20 : n <= 6 ? 17 : 14;
+    // ---------- junctions and winding roads ----------
+    const J = { B: [640, 360], R0: [380, 400], R1: [470, 222], R2: [640, 190], R3: [810, 222], R4: [900, 400], RB: [640, 562], BL: [190, 592], BR: [1090, 592] };
+    TT_REALMS.forEach((rm, k) => J['S' + k] = [rm.x, rm.y]);
+    const ROADS = [['B', 'R0', [[520, 392]]], ['B', 'R1', [[560, 292]]], ['B', 'R2', [[656, 272]]], ['B', 'R3', [[722, 292]]], ['B', 'R4', [[780, 380]]], ['B', 'RB', [[622, 462]]],
+      ['R0', 'R1', [[392, 300]]], ['R1', 'R2', [[555, 176]]], ['R2', 'R3', [[725, 176]]], ['R3', 'R4', [[888, 300]]], ['R4', 'RB', [[860, 515], [760, 572]]], ['RB', 'R0', [[520, 572], [420, 515]]],
+      ['R0', 'S0', [[260, 400], [175, 370]]], ['R1', 'S1', [[405, 170]]], ['R2', 'S2', [[618, 122]]], ['R3', 'S3', [[875, 170]]], ['R4', 'S4', [[1020, 400], [1105, 370]]],
+      ['S0', 'S1', [[140, 225], [228, 145]]], ['S1', 'S2', [[450, 82], [545, 66]]], ['S2', 'S3', [[735, 66], [830, 82]]], ['S3', 'S4', [[1052, 145], [1140, 225]]],
+      ['S0', 'BL', [[100, 450], [135, 545]]], ['BL', 'RB', [[340, 618], [510, 606]]], ['S4', 'BR', [[1180, 450], [1145, 545]]], ['BR', 'RB', [[940, 618], [770, 606]]]];
+    const EXPRESS = [['BL', 'R1', 2, '🕳', 'Goblin Tunnel'], ['BR', 'R3', 2, '⛵', 'Ferry'], ['RB', 'S2', 3, '🦅', 'Eagle Flight']];
+    const RIVER = [[566, -10], [540, 110], [470, 200], [400, 290], [320, 420], [270, 560], [250, 740]];
+    const nodes = [], JN = {};
+    const addNode = o => { nodes.push(Object.assign({ adj: [], type: 'road', realm: -1 }, o)); return nodes.length - 1; };
+    const link = (a, b) => { if (!nodes[a].adj.includes(b)) nodes[a].adj.push(b); if (!nodes[b].adj.includes(a)) nodes[b].adj.push(a); };
+    for (const [k, [x, y]] of Object.entries(J)) JN[k] = addNode({ x, y, j: k, rad: k === 'B' ? 56 : k[0] === 'S' ? 25 : 19, type: k === 'B' ? 'base' : k[0] === 'S' ? 'shrine' : 'junction', realm: k[0] === 'S' ? +k[1] : -1 });
+    const cr = (p0, p1, p2, p3, t) => { const t2 = t * t, t3 = t2 * t; return [0, 1].map(i => 0.5 * ((2 * p1[i]) + (-p0[i] + p2[i]) * t + (2 * p0[i] - 5 * p1[i] + 4 * p2[i] - p3[i]) * t2 + (-p0[i] + 3 * p1[i] - 3 * p2[i] + p3[i]) * t3)); };
+    function spline(P) { const out = []; const Q = [P[0], ...P, P[P.length - 1]]; for (let i = 1; i < Q.length - 2; i++) for (let s = 0; s < 20; s++) out.push(cr(Q[i - 1], Q[i], Q[i + 1], Q[i + 2], s / 20)); out.push(P[P.length - 1]); return out; }
+    const ROADTILES = [];
+    for (const [a, b, wp] of ROADS) { const A = nodes[JN[a]], B = nodes[JN[b]], pts = spline([[A.x, A.y], ...wp, [B.x, B.y]]), cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      const L = cum[cum.length - 1], s0 = A.rad + 2, s1 = L - B.rad - 2, m = Math.max(1, Math.round((s1 - s0) / TL)), seg = (s1 - s0) / m;
+      const at = s => { let i = 1; while (i < cum.length - 1 && cum[i] < s) i++; const u = (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1), x = pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, y = pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u, dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1], l = Math.hypot(dx, dy) || 1; return [x, y, -dy / l, dx / l]; };
+      let prev = JN[a]; const list = [];
+      for (let t = 0; t < m; t++) { const sa = s0 + seg * t + 1.2, sb = s0 + seg * (t + 1) - 1.2, L1 = [], L2 = []; for (let q = 0; q <= 4; q++) { const [x, y, nx, ny] = at(sa + (sb - sa) * q / 4); L1.push([x + nx * HW, y + ny * HW]); L2.push([x - nx * HW, y - ny * HW]); }
+        const [cx, cy, nx, ny] = at((sa + sb) / 2), id = addNode({ x: cx, y: cy, nx, ny, poly: L1.concat(L2.reverse()), road: a + b }); link(prev, id); prev = id; list.push(id); ROADTILES.push(id); }
+      link(prev, JN[b]); }
+    const EXP = new Map(); for (const [a, b, c, e, nm] of EXPRESS) { link(JN[a], JN[b]); EXP.set(JN[a] + '-' + JN[b], { c, e, nm }); EXP.set(JN[b] + '-' + JN[a], { c, e, nm }); }
+    const expOf = (a, b) => EXP.get(a + '-' + b);
+    const BASE = JN.B, SHRINE = [0, 1, 2, 3, 4].map(k => JN['S' + k]);
+    // realms, river bridges, special squares
+    for (const id of ROADTILES) { const nd = nodes[id]; let best = -1, bd = 175; TT_REALMS.forEach((rm, k) => { const d = Math.hypot(rm.x - nd.x, rm.y - nd.y); if (d < bd) { bd = d; best = k; } }); nd.realm = best; }
+    const segDist = (x, y, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy))); return Math.hypot(x - a[0] - u * dx, y - a[1] - u * dy); };
+    const RIVPTS = spline(RIVER), riverD = (x, y) => { let d = 1e9; for (let i = 1; i < RIVPTS.length; i++) d = Math.min(d, segDist(x, y, RIVPTS[i - 1], RIVPTS[i])); return d; };
+    const BR = []; { const used = new Set(); for (const id of ROADTILES) { const nd = nodes[id]; if (riverD(nd.x, nd.y) < 15 && !used.has(nd.road)) { used.add(nd.road); const i = BR.length, draw = i % 2 === 1; BR.push({ node: id, draw, up: draw && i % 4 === 1, v: draw && i % 4 === 1 ? 1 : 0, troll: draw ? null : { owner: -1 } }); nd.type = 'bridge'; nd.br = i; nd.realm = -1; } } }
     const shuffle = L => { for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; } return L; };
-    const near = (k, d) => nodes.some(nd => nd.type !== 'road' && nd.type !== 'danger' && Math.abs(nd.c - nodes[k].c) + Math.abs(nd.r - nodes[k].r) <= d && nd !== nodes[k]);
-    const free = shuffle(nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road' && nodes[k].realm < 0 && Math.abs(nodes[k].c - GC[0]) + Math.abs(nodes[k].r - GC[1]) > 1));
-    const assign = (t, cnt) => { let placed = 0; for (let i = 0; i < free.length && placed < cnt; i++) { const k = free[i]; if (nodes[k].type !== 'road' || near(k, 1)) continue; nodes[k].type = t; placed++; } };
-    assign('heal', 9); assign('ability', 12); assign('attack', 9); assign('move', 9); assign('gold', 16); assign('trap', 6); assign('rune', 4); assign('wheel', 2);
-    nodes.forEach(nd => { if (nd.realm >= 0 && nd.type === 'road' && Math.random() < 0.55) nd.type = 'danger'; });
-    const PORT = [idx(3, 13), idx(33, 13)]; for (const p of PORT) nodes[p].type = 'portal';
-    const passable = v => nodes[v].type !== 'bridge' || !BR[nodes[v].br].draw || !BR[nodes[v].br].up;
-    const g = { t: 0, done: false, panelGame: true, state: 'turn', turn: 0, phase: 'pre', phaseT: 25, botT: 1, dice: 1, dice2: 1, dice3: 1, rollT: 0, round: 1, fx: [], log: [], winner: null, endT: 0,
-      turnNo: 0, left: 0, walkQ: [], stealList: [], targets: [], wheel: null, loot: new Map(), mud: new Set() };
-    g.ps = players.map((p, i) => ({ p, i, node: GATE, x: nodes[GATE].x, y: nodes[GATE].y, hp: 3, carry: [], banked: [], gold: 4, items: [], boost: 0, bait: false, skip: false, hop: 0, lockT: 0, safeT: 0, hurtT: 0, walked: 0 }));
-    const R = () => broadcastPhase(), cur = () => g.ps[g.turn], need = o => [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r) && !o.carry.includes(r));
+    const free = shuffle(ROADTILES.filter(k => nodes[k].type === 'road' && nodes[k].realm < 0 && !nodes[k].adj.includes(BASE)));
+    const assign = (t, cnt) => { let placed = 0; for (const k of free) { if (placed >= cnt) break; if (nodes[k].type !== 'road' || nodes[k].adj.some(v => nodes[v].type !== 'road' && nodes[v].type !== 'junction')) continue; nodes[k].type = t; placed++; } };
+    assign('heal', 8); assign('ability', 10); assign('hex', 13); assign('move', 6); assign('gold', 16); assign('rune', 3); assign('wheel', 2);
+    for (const id of ROADTILES) { const nd = nodes[id]; if (nd.realm >= 0 && nd.type === 'road' && Math.random() < 0.45) nd.type = 'danger'; }
+    // timed events: a gate, a waterfall and the volcano, each every 4 rounds
+    const onRoad = (rd, f) => { const L = ROADTILES.filter(k => nodes[k].road === rd); return L[Math.min(L.length - 1, Math.floor(L.length * f))]; };
+    const EV = [{ k: 'gate', e: '🚧', name: 'The Frost Gate', off: 2, tiles: [onRoad('R2S2', 0.4)] },
+      { k: 'falls', e: '🌊', name: 'The Waterfall', off: 3, tiles: [BR[0] ? BR[0].node : onRoad('R1R2', 0.5)] },
+      { k: 'volcano', e: '🌋', name: 'The Volcano', off: 4, tiles: ROADTILES.filter(k => Math.hypot(nodes[k].x - TT_REALMS[4].x, nodes[k].y - TT_REALMS[4].y) < 110).slice(0, 6) }];
+    for (const ev of EV) for (const t of ev.tiles) if (t != null) nodes[t].ev = ev.k;
+    const evActive = ev => (g.round - ev.off) % 4 === 0 && g.round >= ev.off;
+    const evIn = ev => { let r = g.round; for (let i = 0; i < 5; i++) { if ((r + i - ev.off) % 4 === 0 && r + i >= ev.off) return i; } return 4; };
+    const blocked = v => { const nd = nodes[v]; if (nd.type === 'bridge' && BR[nd.br].draw && BR[nd.br].up) return true; if (nd.ev) { const ev = EV.find(e => e.k === nd.ev); if (evActive(ev)) return true; } return false; };
+    // ---------- state ----------
+    const g = { t: 0, done: false, panelGame: true, state: 'turn', turn: 0, phase: 'pre', phaseT: 25, botT: 1, dice: 1, dice2: 1, rollT: 0, round: 1, fx: [], log: [], winner: null, endT: 0,
+      turnNo: 0, left: 0, walkQ: [], landNext: false, targets: [], card: null, duel: null, wheel: null, loot: new Map() };
+    const starts = shuffle(nodes[BASE].adj.slice());
+    g.ps = players.map((p, i) => { const s = starts[i % starts.length]; return { p, i, node: s, x: nodes[s].x, y: nodes[s].y, hp: 3, carry: [], banked: [], coins: 4, items: [], quest: shuffle([0, 1, 2, 3, 4]),
+      boost: 0, cap: 99, minus: 0, bait: false, skip: false, hop: 0, hurtT: 0, walked: 0, prev: BASE }; });
+    const R = () => broadcastPhase(), cur = () => g.ps[g.turn], need = o => o.quest.filter(r => !o.banked.includes(r) && !o.carry.includes(r));
+    const nextQuest = o => o.quest.find(r => !o.banked.includes(r) && !o.carry.includes(r));
     const log = m => { g.log.unshift(m); g.log.length = Math.min(3, g.log.length); };
     const float = (o, txt, col) => g.fx.push({ k: 'txt', x: o.x, y: o.y, txt, col: col || '#fff', t: 0 });
     const banner = (txt, col) => g.fx.push({ k: 'ban', txt, col: col || TOY.sun, t: 0 });
@@ -13376,158 +13399,171 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       grab: () => { tone(500, 800, 0.08, 'triangle', 0.06); tone(800, 1200, 0.1, 'triangle', 0.05, 0.07); }, bank: () => { tone(660, 660, 0.08, 'square', 0.05); tone(880, 880, 0.08, 'square', 0.05, 0.08); tone(1320, 1320, 0.16, 'square', 0.05, 0.16); },
       clank: () => { tone(220, 120, 0.18, 'square', 0.06); tone(160, 90, 0.2, 'square', 0.05, 0.12); }, tick: () => tone(1500, 1400, 0.02, 'square', 0.04), hit: () => { noise(0.15, 0.1, 1200); tone(240, 90, 0.2, 'square', 0.06); },
       heal: () => { tone(660, 990, 0.15, 'sine', 0.05); tone(990, 1320, 0.2, 'sine', 0.05, 0.12); }, troll: () => { tone(110, 70, 0.4, 'sawtooth', 0.07); tone(90, 60, 0.4, 'sawtooth', 0.05, 0.15); },
-      roar: () => { noise(0.9, 0.12, 300); tone(160, 60, 0.9, 'sawtooth', 0.07); }, zap: () => tone(400, 1600, 0.25, 'sine', 0.06), ko: () => { tone(400, 80, 0.7, 'sawtooth', 0.07); noise(0.4, 0.08, 600); } };
-    const occupied = k => g.ps.some(o => o.node === k), MUDOK = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'road');
-    function roundEvents() { for (const k of [...g.mud]) if (Math.random() < 0.5) g.mud.delete(k); let guard = 0; while (g.mud.size < 2 && guard++ < 40) { const k = rnd(MUDOK); if (!occupied(k)) g.mud.add(k); } }
-    roundEvents();
-    // ---------- distances ----------
-    function field(src) { const dist = new Map([[src, 0]]), q = [src]; while (q.length) { const u = q.shift(); for (const v of nodes[u].adj) { if (dist.has(v) || !passable(v)) continue; dist.set(v, dist.get(u) + 1); q.push(v); } } return dist; }
-    function pathFrom(a, b) { const par = new Map([[a, -1]]), q = [a]; while (q.length) { const u = q.shift(); if (u === b) break; for (const v of nodes[u].adj) { if (par.has(v) || !passable(v)) continue; par.set(v, u); q.push(v); } }
+      roar: () => { noise(0.9, 0.12, 300); tone(160, 60, 0.9, 'sawtooth', 0.07); }, zap: () => tone(400, 1600, 0.25, 'sine', 0.06), ko: () => { tone(400, 80, 0.7, 'sawtooth', 0.07); noise(0.4, 0.08, 600); },
+      card: () => { tone(500, 700, 0.08, 'triangle', 0.05); tone(700, 1000, 0.12, 'triangle', 0.05, 0.08); } };
+    // ---------- paths ----------
+    const canStep = (o, a, b) => { if (blocked(b)) return false; const ex = expOf(a, b); if (ex && (!o || o.coins < ex.c)) return false; return true; };
+    function field(src, o) { const dist = new Map([[src, 0]]), q = [src]; while (q.length) { const u = q.shift(); for (const v of nodes[u].adj) { if (dist.has(v) || blocked(v) || (expOf(u, v) && (!o || o.coins < expOf(u, v).c))) continue; dist.set(v, dist.get(u) + 1); q.push(v); } } return dist; }
+    function pathFrom(a, b, o) { const par = new Map([[a, -1]]), q = [a]; while (q.length) { const u = q.shift(); if (u === b) break; for (const v of nodes[u].adj) { if (par.has(v) || !canStep(o, u, v)) continue; par.set(v, u); q.push(v); } }
       if (!par.has(b)) return []; const P = []; let c = b; while (c !== a) { P.unshift(c); c = par.get(c); } return P; }
-    const within = (o, q, d) => q.node !== GATE && (field(o.node).get(q.node) ?? 99) <= d;
-    const stops = (u, o) => u === GATE || nodes[u].type === 'shrine' || g.mud.has(u) || (g.loot.has(u) && o.carry.length < 3);
-    const stealable = o => o.carry.length >= 3 || o.node === GATE ? [] : g.ps.filter(q => q !== o && q.carry.length && q.node !== GATE && !(q.safeT > g.turnNo) && !(q.lockT > g.turnNo) && (q.node === o.node || nodes[o.node].adj.includes(q.node)));
-    function targetFor(o) { const N = need(o), f = field(o.node);
-      if (o.hp <= 1) { const h = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'heal').sort((a, b) => (f.get(a) ?? 99) - (f.get(b) ?? 99))[0]; if (h != null && (f.get(h) ?? 99) < (f.get(GATE) ?? 99)) return h; return GATE; }
-      const opts = N.map(r => TT_REALMS[r].node); if (o.carry.length && (o.carry.length >= 3 || !N.length || (o.carry.length >= 2 && Math.min(...opts.map(k => f.get(k) ?? 99)) > (f.get(GATE) ?? 99)) || o.banked.length + o.carry.length >= 5)) return GATE; for (const [k] of g.loot) if (o.carry.length < 3) opts.push(k);
-      let best = GATE, bd = 1e9; for (const k of opts) { const d = f.get(k) ?? 99; if (d < bd) { bd = d; best = k; } } return best; }
+    const stops = (u, o) => u === BASE || (g.loot.has(u) && o.carry.length < 3);
+    function targetFor(o) { const f = field(o.node, o);
+      if (o.hp <= 1) { const h = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'heal').sort((a, b) => (f.get(a) ?? 99) - (f.get(b) ?? 99))[0]; if (h != null && (f.get(h) ?? 99) < (f.get(BASE) ?? 99)) return h; return BASE; }
+      const N = need(o), opts = N.map(r => SHRINE[r]);
+      if (o.carry.length && (o.carry.length >= 3 || !N.length || o.banked.length + o.carry.length >= 5 || (o.carry.length >= 2 && Math.min(...opts.map(k => f.get(k) ?? 99)) > (f.get(BASE) ?? 99)))) return BASE;
+      const q = nextQuest(o); if (q != null && (f.get(SHRINE[q]) ?? 99) < 40) return SHRINE[q];
+      for (const [k] of g.loot) if (o.carry.length < 3) opts.push(k); let best = BASE, bd = 1e9; for (const k of opts) { const d = f.get(k) ?? 99; if (d < bd) { bd = d; best = k; } } return best; }
     // ---------- hearts ----------
     const useShield = o => { const i = o.items.indexOf('shield'); if (i < 0) return false; o.items.splice(i, 1); float(o, '🛡 Blocked!', '#9fd3f0'); SFX.bonk(); return true; };
-    function hurt(o, dmg, why) { if (o.node === GATE) return; if (useShield(o)) return; o.hp -= dmg; o.hurtT = g.t; sfx.hit(); float(o, '-' + dmg + ' ❤', '#ff6b8a'); log(o.p.name + ': ' + why); if (o.hp <= 0) ko(o); }
-    function ko(o) { const atN = o.node; if (o.carry.length && atN !== GATE) { const pile = g.loot.get(atN) || []; pile.push(...o.carry); g.loot.set(atN, pile); log(o.p.name + ' was knocked out and dropped ' + o.carry.map(RE).join(' ')); } else log(o.p.name + ' was knocked out!');
-      o.carry = []; o.hp = 3; o.node = GATE; g.landNext = false; sfx.ko(); g.fx.push({ k: 'ko', x: o.x, y: o.y, t: 0 }); banner('💫 ' + o.p.name.toUpperCase() + ' IS KNOCKED OUT', '#ff8fa3'); if (o === cur() && g.phase === 'walk') { g.walkQ = []; g.left = 0; endTurn(); } }
+    function hurt(o, dmg, why) { if (o.node === BASE) return; if (useShield(o)) return; o.hp -= dmg; o.hurtT = g.t; sfx.hit(); float(o, '-' + dmg + ' ❤', '#ff6b8a'); log(o.p.name + ': ' + why); if (o.hp <= 0) ko(o); }
+    function ko(o) { const atN = o.node; if (o.carry.length && atN !== BASE) { const pile = g.loot.get(atN) || []; pile.push(...o.carry); g.loot.set(atN, pile); log(o.p.name + ' was knocked out and dropped ' + o.carry.map(RE).join(' ')); } else log(o.p.name + ' was knocked out!');
+      o.carry = []; o.hp = 3; o.node = BASE; sfx.ko(); g.fx.push({ k: 'ko', x: o.x, y: o.y, t: 0 }); banner('💫 ' + o.p.name.toUpperCase() + ' IS KNOCKED OUT', '#ff8fa3');
+      if (o === cur() && (g.phase === 'walk')) { g.walkQ = []; g.landNext = false; g.left = 0; endTurn(); } }
     // ---------- turn flow ----------
-    function startTurn() { const o = cur(); if (o.skip) { o.skip = false; log(o.p.name + ' is tangled up and misses a turn'); float(o, 'STUCK!', '#c98a4b'); endTurn(); return; } g.phase = 'pre'; g.phaseT = 25; g.botT = 0.9; R(); }
+    function roundEvents() { for (const ev of EV) { if (evActive(ev)) { banner(ev.e + ' ' + ev.name.toUpperCase() + (ev.k === 'gate' ? ' SLAMS SHUT!' : ev.k === 'falls' ? ' FLOODS THE CROSSING!' : ' ERUPTS!'), ev.k === 'volcano' ? '#ff6a2a' : '#9fe3ff');
+        g.fx.push({ k: ev.k === 'volcano' ? 'fire' : 'flash', t: 0 }); if (ev.k === 'volcano') sfx.roar(); else sfx.clank();
+        for (const o of g.ps) if (ev.tiles.includes(o.node)) { hurt(o, 1, 'caught by ' + ev.name); if (o.node !== BASE) { const v = nodes[o.node].adj.find(x => !blocked(x)); if (v != null) o.node = v; } } } } }
+    function startTurn() { const o = cur(); if (o.skip) { o.skip = false; log(o.p.name + ' is webbed and misses a turn'); float(o, 'STUCK!', '#cfd2ff'); endTurn(); return; } g.phase = 'pre'; g.phaseT = 25; g.botT = 0.9; R(); }
     const hireable = o => BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i && (BR[i].node === o.node || nodes[o.node].adj.includes(BR[i].node)));
-    function hire(o, i) { if (g.phase !== 'pre' || !hireable(o).includes(i) || o.gold < 5) return; o.gold -= 5; const old = BR[i].troll.owner; BR[i].troll = { owner: o.i }; sfx.troll(); SFX.pop();
+    function hire(o, i) { if (g.phase !== 'pre' || !hireable(o).includes(i) || o.coins < 5) return; o.coins -= 5; const old = BR[i].troll.owner; BR[i].troll = { owner: o.i }; sfx.troll(); SFX.pop();
       float(o, '🧌 Troll hired!', TOY.mint); log(o.p.name + (old >= 0 ? ' bribed ' + g.ps[old].p.name + "'s troll over to their side!" : ' hired a troll to guard a bridge')); R(); }
-    function roll(o) { if (g.phase !== 'pre') return; g.dice = 1 + Math.floor(Math.random() * 6); g.dice2 = 1 + Math.floor(Math.random() * 6); g.dice3 = 1 + Math.floor(Math.random() * 6); g.rollT = 0.8; g.phase = 'rolling'; R(); }
-    function doneRoll() { const o = cur(); let d = g.dice + g.dice2 + g.dice3; if (g.mud.has(o.node)) { if (g.dice + g.dice2 < 7) { float(o, 'Still stuck in the mud!', '#c98a4b'); endTurn(); return; } float(o, 'Free!', TOY.mint); g.mud.delete(o.node); }
-      startWalk(o, d + o.boost); o.boost = 0; }
+    function roll(o) { if (g.phase !== 'pre') return; g.dice = 1 + Math.floor(Math.random() * 6); g.dice2 = 1 + Math.floor(Math.random() * 6); g.rollT = 0.8; g.phase = 'rolling'; R(); }
+    function doneRoll() { const o = cur(); let d = Math.max(1, Math.min(o.cap, g.dice + g.dice2 + o.boost - o.minus)); if (o.minus) float(o, '⛈ Storm: -' + o.minus, '#cfd2ff'); if (o.cap < 99) float(o, '🌫 Fog: max ' + o.cap, '#cfd2ff'); o.boost = 0; o.minus = 0; o.cap = 99; startWalk(o, d); }
     function startWalk(o, s) { g.left = s; g.walkQ = []; g.landNext = false; o.walked = 0; g.phase = 'walk'; g.phaseT = 30; g.botT = 0.5; R(); }
-    function stepTo(o, v) { if (g.phase !== 'walk' || g.left <= 0 || g.walkQ.length || g.landNext) return; if (!nodes[o.node].adj.includes(v) || !passable(v)) return; g.walkQ.push(v); }
-    function autoWalk(o, tgt) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; const P = pathFrom(o.node, tgt); const Q = []; for (const v of P) { if (Q.length >= g.left) break; Q.push(v); if (stops(v, o)) break; } g.walkQ = Q; if (!Q.length) { g.phase = 'landing'; land(o); } }
-    function stopWalk(o) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; if (!o.walked && g.left > 0) return; g.phase = 'landing'; land(o); }
-    function arrive(o, v) { o.node = v; o.walked++; g.left--; sfx.step(); const nd = nodes[v];
-      if (nd.type === 'bridge') crossBridge(o, nd.br); if (o.node !== v) return; // knocked out by a troll
+    function stepTo(o, v) { if (g.phase !== 'walk' || g.left <= 0 || g.walkQ.length || g.landNext) return; if (!nodes[o.node].adj.includes(v) || !canStep(o, o.node, v)) return; g.walkQ.push(v); }
+    function autoWalk(o, tgt) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; const P = pathFrom(o.node, tgt, o), Q = []; for (const v of P) { if (Q.length >= g.left) break; Q.push(v); if (stops(v, o)) break; } g.walkQ = Q; if (!Q.length) stopWalk(o, true); }
+    function stopWalk(o, force) { if (g.phase !== 'walk' || g.walkQ.length || g.landNext) return; if (!o.walked && !force) return; const c = Math.floor(g.left / 2); if (c > 0) { o.coins += c; sfx.coin(); float(o, '+' + c + ' coin' + (c > 1 ? 's' : '') + ' (cashed out)', TOY.sun); } g.left = 0; g.phase = 'landing'; land(o); }
+    function arrive(o, v) { const from = o.node, ex = expOf(from, v); o.prev = from; o.node = v; o.walked++; g.left--; sfx.step();
+      if (ex) { o.coins -= ex.c; sfx.coin(); float(o, ex.e + ' ' + ex.nm + ' -' + ex.c + '🪙', TOY.sun); log(o.p.name + ' took the ' + ex.nm); g.fx.push({ k: 'zap', x: nodes[from].x, y: nodes[from].y, t: 0 }); }
+      const nd = nodes[v]; if (nd.type === 'bridge') crossBridge(o, nd.br); if (o.node !== v) return;
+      if (v === BASE) bank(o);
       if (stops(v, o) || g.left <= 0) { g.walkQ = []; g.landNext = true; return; } R(); }
-    function useItem(o, k) { if (g.phase !== 'pre') return; const i = o.items.indexOf(k); if (i < 0 || k === 'shield') return;
-      if (k === 'bomb') { const T = g.ps.filter(q => q !== o && within(o, q, 8)); if (!T.length) { float(o, 'Nobody in range', '#fff'); return; } o.items.splice(i, 1); const q = T.sort((a, b) => b.carry.length - a.carry.length || a.hp - b.hp)[0]; g.fx.push({ k: 'boom', x: q.x, y: q.y, t: 0 }); hurt(q, 1, 'hit by ' + o.p.name + "'s bomb"); R(); return; }
-      if (k === 'potion' && o.hp >= 3) { float(o, 'Already full hearts', '#fff'); return; }
+    function useItem(o, k) { if (g.phase !== 'pre') return; const i = o.items.indexOf(k); if (i < 0 || k === 'shield') return; if (k === 'potion' && o.hp >= 3) { float(o, 'Already full hearts', '#fff'); return; }
       o.items.splice(i, 1); const [e, nm] = TT_ITEMS[k]; float(o, e + ' ' + nm + '!', TOY.sun); SFX.pop();
-      if (k === 'boots') o.boost += 4; if (k === 'bait') o.bait = true; if (k === 'scroll') flip(); if (k === 'potion') { o.hp = Math.min(3, o.hp + 1); sfx.heal(); } R(); }
+      if (k === 'boots') o.boost += 3; if (k === 'bait') o.bait = true; if (k === 'scroll') flip(); if (k === 'potion') { o.hp = Math.min(3, o.hp + 1); sfx.heal(); } R(); }
     function giveItem(o, k) { k = k || rnd(Object.keys(TT_ITEMS)); if (o.items.length >= 3) o.items.shift(); o.items.push(k); float(o, TT_ITEMS[k][0] + ' ' + TT_ITEMS[k][1], TOY.mint); sfx.grab(); log(o.p.name + ' found ' + TT_ITEMS[k][1]); }
     function crossBridge(o, br) { const b = BR[br]; if (!b.troll || b.troll.owner === o.i) return; const own = b.troll.owner, toll = own >= 0 ? 3 : 2;
       if (o.bait) { float(o, '🍖 The troll is busy eating', '#fff'); return; } b.troll.angry = g.t; sfx.troll();
-      if (o.gold >= toll) { o.gold -= toll; if (own >= 0) { g.ps[own].gold += toll; float(g.ps[own], '+' + toll + ' toll', TOY.sun); } float(o, '-' + toll + ' gold toll', '#ffd23f'); sfx.coin(); log(o.p.name + ' paid the troll ' + toll + ' gold' + (own >= 0 ? ' (to ' + g.ps[own].p.name + ')' : '')); return; }
-      if (own >= 0) g.ps[own].gold += o.gold; o.gold = 0; g.fx.push({ k: 'boom', x: o.x, y: o.y, t: 0 }); hurt(o, 1, "couldn't pay, so the troll clubbed them"); }
-    function bank(o) { if (!o.carry.length) return; let dup = 0; for (const r of o.carry) { if (o.banked.includes(r)) dup++; else o.banked.push(r); } const nw = o.carry.length - dup; o.carry = [];
-      if (dup) { o.gold += dup * 3; float(o, '+' + dup * 3 + ' gold for spares', TOY.sun); } if (nw) { float(o, 'BANKED!', TOY.sun); log(o.p.name + ' banked ' + nw + ' relic' + (nw > 1 ? 's' : '') + ' (' + o.banked.length + '/5)'); sfx.bank(); SFX.cheer(); } }
+      if (o.coins >= toll) { o.coins -= toll; if (own >= 0) { g.ps[own].coins += toll; float(g.ps[own], '+' + toll + ' toll', TOY.sun); } float(o, '-' + toll + ' coin toll', '#ffd23f'); sfx.coin(); log(o.p.name + ' paid the troll ' + toll + ' coins' + (own >= 0 ? ' (to ' + g.ps[own].p.name + ')' : '')); return; }
+      if (own >= 0) g.ps[own].coins += o.coins; o.coins = 0; g.fx.push({ k: 'boom', x: o.x, y: o.y, t: 0 }); hurt(o, 1, "couldn't pay, so the troll clubbed them"); }
+    function bank(o) { if (!o.carry.length) return; let dup = 0, nw = 0; for (const r of o.carry) { if (o.banked.includes(r)) dup++; else { o.banked.push(r); nw++; } } o.carry = [];
+      if (dup) { o.coins += dup * 3; float(o, '+' + dup * 3 + ' coins for spares', TOY.sun); } if (nw) { float(o, 'BANKED ON YOUR PLINTH!', TOY.sun); log(o.p.name + ' banked ' + nw + ' relic' + (nw > 1 ? 's' : '') + ' (' + o.banked.length + '/5)'); sfx.bank(); SFX.cheer(); g.fx.push({ k: 'plinth', i: o.i, t: 0 }); } }
     function land(o) { const id = o.node, t = nodes[id];
-      if (id === GATE) { bank(o); if (o.hp < 3) { o.hp = 3; sfx.heal(); float(o, '❤ Rested at the gates', '#ff9fb4'); } return afterLand(o); }
-      if (g.mud.has(id)) { noise(0.25, 0.08, 400); float(o, 'MUD! Roll 7+ to leave', '#c98a4b'); }
+      if (id === BASE) { bank(o); if (o.hp < 3) { o.hp = 3; sfx.heal(); float(o, '❤ Rested in the Kingdom', '#ff9fb4'); } return afterLand(o); }
       if (g.loot.has(id) && o.carry.length < 3) { const pile = g.loot.get(id), take = pile.splice(0, 3 - o.carry.length); o.carry.push(...take); if (!pile.length) g.loot.delete(id); sfx.grab(); float(o, take.map(RE).join(' ') + ' Finders keepers!', TOY.mint); log(o.p.name + ' scooped up dropped relics'); }
-      if (t.type === 'shrine') { const r = t.realm; if (r === 4 && Math.random() < 0.3) { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 THE DRAGON WAKES!', '#ff6a2a'); hurt(o, 2, 'scorched by the dragon'); if (o.node !== id) return endTurn(); }
-        if (o.carry.length < 3) { o.carry.push(r); sfx.grab(); float(o, RE(r) + ' ' + RN(r) + '!', TOY.sun); log(o.p.name + ' claimed the ' + RN(r) + (o.banked.includes(r) ? ' (a spare)' : '') + ' in ' + TT_REALMS[r].name); g.fx.push({ k: 'relic', r, x: o.x, y: o.y, t: 0 }); } else float(o, 'Your bag is full!', TOY.coral); }
+      if (t.type === 'shrine') { const r = t.realm; if (r === 4 && Math.random() < 0.25) { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 THE DRAGON WAKES!', '#ff6a2a'); hurt(o, 2, 'scorched by the dragon'); if (o.node !== id) return endTurn(); }
+        if (o.carry.length < 3) { o.carry.push(r); sfx.grab(); const onQ = nextQuest({ ...o, carry: o.carry.slice(0, -1) }) === r; float(o, RE(r) + ' ' + RN(r) + '!' + (onQ ? ' +3🪙 quest bonus' : ''), TOY.sun); if (onQ) o.coins += 3;
+          log(o.p.name + ' claimed the ' + RN(r) + (o.banked.includes(r) ? ' (a spare)' : '') + (onQ ? ', right on quest' : '')); g.fx.push({ k: 'relic', r, x: o.x, y: o.y, t: 0 }); } else float(o, 'Your bag is full!', TOY.coral); }
       else if (t.type === 'danger') { const dz = TT_REALMS[t.realm].dz; if (Math.random() < 0.5) { g.fx.push({ k: 'emo', e: dz[0], x: o.x, y: o.y, t: 0 }); hurt(o, 1, dz[1] + ' in ' + TT_REALMS[t.realm].name); if (o.node !== id) return endTurn(); } else float(o, 'Snuck past the ' + dz[0], '#fff'); }
-      else if (t.type === 'gold') { const v = 2 + Math.floor(Math.random() * 3); o.gold += v; sfx.coin(); float(o, '+' + v + ' gold', TOY.sun); }
+      else if (t.type === 'gold') { const v = 2 + Math.floor(Math.random() * 3); o.coins += v; sfx.coin(); float(o, '+' + v + ' coins', TOY.sun); }
       else if (t.type === 'ability') giveItem(o);
-      else if (t.type === 'heal') { if (o.hp < 3) { o.hp = 3; sfx.heal(); float(o, '❤ Fully healed!', '#ff9fb4'); } else { o.gold += 1; float(o, '+1 gold', TOY.sun); } }
-      else if (t.type === 'trap') { o.skip = true; float(o, '🕸 Caught in a web! Skip a turn', '#cfd2ff'); SFX.bonk(); }
-      else if (t.type === 'portal') { o.node = PORT.find(k => k !== id); sfx.zap(); g.fx.push({ k: 'zap', x: o.x, y: o.y, t: 0 }); float(o, 'WHOOSH!', '#d6c4ff'); log(o.p.name + ' jumped through the portal'); }
+      else if (t.type === 'heal') { if (o.hp < 3) { o.hp = 3; sfx.heal(); float(o, '❤ Fully healed!', '#ff9fb4'); } else { o.coins += 1; float(o, '+1 coin', TOY.sun); } }
       else if (t.type === 'move') { g.phase = 'gust'; g.phaseT = 10; g.botT = 0.9; float(o, '🌀 Tailwind!', '#9fe3ff'); R(); return; }
-      else if (t.type === 'attack') { g.targets = g.ps.filter(q => q !== o && within(o, q, 9)); if (g.targets.length) { g.phase = 'attack'; g.phaseT = 12; g.botT = 1; R(); return; } float(o, 'Nobody in range to attack', '#fff'); }
+      else if (t.type === 'hex') return drawCard(o);
       else if (t.type === 'wheel') { g.phase = 'spin'; g.phaseT = 12; g.botT = 1; tone(500, 900, 0.15, 'triangle', 0.06); R(); return; }
       else if (t.type === 'rune') { g.phase = 'switch'; g.phaseT = 10; g.botT = 1; R(); return; }
       afterLand(o); }
-    function afterLand(o) { if (checkEnd()) return; const N = stealable(o); if (N.length) { g.stealList = N; g.phase = 'steal'; g.phaseT = 10; g.botT = 0.9; R(); return; } endTurn(); }
-    function gust(o) { if (g.phase !== 'gust') return; const d = 1 + Math.floor(Math.random() * 6); g.dice = d; g.dice2 = 0; g.dice3 = 0; float(o, 'Move again: ' + d, '#9fe3ff'); startWalk(o, d); }
-    function attack(o, q, how) { if (g.phase !== 'attack' || !g.targets.includes(q)) return; g.fx.push({ k: 'bolt', x0: o.x, y0: o.y, x1: q.x, y1: q.y, t: 0 });
-      if (how === 'web') { if (!useShield(q)) { q.skip = true; float(q, '🕸 Webbed! Skips a turn', '#cfd2ff'); log(o.p.name + ' webbed ' + q.p.name + ' in place'); SFX.bonk(); } } else hurt(q, 1, 'zapped by ' + o.p.name); afterLand(o); }
-    function steal(o, q) { if (g.phase !== 'steal' || !q || !g.stealList.includes(q) || !q.carry.length) return; if (useShield(q)) { log(q.p.name + "'s shield stopped " + o.p.name); return endTurn(); }
-      const r = q.carry.splice(Math.floor(Math.random() * q.carry.length), 1)[0]; o.carry.push(r); o.lockT = g.turnNo + g.ps.length; q.safeT = g.turnNo + g.ps.length; float(q, RE(r) + ' stolen!', TOY.coral); float(o, RE(r) + ' Yoink!', TOY.mint); log(o.p.name + ' stole the ' + RN(r) + ' from ' + q.p.name); SFX.bonk(); sfx.grab(); endTurn(); }
-    function flip() { for (const b of BR) if (b.draw) b.up = !b.up; for (const o of g.ps) if (nodes[o.node].type === 'bridge' && !passable(o.node)) { const v = nodes[o.node].adj[0]; o.node = v; } sfx.clank(); banner('DRAWBRIDGES FLIPPED', TOY.sun); }
+    function afterLand(o) { if (checkEnd()) return; const D = o.node === BASE ? [] : g.ps.filter(q => q !== o && q.node === o.node); if (D.length) { g.targets = D; g.phase = 'duelask'; g.phaseT = 10; g.botT = 0.9; R(); return; } endTurn(); }
+    function drawCard(o) { const c = rnd(TT_CARDS); g.card = { c, t: g.t }; sfx.card(); log(o.p.name + ' drew ' + c[1]);
+      if (c[3]) { g.targets = g.ps.filter(q => q !== o && !(c[0] === 'pick' && q.coins < 1)); if (!g.targets.length) { float(o, 'Nobody to target', '#fff'); return afterLand(o); } g.phase = 'hex'; g.phaseT = 14; g.botT = 1.6; R(); return; }
+      const others = g.ps.filter(q => q !== o);
+      if (c[0] === 'storm') for (const q of others) q.minus = 2; if (c[0] === 'fog') for (const q of others) q.cap = 5;
+      if (c[0] === 'dragon') { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); for (const q of others) if (q.node !== BASE) hurt(q, 1, 'scorched by the dragon flyover'); }
+      if (c[0] === 'tax') { let got = 0; for (const q of others) if (q.coins > 0) { q.coins--; got++; } o.coins += got; sfx.coin(); float(o, '+' + got + ' coins tax', TOY.sun); }
+      g.phase = 'cardshow'; g.phaseT = 1.8; R(); }
+    function hex(o, q) { if (g.phase !== 'hex' || !g.targets.includes(q)) return; const c = g.card.c[0]; g.fx.push({ k: 'bolt', x0: o.x, y0: o.y, x1: q.x, y1: q.y, t: 0 });
+      if (c === 'curse') hurt(q, 1, 'cursed by ' + o.p.name);
+      else if (c === 'web') { if (!useShield(q)) { q.skip = true; float(q, '🕸 Webbed!', '#cfd2ff'); log(o.p.name + ' webbed ' + q.p.name); } }
+      else if (c === 'swap') { const a = o.node; o.node = q.node; q.node = a; sfx.zap(); log(o.p.name + ' swapped places with ' + q.p.name); }
+      else if (c === 'pick') { const v = Math.min(2, q.coins); q.coins -= v; o.coins += v; sfx.coin(); float(o, '+' + v + ' pinched', TOY.sun); log(o.p.name + ' pickpocketed ' + q.p.name); }
+      g.card = null; afterLand(o); }
+    function duel(o, q) { if (g.phase !== 'duelask' || !g.targets.includes(q)) return; g.duel = { a: o, b: q, ra: 1 + Math.floor(Math.random() * 6), rb: 1 + Math.floor(Math.random() * 6), t: 0, done: false }; g.phase = 'duel'; SFX.go(); log(o.p.name + ' challenged ' + q.p.name + ' to a duel!'); R(); }
+    function duelResult() { const D = g.duel, { a, b, ra, rb } = D; if (ra === rb) { banner("⚔ IT'S A DRAW!", '#fff'); log('The duel was a draw'); return; }
+      const w = ra > rb ? a : b, l = ra > rb ? b : a, by = Math.abs(ra - rb); banner('⚔ ' + w.p.name.toUpperCase() + ' WINS THE DUEL', TOY.sun); SFX.bonk();
+      if (l.coins >= 2) { l.coins -= 2; w.coins += 2; float(w, '+2 coins', TOY.sun); float(l, '-2 coins', TOY.coral); } else { const P = pathFrom(l.node, BASE, null).slice(0, 3); if (P.length) l.node = P[P.length - 1]; float(l, 'Knocked back!', TOY.coral); }
+      if (by >= 4 && l.carry.length) { const r = l.carry.splice(Math.floor(Math.random() * l.carry.length), 1)[0], at = w.node, pile = g.loot.get(at) || []; pile.push(r); g.loot.set(at, pile); float(l, RE(r) + ' dropped!', TOY.coral); log(l.p.name + ' lost badly and dropped the ' + RN(r)); }
+      log(w.p.name + ' beat ' + l.p.name + ' ' + Math.max(ra, rb) + '–' + Math.min(ra, rb)); }
+    function flip() { for (const b of BR) if (b.draw) b.up = !b.up; for (const o of g.ps) if (blocked(o.node)) { const v = nodes[o.node].adj.find(x => !blocked(x)); if (v != null) o.node = v; } sfx.clank(); banner('DRAWBRIDGES FLIPPED', TOY.sun); }
     function spinWheel(o) { if (g.phase !== 'spin') return; const tot = TT_WHEEL.reduce((s, w) => s + w[2], 0); let r = Math.random() * tot, k = 0; for (; k < TT_WHEEL.length; k++) { r -= TT_WHEEL[k][2]; if (r <= 0) break; } k = Math.min(k, TT_WHEEL.length - 1);
-      let s = 0; const st = TT_WHEEL.map(w => { const a = s; s += w[2] / tot; return a; }), en = k + 1 < TT_WHEEL.length ? st[k + 1] : 1, J = TT_WHEEL.findIndex(w => w[0] === 'jackpot');
-      let f = st[k] + (en - st[k]) * (0.15 + Math.random() * 0.7); if (k === J - 1 && Math.random() < 0.6) f = en - 0.004; if (k === J + 1 && Math.random() < 0.6) f = st[k] + 0.004;
+      let s = 0; const st = TT_WHEEL.map(w => { const a = s; s += w[2] / tot; return a; }), en = k + 1 < TT_WHEEL.length ? st[k + 1] : 1, Jk = TT_WHEEL.findIndex(w => w[0] === 'jackpot');
+      let f = st[k] + (en - st[k]) * (0.15 + Math.random() * 0.7); if (k === Jk - 1 && Math.random() < 0.6) f = en - 0.004; if (k === Jk + 1 && Math.random() < 0.6) f = st[k] + 0.004;
       const from = g.wheel ? g.wheel.rot % TAU : 0, to = from + TAU * 6 + (((-f * TAU - from) % TAU) + TAU) % TAU; g.wheel = { rot: from, from, to, t: 0, dur: 3.6, k, st, show: 1, last: -1, resT: 0 }; g.phase = 'spinning'; R(); }
     function wheelResult(o, kind) {
-      if (kind === 'gold') { o.gold += 5; sfx.coin(); float(o, '+5 gold', TOY.sun); } else if (kind === 'item') giveItem(o); else if (kind === 'heal') { o.hp = 3; sfx.heal(); float(o, '❤ Full hearts', '#ff9fb4'); } else if (kind === 'flip') flip();
-      else if (kind === 'troll') { const L = BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i); if (L.length) { BR[rnd(L)].troll = { owner: o.i }; sfx.troll(); banner('🧌 FREE TROLL FOR ' + o.p.name.toUpperCase(), '#a6e38a'); } else o.gold += 3; }
-      else if (kind === 'fire') { sfx.roar(); g.fx.push({ k: 'fire', t: 0 }); banner('🐉 DRAGON FIRE! EVERYONE OUT THERE TAKES A HIT', '#ff6a2a'); for (const q of g.ps) if (q.node !== GATE) hurt(q, 1, 'caught in dragon fire'); }
-      else if (kind === 'home') { o.node = GATE; float(o, 'Whisked home!', '#cfd2ff'); bank(o); }
-      else if (kind === 'jackpot') { const N = [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r)); const r = N.length ? rnd(N) : 0; if (N.length) o.banked.push(r); log('JACKPOT! The ' + RN(r) + ' appears in ' + o.p.name + "'s vault!"); banner('🏆 JACKPOT! ' + RE(r) + ' 🏆', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer();
+      if (kind === 'gold') { o.coins += 5; sfx.coin(); float(o, '+5 coins', TOY.sun); } else if (kind === 'item') giveItem(o); else if (kind === 'heal') { o.hp = 3; sfx.heal(); float(o, '❤ Full hearts', '#ff9fb4'); } else if (kind === 'flip') flip();
+      else if (kind === 'troll') { const L = BR.map((b, i) => i).filter(i => BR[i].troll && BR[i].troll.owner !== o.i); if (L.length) { BR[rnd(L)].troll = { owner: o.i }; sfx.troll(); banner('🧌 FREE TROLL FOR ' + o.p.name.toUpperCase(), '#a6e38a'); } else o.coins += 3; }
+      else if (kind === 'home') { o.node = BASE; float(o, 'Whisked home!', '#cfd2ff'); bank(o); }
+      else if (kind === 'jackpot') { const N = [0, 1, 2, 3, 4].filter(r => !o.banked.includes(r)); const r = N.length ? rnd(N) : 0; if (N.length) o.banked.push(r); log('JACKPOT! The ' + RN(r) + ' appears on ' + o.p.name + "'s plinth!"); banner('🏆 JACKPOT! ' + RE(r) + ' 🏆', TOY.sun); g.fx.push({ k: 'jack', t: 0 }); SFX.win(); SFX.cheer();
         for (let k = 0; k < 6; k++) tone(700, 1100, 0.18, 'square', 0.05, k * 0.2); } }
     function checkEnd() { const w = g.ps.find(q => q.banked.length >= 5); if (w) { finish(w); return true; } return false; }
-    function endTurn() { const o = cur(); o.bait = false; g.phase = 'pause'; g.phaseT = 0.8; g.walkQ = []; R(); }
-    function nextPlayer() { g.turnNo++; g.turn = (g.turn + 1) % g.ps.length; if (g.turn === 0) { g.round++; roundEvents(); if (g.round > MAXR) return finish(null); if (g.round === MAXR) banner('FINAL ROUND! MOST RELICS WINS IF NOBODY GETS ALL 5', TOY.coral); } startTurn(); }
-    function finish(w) { if (g.state === 'end') return; g.phase = 'over'; g.state = 'end'; g.endT = 0; g.winner = w || g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.carry.length - a.carry.length || b.gold - a.gold)[0]; SFX.win(); SFX.cheer(); R(); }
+    function endTurn() { const o = cur(); o.bait = false; g.phase = 'pause'; g.phaseT = 0.8; g.walkQ = []; g.card = null; R(); }
+    function nextPlayer() { g.turnNo++; g.turn = (g.turn + 1) % g.ps.length; if (g.turn === 0) { g.round++; if (g.round > MAXR) return finish(null); roundEvents(); if (g.round === MAXR) banner('FINAL ROUND! MOST RELICS WINS', TOY.coral); } startTurn(); }
+    function finish(w) { if (g.state === 'end') return; g.phase = 'over'; g.state = 'end'; g.endT = 0; g.winner = w || g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.carry.length - a.carry.length || b.coins - a.coins)[0]; SFX.win(); SFX.cheer(); R(); }
     // ---------- phone ----------
-    const DIRS = [['up', 0, -1, '⬆'], ['left', -1, 0, '⬅'], ['right', 1, 0, '➡'], ['down', 0, 1, '⬇']];
-    const dirTo = (o, d) => { const [, dc, dr] = DIRS.find(x => x[0] === d); const v = idx(nodes[o.node].c + dc, nodes[o.node].r + dr); return v != null && passable(v) ? v : null; };
+    const ARROWS = ['➡', '↘', '⬇', '↙', '⬅', '↖', '⬆', '↗'], arrowFor = (a, b) => ARROWS[((Math.round(Math.atan2(nodes[b].y - nodes[a].y, nodes[b].x - nodes[a].x) / (Math.PI / 4)) % 8) + 8) % 8];
+    const DEST = [[BASE, '🏰 Kingdom'], ...SHRINE.map((s, r) => [s, RE(r) + ' ' + TT_REALMS[r].name])];
+    function leadsTo(o, from, v) { const f = new Map([[v, 0]]), q = [v]; while (q.length) { const u = q.shift(); for (const w of nodes[u].adj) { if (w === from || f.has(w) || blocked(w)) continue; f.set(w, f.get(u) + 1); q.push(w); } }
+      let best = '', bd = 1e9; for (const [k, l] of DEST) { const d = f.get(k); if (d != null && d < bd) { bd = d; best = l; } } return best; }
     g.onPick = (p, v) => { const o = g.ps.find(x => x.p === p); if (!o || g.state === 'end' || o !== cur()) return; v = String(v);
       if (v === 'roll') roll(o); else if (v.startsWith('use:')) useItem(o, v.slice(4)); else if (v.startsWith('hire:')) hire(o, +v.slice(5));
-      else if (v.startsWith('dir:')) { const t = dirTo(o, v.slice(4)); if (t != null) stepTo(o, t); } else if (v.startsWith('auto:')) autoWalk(o, +v.slice(5)); else if (v === 'stop') stopWalk(o);
-      else if (v === 'gust') gust(o); else if (v === 'nogust' && g.phase === 'gust') afterLand(o);
-      else if (v.startsWith('zap:')) attack(o, g.ps[+v.slice(4)], 'zap'); else if (v.startsWith('web:')) attack(o, g.ps[+v.slice(4)], 'web'); else if (v === 'noatk' && g.phase === 'attack') afterLand(o);
-      else if (v.startsWith('steal:')) steal(o, g.ps[+v.slice(6)]); else if (v === 'nosteal') { if (g.phase === 'steal') endTurn(); }
+      else if (v.startsWith('go:')) stepTo(o, +v.slice(3)); else if (v.startsWith('auto:')) autoWalk(o, +v.slice(5)); else if (v === 'stop') stopWalk(o);
+      else if (v === 'gust') { if (g.phase === 'gust') { const d = 1 + Math.floor(Math.random() * 6); g.dice = d; g.dice2 = 0; float(o, 'Move again: ' + d, '#9fe3ff'); startWalk(o, d); } } else if (v === 'nogust' && g.phase === 'gust') afterLand(o);
+      else if (v.startsWith('hex:')) hex(o, g.ps[+v.slice(4)]); else if (v.startsWith('duel:')) duel(o, g.ps[+v.slice(5)]); else if (v === 'noduel' && g.phase === 'duelask') endTurn();
       else if (v === 'flip' && g.phase === 'switch') { flip(); afterLand(o); } else if (v === 'leave' && g.phase === 'switch') afterLand(o); else if (v === 'spin') spinWheel(o); };
     const hearts = o => '❤'.repeat(Math.max(0, o.hp)) + '🖤'.repeat(Math.max(0, 3 - o.hp));
-    const relicRow = o => `<div style="margin:4px 0">${TT_REALMS.map((rm, r) => { const b = o.banked.includes(r), c = o.carry.includes(r); return `<span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin:2px;border-radius:10px;font-size:24px;background:${b ? rm.col : c ? '#fff6d6' : '#eef1fb'};border:2.5px ${b ? 'solid #1b1f5e' : c ? 'dashed #e8913a' : 'dashed #b6bde0'};${b || c ? '' : 'filter:grayscale(1);opacity:.45'}">${rm.e}</span>`; }).join('')}</div>`;
-    const NAME = { road: 'Path', gate: 'Kingdom Gates', shrine: 'Shrine', gold: '💰 Gold', ability: '✨ Ability', attack: '⚔ Attack', heal: '❤ Heal', move: '🌀 Tailwind', trap: '🕸 Web trap', portal: '🌌 Portal', wheel: '🎡 Wheel of Fate', rune: '⚡ Rune Stone', bridge: '🌉 Bridge' };
-    const ICON = k => { const nd = nodes[k]; return ({ gate: '🏰', shrine: nd.realm >= 0 ? TT_REALMS[nd.realm].e : '', gold: '💰', ability: '✨', attack: '⚔', heal: '❤', move: '🌀', trap: '🕸', portal: '🌌', wheel: '🎡', rune: '⚡', danger: nd.realm >= 0 ? TT_REALMS[nd.realm].dz[0] : '' })[nd.type] || ''; };
-    const sqName = k => { const nd = nodes[k]; return nd.type === 'shrine' ? TT_REALMS[nd.realm].e + ' ' + RN(nd.realm) + ' shrine' : nd.type === 'danger' ? TT_REALMS[nd.realm].dz[0] + ' Danger' : g.mud.has(k) ? '🟫 Mud' : NAME[nd.type] || 'Path'; };
-    function miniMap(o) { const me = nodes[o.node], rad = 4, cs = 27; let s = `<div style="position:relative;width:${(rad * 2 + 1) * cs}px;height:${(rad * 2 + 1) * cs}px;margin:4px auto;background:#5d8f4a;border-radius:12px;border:3px solid #1b1f5e;overflow:hidden">`;
-      for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) { const k = idx(me.c + dc, me.r + dr); if (k == null) continue; const nd = nodes[k], rm = nd.realm >= 0 ? TT_REALMS[nd.realm] : null, here = k === o.node, other = g.ps.find(q => q !== o && q.node === k), blocked = !passable(k);
-        s += `<div style="position:absolute;left:${(dc + rad) * cs + 1}px;top:${(dr + rad) * cs + 1}px;width:${cs - 2}px;height:${cs - 2}px;border-radius:6px;background:${here ? o.p.color : blocked ? '#e8384f' : rm ? rm.tint : '#fbf3dc'};border:1.5px solid #1b1f5e;font-size:15px;display:flex;align-items:center;justify-content:center">${here ? '⭐' : other ? `<span style="width:14px;height:14px;border-radius:50%;background:${other.p.color};border:2px solid #1b1f5e;display:inline-block"></span>` : g.loot.has(k) ? '🎒' : g.mud.has(k) ? '🟫' : nd.type === 'bridge' ? (BR[nd.br].troll ? '🧌' : '🌉') : ICON(k)}</div>`; }
-      return s + '</div>'; }
+    const questRow = o => `<div style="margin:4px 0;display:flex;justify-content:center;align-items:center;gap:2px">${o.quest.map((r, k) => { const rm = TT_REALMS[r], b = o.banked.includes(r), c = o.carry.includes(r), nx = nextQuest(o) === r; return `${k ? '<span style="opacity:.4">›</span>' : ''}<span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;font-size:22px;background:${b ? rm.col : c ? '#fff6d6' : '#eef1fb'};border:2.5px ${b ? 'solid #1b1f5e' : nx ? 'solid #e8913a' : c ? 'dashed #e8913a' : 'dashed #b6bde0'};${b || c || nx ? '' : 'filter:grayscale(1);opacity:.5'}">${rm.e}</span>`; }).join('')}</div>`;
+    const NAME = { road: 'Path', base: '🏰 Kingdom', junction: 'Crossroads', gold: '💰 Coins', ability: '✨ Ability', hex: '🃏 Hindrance card', heal: '❤ Heal', move: '🌀 Tailwind', wheel: '🎡 Wheel of Fate', rune: '⚡ Rune Stone', bridge: '🌉 Bridge' };
+    const ICON = k => { const nd = nodes[k]; return ({ shrine: nd.realm >= 0 ? TT_REALMS[nd.realm].e : '', gold: '💰', ability: '✨', hex: '🃏', heal: '❤', move: '🌀', wheel: '🎡', rune: '⚡', danger: nd.realm >= 0 ? TT_REALMS[nd.realm].dz[0] : '' })[nd.type] || ''; };
+    const sqName = k => { const nd = nodes[k]; return nd.type === 'shrine' ? TT_REALMS[nd.realm].e + ' ' + RN(nd.realm) + ' shrine' : nd.type === 'danger' ? TT_REALMS[nd.realm].dz[0] + ' Danger' : NAME[nd.type] || 'Path'; };
     g.panel = p => { const o = g.ps.find(x => x.p === p); if (!o) return '<b>👀 Watching</b>';
-      const head = `<div style="font-size:22px;letter-spacing:2px">${hearts(o)}</div><div class="small" style="opacity:1">Relics banked: ${o.banked.length}/5${o.carry.length ? ' · carrying ' + o.carry.length : ''}</div>${relicRow(o)}<div style="font-size:15px;margin:2px 0">💰 <b style="display:inline">${o.gold}</b> gold${o.carry.length ? ' · 🎒 ' + o.carry.map(RE).join(' ') : ''}${o.items.length ? ' · ' + o.items.map(k => TT_ITEMS[k][0]).join(' ') : ''}</div>`;
-      if (g.state === 'end') return head + `<b>${g.winner === o ? '🏆 You rule the realm!' : esc(g.winner.p.name) + ' rules the realm'}</b>`;
+      const top = `<div style="font-size:15px">${hearts(o)} · 🪙${o.coins} · 🏛 ${o.banked.length}/5${o.carry.length ? ' · 🎒 ' + o.carry.map(RE).join(' ') : ''}${o.items.length ? ' · ' + o.items.map(k => TT_ITEMS[k][0]).join('') : ''}</div>`;
+      const head = top + `<div class="small" style="opacity:1">Your secret quest</div>${questRow(o)}`;
+      if (g.state === 'end') return head + `<b>${g.winner === o ? '🏆 All five relics on your plinth. You rule the realm!' : esc(g.winner.p.name) + ' rules the realm'}</b>`;
+      if (g.phase === 'hex' && g.card && o !== cur()) return head + `<b>${esc(cur().p.name)} drew ${g.card.c[1]}…</b><div class="small">${g.card.c[2]}</div>`;
       if (o !== cur()) return head + `<b>${esc(cur().p.name)} is questing…</b>`;
       if (g.phase === 'pre') { const H = hireable(o);
-        return head + `<b>⭐ Your turn</b>${g.mud.has(o.node) ? '<div class="small" style="opacity:1">🟫 Stuck in mud! Roll 7 or more to get out</div>' : ''}${H.map(i => `<button class="pbtn" ${o.gold < 5 ? 'disabled style="opacity:.45"' : ''} data-c="pp" data-v="hire:${i}">🧌 Hire the troll next to you (5 gold)${BR[i].troll.owner >= 0 ? ': steal it from ' + esc(g.ps[BR[i].troll.owner].p.name) : ''}</button>`).join('')}${o.items.filter(k => k !== 'shield').map(k => `<button class="pbtn" data-c="pp" data-v="use:${k}">${TT_ITEMS[k][0]} ${TT_ITEMS[k][1]}: ${TT_ITEMS[k][2]}</button>`).join('')}<button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`; }
-      if (g.phase === 'walk') { const busy = g.walkQ.length > 0, A = DIRS.map(([d, , , ic]) => { const t = dirTo(o, d); return `<button class="pbtn big ${t != null ? 'go' : ''}" style="margin:0;padding:6px 0;font-size:22px${t == null || busy ? ';opacity:.3' : ''}" ${t == null || busy ? 'disabled' : ''} data-c="pp" data-v="dir:${d}">${ic}</button>`; });
-        const q = []; const f = field(o.node); if (o.carry.length || o.hp < 3) q.push([GATE, '🏰 Head home']); for (const r of need(o)) q.push([TT_REALMS[r].node, RE(r) + ' ' + RN(r), f.get(TT_REALMS[r].node) ?? 99]);
-        q.sort((a, b) => (a[2] ?? 0) - (b[2] ?? 0)); const H = nodes.map((nd, k) => k).filter(k => nodes[k].type === 'heal').sort((a, b) => (f.get(a) ?? 99) - (f.get(b) ?? 99))[0]; if (o.hp < 3 && H != null) q.push([H, '❤ Nearest heal']);
-        return `<div style="font-size:15px">${hearts(o)} · 💰${o.gold}${o.carry.length ? ' · 🎒 ' + o.carry.map(RE).join(' ') : ''} · 🏰 ${o.banked.length}/5</div><b>👣 ${g.left} step${g.left === 1 ? '' : 's'} left</b><div class="small" style="opacity:1">On: ${sqName(o.node)}</div>${miniMap(o)}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;width:210px;margin:4px auto"><span></span>${A[0]}<span></span>${A[1]}<button class="pbtn big" style="margin:0;font-size:15px${!o.walked || busy ? ';opacity:.35' : ''}" ${!o.walked || busy ? 'disabled' : ''} data-c="pp" data-v="stop">Stop</button>${A[2]}<span></span>${A[3]}<span></span></div>`
-          + `<div class="small" style="opacity:1">Or auto-walk toward:</div><div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${q.slice(0, 4).map(([k, l]) => `<button class="pbtn" style="flex:1 1 45%;margin:0" ${busy ? 'disabled' : ''} data-c="pp" data-v="auto:${k}">${l}</button>`).join('')}</div>`; }
+        return head + `<b>⭐ Your turn</b>${H.map(i => `<button class="pbtn" ${o.coins < 5 ? 'disabled style="opacity:.45"' : ''} data-c="pp" data-v="hire:${i}">🧌 Hire the troll next to you (5🪙)${BR[i].troll.owner >= 0 ? ': steal it from ' + esc(g.ps[BR[i].troll.owner].p.name) : ''}</button>`).join('')}${o.items.filter(k => k !== 'shield').map(k => `<button class="pbtn" data-c="pp" data-v="use:${k}">${TT_ITEMS[k][0]} ${TT_ITEMS[k][1]}: ${TT_ITEMS[k][2]}</button>`).join('')}<button class="pbtn big go" data-c="pp" data-v="roll">🎲 Roll</button>`; }
+      if (g.phase === 'walk') { const busy = g.walkQ.length > 0 || g.landNext, opts = nodes[o.node].adj.map(v => { const ex = expOf(o.node, v), ok = canStep(o, o.node, v); return `<button class="pbtn ${ok ? 'go' : ''}" style="margin:3px 0;width:100%;text-align:left${!ok || busy ? ';opacity:.35' : ''}" ${!ok || busy ? 'disabled' : ''} data-c="pp" data-v="go:${v}"><span style="font-size:20px">${arrowFor(o.node, v)}</span> ${ex ? ex.e + ' ' + ex.nm + ' (' + ex.c + '🪙)' : sqName(v)}<br><span style="font-size:12px;opacity:.8">toward ${leadsTo(o, o.node, v)}${blocked(v) ? ' · BLOCKED' : ''}</span></button>`; }).join('');
+        const q = []; const qq = nextQuest(o); if (qq != null) q.push([SHRINE[qq], '⭐ Quest: ' + RE(qq) + ' ' + RN(qq)]); if (o.carry.length || o.hp < 3) q.push([BASE, '🏰 Kingdom']); for (const r of need(o)) if (r !== qq) q.push([SHRINE[r], RE(r) + ' ' + RN(r)]);
+        const cash = Math.floor(g.left / 2);
+        return top + `<b>👣 ${g.left} step${g.left === 1 ? '' : 's'} left</b><div class="small" style="opacity:1">On: ${sqName(o.node)}</div>${opts}<button class="pbtn big" style="margin-top:6px${!o.walked || busy ? ';opacity:.35' : ''}" ${!o.walked || busy ? 'disabled' : ''} data-c="pp" data-v="stop">✋ Stop here${cash ? ' · cash out +' + cash + '🪙' : ''}</button>`
+          + `<div class="small" style="opacity:1">Auto-walk toward:</div><div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${q.slice(0, 4).map(([k, l]) => `<button class="pbtn" style="flex:1 1 45%;margin:0" ${busy ? 'disabled' : ''} data-c="pp" data-v="auto:${k}">${l}</button>`).join('')}</div>`; }
       if (g.phase === 'gust') return head + '<b>🌀 Tailwind!</b><div class="small" style="opacity:1">Roll one die and move again?</div><button class="pbtn big go" data-c="pp" data-v="gust">🎲 Move again</button><button class="pbtn big" data-c="pp" data-v="nogust">Stay here</button>';
-      if (g.phase === 'attack') return head + '<b>⚔ Attack!</b><div class="small" style="opacity:1">Zap takes a heart. Web makes them miss a turn.</div>' + g.targets.map(q => `<div style="display:flex;gap:4px"><button class="pbtn go" style="flex:1;margin:2px 0" data-c="pp" data-v="zap:${q.i}">⚡ Zap ${esc(q.p.name)} ${hearts(q)}${q.carry.length ? ' 🎒' + q.carry.map(RE).join('') : ''}</button><button class="pbtn" style="flex:0 0 30%;margin:2px 0" data-c="pp" data-v="web:${q.i}">🕸 Web</button></div>`).join('') + '<button class="pbtn" data-c="pp" data-v="noatk">Leave them be</button>';
-      if (g.phase === 'steal') return head + '<b>😈 Steal a relic?</b>' + g.stealList.map(q => `<button class="pbtn big go" data-c="pp" data-v="steal:${q.i}">Rob ${esc(q.p.name)} (${q.carry.map(RE).join(' ')})</button>`).join('') + '<button class="pbtn" data-c="pp" data-v="nosteal">Leave them</button>';
+      if (g.phase === 'hex') return head + `<b>${g.card.c[1]}</b><div class="small" style="opacity:1">${g.card.c[2]}</div>` + g.targets.map(q => `<button class="pbtn big go" data-c="pp" data-v="hex:${q.i}">${esc(q.p.name)} · ${hearts(q)} · 🪙${q.coins}${q.carry.length ? ' · 🎒' + q.carry.map(RE).join('') : ''}</button>`).join('');
+      if (g.phase === 'duelask') return head + '<b>⚔ Challenge to a duel?</b><div class="small" style="opacity:1">Both roll a die. Loser pays 2 coins (or gets knocked back). Lose by 4+ and they drop a relic.</div>' + g.targets.map(q => `<button class="pbtn big go" data-c="pp" data-v="duel:${q.i}">⚔ Duel ${esc(q.p.name)}${q.carry.length ? ' (🎒' + q.carry.map(RE).join('') + ')' : ''}</button>`).join('') + '<button class="pbtn" data-c="pp" data-v="noduel">No thanks</button>';
       if (g.phase === 'switch') return head + '<b>⚡ Rune Stone</b><div class="small" style="opacity:1">Flip every drawbridge? Open ones rise, raised ones drop.</div><button class="pbtn big go" data-c="pp" data-v="flip">🌉 Flip them</button><button class="pbtn big" data-c="pp" data-v="leave">Leave them</button>';
       if (g.phase === 'spin') return head + '<b>🎡 Wheel of Fate!</b><button class="pbtn big go" data-c="pp" data-v="spin">SPIN IT</button>';
       return head + '<b>⭐ Your turn</b><div class="small">Watch the TV…</div>'; };
-    g.ranking = () => g.ps.slice().sort((a, b) => (b === g.winner) - (a === g.winner) || b.banked.length - a.banked.length || b.gold - a.gold).map(o => o.p.slot);
+    g.ranking = () => g.ps.slice().sort((a, b) => (b === g.winner) - (a === g.winner) || b.banked.length - a.banked.length || b.coins - a.coins).map(o => o.p.slot);
     Object.defineProperty(g, 'pointTable', { get: () => g.ps.map((_, i) => Math.max(0, 3 - i)) });
     g.resultLine = () => g.winner ? '🧌 ' + g.winner.p.name + ' rules the realm' : '';
     g.bot = () => {};
     // ---------- bots ----------
     function botAct(o) {
-      if (g.phase === 'pre') { const H = hireable(o); if (H.length && o.gold >= 8) return hire(o, H[0]);
-        if (o.items.includes('potion') && o.hp <= 1) return useItem(o, 'potion'); if (o.items.includes('bomb') && g.ps.some(q => q !== o && q.carry.length && within(o, q, 8))) return useItem(o, 'bomb');
-        const k = o.items.find(k => k === 'boots' || (k === 'bait' && o.gold < 3) || (k === 'scroll' && Math.random() < 0.3)); if (k) useItem(o, k); else roll(o); return; }
-      if (g.phase === 'walk') { if (!g.walkQ.length) autoWalk(o, targetFor(o)); return; }
-      if (g.phase === 'gust') return gust(o);
-      if (g.phase === 'attack') { const q = g.targets.slice().sort((a, b) => b.carry.length - a.carry.length || b.banked.length - a.banked.length || a.hp - b.hp)[0]; return attack(o, q, q.carry.length || q.hp === 1 ? 'zap' : 'web'); }
-      if (g.phase === 'steal') return steal(o, g.stealList[0]);
+      if (g.phase === 'pre') { const H = hireable(o); if (H.length && o.coins >= 8) return hire(o, H[0]); if (o.items.includes('potion') && o.hp <= 1) return useItem(o, 'potion');
+        const k = o.items.find(k => k === 'boots' || (k === 'bait' && o.coins < 3) || (k === 'scroll' && Math.random() < 0.3)); if (k) useItem(o, k); else roll(o); return; }
+      if (g.phase === 'walk') { if (!g.walkQ.length && !g.landNext) { if (o.walked && g.left > 0 && o.node === targetFor(o)) return stopWalk(o); autoWalk(o, targetFor(o)); } return; }
+      if (g.phase === 'gust') return g.onPick(o.p, 'gust');
+      if (g.phase === 'hex') { const c = g.card.c[0], T = g.targets.slice().sort((a, b) => b.banked.length + b.carry.length - a.banked.length - a.carry.length || b.coins - a.coins); return hex(o, c === 'swap' ? T.find(q => q.carry.length || q.banked.length > o.banked.length) || T[0] : T[0]); }
+      if (g.phase === 'duelask') { const q = g.targets.find(q => q.carry.length) || g.targets[0]; return Math.random() < 0.7 ? duel(o, q) : endTurn(); }
       if (g.phase === 'switch') { if (Math.random() < 0.5) flip(); afterLand(o); return; }
       if (g.phase === 'spin') spinWheel(o); }
-    function timeout(o) { if (g.phase === 'pre') roll(o); else if (g.phase === 'walk') { if (!g.walkQ.length) { if (o.walked) stopWalk(o); else autoWalk(o, targetFor(o)); } } else if (g.phase === 'gust' || g.phase === 'attack' || g.phase === 'switch') afterLand(o); else if (g.phase === 'steal') endTurn(); else if (g.phase === 'spin') spinWheel(o); }
+    function timeout(o) { if (g.phase === 'pre') roll(o); else if (g.phase === 'walk') { if (!g.walkQ.length && !g.landNext) { if (o.walked) stopWalk(o); else autoWalk(o, targetFor(o)); } } else if (g.phase === 'gust' || g.phase === 'switch') afterLand(o); else if (g.phase === 'hex') hex(o, g.targets[0]); else if (g.phase === 'duelask') endTurn(); else if (g.phase === 'spin') spinWheel(o); }
     // ---------- update ----------
-    g.update = dt => { g.t += dt; for (let i = g.fx.length - 1; i >= 0; i--) { g.fx[i].t += dt; if (g.fx[i].t > (g.fx[i].k === 'jack' || g.fx[i].k === 'fire' ? 3 : 2.2)) g.fx.splice(i, 1); }
+    const restPos = o => { const nd = nodes[o.node]; if (o.node === BASE) { const a = -Math.PI / 2 + o.i / n * TAU; return [nd.x + Math.cos(a) * 34, nd.y + Math.sin(a) * 22 + 6]; } const here = g.ps.filter(q => q.node === o.node), k = here.indexOf(o), m = here.length; return [nd.x + (m > 1 ? (k - (m - 1) / 2) * 13 : 0), nd.y + (m > 1 ? ((k % 2) - 0.5) * 6 : 0)]; };
+    g.update = dt => { g.t += dt; for (let i = g.fx.length - 1; i >= 0; i--) { g.fx[i].t += dt; if (g.fx[i].t > (g.fx[i].k === 'jack' || g.fx[i].k === 'fire' ? 3 : 2.4)) g.fx.splice(i, 1); }
       for (const b of BR) b.v += ((b.draw && b.up ? 1 : 0) - b.v) * Math.min(1, dt * 4);
       const C = cur(), walking = g.phase === 'walk' && g.state === 'turn';
-      for (const o of g.ps) { const here = g.ps.filter(q => q.node === o.node && !(q === C && walking)), k = here.indexOf(o), m = here.length, nd = nodes[o.node], gap = o.node === GATE ? 22 : 12;
-        const tx = nd.x + (m > 1 ? (k - (m - 1) / 2) * gap : 0), ty = nd.y + (m > 1 ? ((k % 2) - 0.5) * 6 : 0); if (o === C && walking) { o.hop += dt * 14; const dx = nd.x - o.x, dy = nd.y - o.y, d = Math.hypot(dx, dy), s = Math.min(d, 240 * dt); if (d > 0.5) { o.x += dx / d * s; o.y += dy / d * s; } }
-        else { const f = 1 - Math.exp(-dt * 8); o.x += (tx - o.x) * f; o.y += (ty - o.y) * f; } }
+      for (const o of g.ps) { if (o === C && walking) { o.hop += dt * 14; const nd = nodes[o.node], dx = nd.x - o.x, dy = nd.y - o.y, d = Math.hypot(dx, dy), s = Math.min(d, 220 * dt); if (d > 0.5) { o.x += dx / d * s; o.y += dy / d * s; } }
+        else { const [tx, ty] = restPos(o), f = 1 - Math.exp(-dt * 8); o.x += (tx - o.x) * f; o.y += (ty - o.y) * f; } }
       if (walking && (g.walkQ.length || g.landNext)) { const nd = nodes[C.node]; if (Math.hypot(nd.x - C.x, nd.y - C.y) < 3) { if (g.landNext) { g.landNext = false; g.phase = 'landing'; land(C); } else arrive(C, g.walkQ.shift()); } }
       if (g.state === 'end') { g.endT += dt; if (g.endT > 7) g.done = true; return; }
       const o = cur();
       if (g.phase === 'rolling') { g.rollT -= dt; if (Math.random() < 0.5) noise(0.02, 0.04, 2500); if (g.rollT <= 0) doneRoll(); return; }
+      if (g.phase === 'cardshow') { g.phaseT -= dt; if (g.phaseT <= 0) { g.card = null; afterLand(o); } return; }
+      if (g.phase === 'duel') { const D = g.duel; D.t += dt; if (D.t > 1.6 && !D.done) { D.done = true; duelResult(); R(); } if (D.t > 3.4) { g.duel = null; if (!checkEnd()) endTurn(); } return; }
       if (g.phase === 'spinning') { const w = g.wheel; w.t += dt; const u = Math.min(1, w.t / w.dur); w.rot = w.from + (w.to - w.from) * (1 - Math.pow(1 - u, 3.2));
         const fr = (((-w.rot) % TAU) + TAU) % TAU / TAU; let seg = 0; for (let i = 0; i < w.st.length; i++) if (fr >= w.st[i]) seg = i; if (seg !== w.last) { w.last = seg; sfx.tick(); }
-        if (u >= 1) { w.resT += dt; if (!w.applied) { w.applied = true; const kind = TT_WHEEL[w.k][0]; if (kind !== 'jackpot') tone(880, 1320, 0.2, 'triangle', 0.06); wheelResult(o, kind); w.label = kind === 'jackpot' ? '🏆 JACKPOT 🏆' : TT_WHEEL[w.k][1]; R(); }
+        if (u >= 1) { w.resT += dt; if (!w.applied) { w.applied = true; const kind = TT_WHEEL[w.k][0]; w.label = kind === 'jackpot' ? '🏆 JACKPOT 🏆' : TT_WHEEL[w.k][1]; if (kind === 'card') { w.show = 0; return drawCard(o); } if (kind !== 'jackpot') tone(880, 1320, 0.2, 'triangle', 0.06); wheelResult(o, kind); R(); }
           if (w.resT > 1.6) { w.show = 0; if (checkEnd()) return; afterLand(o); } } return; }
       if (g.phase === 'pause') { g.phaseT -= dt; if (g.phaseT <= 0) nextPlayer(); return; }
       if (g.phase === 'landing') return;
@@ -13535,30 +13571,42 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       g.phaseT -= dt; if (g.phaseT <= 0) { timeout(o); g.phaseT = 3; } };
     // ---------- TV ----------
     const emo = (t, x, y, px, c) => { c = c || ctx; c.font = px + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, x, y); };
-    function rrX(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
-    const BAND = { shrine: nd => TT_REALMS[nd.realm].col, gold: () => '#ffd23f', ability: () => '#b48cff', attack: () => '#ff6b6b', heal: () => '#ff8fab', move: () => '#7fd6ff', trap: () => '#9aa3c9', portal: () => '#c3a6ff', rune: () => '#ffe066', wheel: () => '#ff9a3c', danger: nd => TT_REALMS[nd.realm].col };
+    const polyPath = (P, x) => { x = x || ctx; x.beginPath(); P.forEach(([px, py], k) => k ? x.lineTo(px, py) : x.moveTo(px, py)); x.closePath(); };
+    const BAND = { gold: '#ffd23f', ability: '#b48cff', hex: '#e8384f', heal: '#ff8fab', move: '#7fd6ff', rune: '#ffe066', wheel: '#ff9a3c' };
     let bg = null; const board = () => { if (bg) return bg; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-      const gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#3f6d48'); gr.addColorStop(1, '#5d8f4a'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
-      for (let i = 0; i < 160; i++) { x.fillStyle = `rgba(30,80,40,${0.1 + Math.random() * 0.12})`; x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 6 + Math.random() * 18, 0, 7); x.fill(); }
-      TT_REALMS.forEach(rm => { const px = OX + rm.c * CS + CS / 2, py = OY + rm.r * CS + CS / 2, rg = x.createRadialGradient(px, py, 10, px, py, 190); rg.addColorStop(0, rm.tint); rg.addColorStop(0.6, rm.tint + 'bb'); rg.addColorStop(1, rm.tint + '00'); x.fillStyle = rg; x.beginPath(); x.arc(px, py, 190, 0, TAU); x.fill(); });
-      // the river along row RIVER
-      const ry = OY + RIVER * CS + CS / 2; x.lineCap = 'round'; for (const [lw, col] of [[CS + 10, '#1b1f5e'], [CS + 4, '#2c8fd0'], [CS - 8, '#6cc3f2']]) { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); for (let px = -20; px <= W + 20; px += 10) { const py = ry + Math.sin(px / 60) * 4; px === -20 ? x.moveTo(px, py) : x.lineTo(px, py); } x.stroke(); }
-      x.strokeStyle = 'rgba(255,255,255,.45)'; x.lineWidth = 2; for (let px = 10; px < W; px += 46) { x.beginPath(); x.moveTo(px, ry - 3); x.quadraticCurveTo(px + 6, ry - 7, px + 12, ry - 3); x.stroke(); }
-      // decorations on empty ground
-      for (let c2 = 0; c2 < COLS; c2++) for (let r2 = 0; r2 < ROWS; r2++) { if (cell.has(K(c2, r2)) || r2 === RIVER) continue; if (Math.random() > 0.22) continue; let best = -1, bd = 7; TT_REALMS.forEach((rm, k) => { const d = Math.abs(rm.c - c2) + Math.abs(rm.r - r2); if (d < bd) { bd = d; best = k; } });
-        const px = OX + c2 * CS + CS / 2 + (Math.random() - 0.5) * 10, py = OY + r2 * CS + CS / 2 + (Math.random() - 0.5) * 10; if (py > 600 || (px < 290 && py < 110)) continue; emo(best >= 0 ? TT_REALMS[best].deco : (Math.random() < 0.7 ? '🌳' : '🌼'), px, py, best >= 0 ? 20 : 18, x); }
-      TT_REALMS.forEach(rm => { const px = OX + rm.c * CS + CS / 2, py = OY + rm.r * CS + CS / 2, top = rm.r < 4, lx = top ? px + (rm.c < 18 ? -82 : 82) : px, ly = top ? py + 34 : py - 40;
-        x.font = '700 13px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineWidth = 4; x.strokeStyle = 'rgba(27,31,94,.9)'; x.strokeText(rm.name.toUpperCase(), lx, ly); x.fillStyle = '#fff'; x.fillText(rm.name.toUpperCase(), lx, ly); });
-      // the squares
-      nodes.forEach((nd, k) => { if (nd.type === 'bridge') return; const sx = OX + nd.c * CS + 1.5, sy = OY + nd.r * CS + 1.5, sz = CS - 3, rm = nd.realm >= 0 ? TT_REALMS[nd.realm] : null;
-        x.fillStyle = 'rgba(0,0,0,.28)'; rrX(x, sx + 1.5, sy + 2.5, sz, sz, 6); x.fill(); rrX(x, sx, sy, sz, sz, 6); x.fillStyle = nd.type === 'gate' ? '#e7dfcc' : rm ? rm.tint : '#fbf3dc'; x.fill();
-        const band = nd.type === 'road' ? (rm ? rm.col : null) : (BAND[nd.type] ? BAND[nd.type](nd) : null); if (band) { x.save(); rrX(x, sx, sy, sz, sz, 6); x.clip(); x.fillStyle = band; x.fillRect(sx, sy, sz, nd.type === 'road' ? 4 : 8); x.restore(); }
-        rrX(x, sx, sy, sz, sz, 6); x.lineWidth = nd.type === 'shrine' ? 3 : 1.8; x.strokeStyle = TOY.navy; x.stroke(); const t = ICON(k); if (t) emo(t, nd.x, nd.y + 2, nd.type === 'shrine' ? 22 : 16, x); });
-      // castle around the gates
-      const gx = nodes[GATE].x, gy = nodes[GATE].y + 20; x.save(); x.fillStyle = 'rgba(0,0,0,.3)'; rrX(x, gx - 60 + 3, gy - 10 + 5, 120, 48, 8); x.fill(); x.fillStyle = '#d9d2c2'; x.strokeStyle = TOY.navy; x.lineWidth = 3; rrX(x, gx - 60, gy - 10, 120, 48, 8); x.fill(); x.stroke();
-      for (const sx of [-60, 38]) { x.fillStyle = '#cfc7b4'; x.fillRect(gx + sx, gy - 26, 22, 64); x.strokeRect(gx + sx, gy - 26, 22, 64); for (let k = 0; k < 3; k++) { x.fillRect(gx + sx + k * 8, gy - 33, 6, 8); x.strokeRect(gx + sx + k * 8, gy - 33, 6, 8); } }
-      x.fillStyle = '#5a3d2b'; x.beginPath(); x.moveTo(gx - 16, gy + 38); x.lineTo(gx - 16, gy + 4); x.arc(gx, gy + 4, 16, Math.PI, 0); x.lineTo(gx + 16, gy + 38); x.closePath(); x.fill(); x.stroke(); x.restore();
-      x.font = '700 10px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.fillStyle = TOY.navy; x.fillText('KINGDOM GATES', gx, gy - 2);
+      const gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#4b7d4f'); gr.addColorStop(1, '#6a9b55'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      // rolling hills with light from the top left
+      for (let i = 0; i < 26; i++) { const hx = Math.random() * W, hy = Math.random() * H, hr = 50 + Math.random() * 90, hg = x.createRadialGradient(hx - hr * 0.3, hy - hr * 0.35, hr * 0.1, hx, hy, hr); hg.addColorStop(0, 'rgba(200,240,160,.28)'); hg.addColorStop(0.6, 'rgba(120,180,90,.12)'); hg.addColorStop(1, 'rgba(40,80,40,0)'); x.fillStyle = hg; x.beginPath(); x.ellipse(hx, hy, hr, hr * 0.62, 0, 0, TAU); x.fill(); }
+      TT_REALMS.forEach(rm => { const rg = x.createRadialGradient(rm.x, rm.y, 10, rm.x, rm.y, 200); rg.addColorStop(0, rm.tint); rg.addColorStop(0.6, rm.tint + 'aa'); rg.addColorStop(1, rm.tint + '00'); x.fillStyle = rg; x.beginPath(); x.arc(rm.x, rm.y, 200, 0, TAU); x.fill(); });
+      // lake (bottom right) and the river
+      x.fillStyle = '#2c8fd0'; x.beginPath(); x.ellipse(1010, 520, 120, 52, -0.12, 0, TAU); x.fill(); x.fillStyle = '#6cc3f2'; x.beginPath(); x.ellipse(1010, 516, 108, 42, -0.12, 0, TAU); x.fill();
+      const riv = (lw, col) => { x.strokeStyle = col; x.lineWidth = lw; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); RIVPTS.forEach(([px, py], i) => i ? x.lineTo(px, py) : x.moveTo(px, py)); x.stroke(); };
+      riv(40, '#1b1f5e'); riv(34, '#2c8fd0'); riv(24, '#6cc3f2');
+      // scenery
+      for (let i = 0; i < 420; i++) { const px = Math.random() * W, py = Math.random() * 640; if (riverD(px, py) < 30 || Math.hypot(px - 640, py - 360) < 90) continue; let ok = true; for (const id of ROADTILES) if (Math.abs(nodes[id].x - px) < 28 && Math.abs(nodes[id].y - py) < 28) { ok = false; break; } if (!ok) continue;
+        for (const k in J) if (Math.hypot(J[k][0] - px, J[k][1] - py) < 40) ok = false; if (!ok || (px < 300 && py < 100) || (px > 820 && py < 60)) continue;
+        let best = -1, bd = 210; TT_REALMS.forEach((rm, k) => { const d = Math.hypot(rm.x - px, rm.y - py); if (d < bd) { bd = d; best = k; } }); if (Math.random() < 0.55) continue;
+        x.fillStyle = 'rgba(0,0,0,.18)'; x.beginPath(); x.ellipse(px + 3, py + 9, 9, 3.5, 0, 0, TAU); x.fill(); emo(best >= 0 ? TT_REALMS[best].deco : rnd(['🌳', '🌳', '🌲', '🌼', '🪨']), px, py, best >= 0 ? 20 : 18, x); }
+      // roads: a continuous dirt ribbon under the tiles so they read as one joined track
+      for (const [a, b, wp] of ROADS) { const P = spline([J[a], ...wp, J[b]]); x.lineCap = 'round'; x.lineJoin = 'round'; for (const [lw, col] of [[HW * 2 + 9, 'rgba(27,31,94,.85)'], [HW * 2 + 4, '#c9a974']]) { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); P.forEach(([px, py], i) => i ? x.lineTo(px, py) : x.moveTo(px, py)); x.stroke(); } }
+      // express routes: dotted magic lines
+      for (const [a, b, cst, e, nm] of EXPRESS) { const A = J[a], B = J[b], mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2 - 40; x.setLineDash([6, 8]); x.strokeStyle = 'rgba(255,240,180,.75)'; x.lineWidth = 3; x.beginPath(); x.moveTo(A[0], A[1]); x.quadraticCurveTo(mx, my, B[0], B[1]); x.stroke(); x.setLineDash([]);
+        for (const P of [A, B]) emo(e, P[0] + 20, P[1] - 18, 20, x); x.font = '700 11px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.lineWidth = 3; x.strokeStyle = 'rgba(27,31,94,.85)'; x.strokeText(nm + ' · ' + cst + '🪙', mx, my + 18); x.fillStyle = '#fff6c8'; x.fillText(nm + ' · ' + cst + '🪙', mx, my + 18); }
+      // tiles: curved boxes joined end to end
+      for (const id of ROADTILES) { const nd = nodes[id]; if (nd.type === 'bridge') continue; const rm = nd.realm >= 0 ? TT_REALMS[nd.realm] : null;
+        polyPath(nd.poly, x); x.fillStyle = rm ? rm.tint : '#fbf3dc'; x.fill(); const band = BAND[nd.type] || (nd.type === 'danger' ? rm.col : null);
+        if (band) { x.save(); polyPath(nd.poly, x); x.clip(); x.strokeStyle = band; x.lineWidth = 9; x.beginPath(); x.moveTo(nd.poly[0][0], nd.poly[0][1]); for (let q = 1; q < 5; q++) x.lineTo(nd.poly[q][0], nd.poly[q][1]); x.stroke(); x.restore(); }
+        polyPath(nd.poly, x); x.lineWidth = 1.6; x.strokeStyle = 'rgba(27,31,94,.75)'; x.stroke(); const t = ICON(id); if (t) emo(t, nd.x, nd.y + 1, 15, x); }
+      // junctions and shrines
+      for (const [k, id] of Object.entries(JN)) { const nd = nodes[id]; if (k === 'B') continue; const sh = nd.type === 'shrine', rm = sh ? TT_REALMS[nd.realm] : null;
+        x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.arc(nd.x + 2, nd.y + 4, nd.rad, 0, TAU); x.fill(); x.fillStyle = sh ? rm.tint : '#efe2c2'; x.beginPath(); x.arc(nd.x, nd.y, nd.rad, 0, TAU); x.fill(); x.lineWidth = sh ? 3.5 : 2.5; x.strokeStyle = TOY.navy; x.stroke();
+        if (sh) { x.strokeStyle = rm.col; x.lineWidth = 4; x.beginPath(); x.arc(nd.x, nd.y, nd.rad - 5, 0, TAU); x.stroke(); emo(rm.e, nd.x, nd.y + 1, 24, x); x.font = '700 12px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = 'rgba(27,31,94,.9)'; const ly = nd.y < 150 ? nd.y + nd.rad + 14 : nd.y - nd.rad - 10; x.strokeText(rm.name.toUpperCase(), nd.x, ly); x.fillStyle = '#fff'; x.fillText(rm.name.toUpperCase(), nd.x, ly); }
+        else emo('🪧', nd.x, nd.y, 15, x); }
+      // the Kingdom
+      const B = nodes[BASE]; x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.ellipse(B.x + 3, B.y + 6, 62, 48, 0, 0, TAU); x.fill(); x.fillStyle = '#d9d2c2'; x.beginPath(); x.ellipse(B.x, B.y, 62, 48, 0, 0, TAU); x.fill(); x.lineWidth = 4; x.strokeStyle = TOY.navy; x.stroke();
+      x.fillStyle = '#c3e3a6'; x.beginPath(); x.ellipse(B.x, B.y + 2, 48, 34, 0, 0, TAU); x.fill(); x.lineWidth = 2; x.stroke();
+      for (let k = 0; k < 12; k++) { const a = k / 12 * TAU, px = B.x + Math.cos(a) * 62, py = B.y + Math.sin(a) * 48; x.fillStyle = '#cfc7b4'; x.fillRect(px - 5, py - 8, 10, 10); x.strokeStyle = TOY.navy; x.lineWidth = 1.5; x.strokeRect(px - 5, py - 8, 10, 10); }
+      x.font = '700 10px Fredoka, system-ui, sans-serif'; x.textAlign = 'center'; x.fillStyle = TOY.navy; x.fillText('THE KINGDOM', B.x, B.y - 18);
       return bg = c; };
     function knight(o, x, y, sc, lift) { ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 14, 11, 4, 0, 0, 7); ctx.fill();
       ctx.translate(0, -lift); if (g.t - o.hurtT < 0.6) ctx.translate(Math.sin(g.t * 60) * 3, 0); ctx.fillStyle = o.p.color; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-10, 13); ctx.lineTo(10, 13); ctx.lineTo(6, -2); ctx.lineTo(-6, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -13567,7 +13615,7 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       ctx.fillStyle = o.p.color; ctx.beginPath(); ctx.moveTo(x + 12 * sc, y - 28 * sc - lift * sc); ctx.lineTo(x + 24 * sc, y - 23 * sc - lift * sc); ctx.lineTo(x + 12 * sc, y - 18 * sc - lift * sc); ctx.closePath(); ctx.fill();
       o.carry.forEach((r, k) => emo(RE(r), x - 12 * sc + k * 13 * sc, y - 34 * sc - lift * sc + Math.sin(g.t * 3 + k) * 2, 14)); }
     function card(o, x, y, w) { const isC = o === cur() && g.state !== 'end'; ctx.save(); rr(x, y, w, 60, 12); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.lineWidth = isC ? 4 : 2.5; ctx.strokeStyle = isC ? TOY.sun : TOY.navy; ctx.stroke();
-      drawAvatar(x + 18, y + 18, 12, o.p, { happy: o.hp > 1 }); toyText(o.p.name.length > 8 ? o.p.name.slice(0, 7) + '…' : o.p.name, x + 34, y + 13, 12, TOY.navy, 'left', null); toyText('💰' + o.gold, x + w - 8, y + 13, 11, '#8a6a00', 'right', null);
+      drawAvatar(x + 18, y + 18, 12, o.p, { happy: o.hp > 1 }); toyText(o.p.name.length > 8 ? o.p.name.slice(0, 7) + '…' : o.p.name, x + 34, y + 13, 12, TOY.navy, 'left', null); toyText('🪙' + o.coins, x + w - 8, y + 13, 11, '#8a6a00', 'right', null);
       ctx.font = '12px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(hearts(o), x + 34, y + 28);
       TT_REALMS.forEach((rm, r) => { const sx = x + 6 + r * ((w - 12) / 5), b = o.banked.includes(r), sw = (w - 12) / 5 - 3; rr(sx, y + 38, sw, 17, 5); ctx.fillStyle = b ? rm.col : 'rgba(27,31,94,.08)'; ctx.fill(); ctx.save(); if (!b) ctx.globalAlpha = 0.25; emo(rm.e, sx + sw / 2, y + 47, 12); ctx.restore(); });
       ctx.restore(); }
@@ -13584,42 +13632,60 @@ const TrollToll = { title: 'Troll Toll', accent: '#5fae4b', phones: true, minPho
       ctx.fillStyle = TOY.coral; ctx.strokeStyle = TOY.navy; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x0 - 20, y0 - Rw - 30); ctx.lineTo(x0 + 20, y0 - Rw - 30); ctx.lineTo(x0, y0 - Rw + 6); ctx.closePath(); ctx.fill(); ctx.stroke();
       if (w.label) { const k = Math.min(1, w.resT * 5); ctx.save(); ctx.translate(640, 660); ctx.scale(k, k); headline(w.label, 0, 0, 44, '#fff', TT_WHEEL[w.k][3]); ctx.restore(); } }
     g.draw = () => { ctx.drawImage(board(), 0, 0, W, H); const C = cur(), pulse = 0.5 + Math.sin(g.t * 6) * 0.5;
-      // bridges
-      BR.forEach(b => { const nd = nodes[b.node], sx = OX + nd.c * CS, sy = OY + nd.r * CS; ctx.save(); ctx.translate(sx + CS / 2, sy + CS / 2);
-        if (!b.draw) { rr(-CS / 2 + 1, -CS / 2 - 4, CS - 2, CS + 8, 4); ctx.fillStyle = '#9aa0ad'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); ctx.strokeStyle = 'rgba(27,31,94,.3)'; ctx.lineWidth = 1.2; for (let k = -12; k <= 12; k += 8) { ctx.beginPath(); ctx.moveTo(-CS / 2 + 3, k); ctx.lineTo(CS / 2 - 3, k); ctx.stroke(); } }
-        else { const v = b.v, hh = (CS + 8) / 2 * (1 - v * 0.6); for (const sgn of [-1, 1]) { rr(-CS / 2 + 1 - v * 3, sgn > 0 ? (CS + 8) / 2 - hh : -(CS + 8) / 2, CS - 2 + v * 6, hh, 3); ctx.fillStyle = '#a77a4c'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
-          ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; for (const sgn of [-1, 1]) { ctx.beginPath(); ctx.arc(sgn * (CS / 2 + 4), 0, 4, 0, 7); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 1.5; ctx.stroke(); } }
-        ctx.restore(); if (b.troll) { const own = b.troll.owner, ang = b.troll.angry && g.t - b.troll.angry < 1.2; if (own >= 0) { ctx.fillStyle = g.ps[own].p.color; ctx.beginPath(); ctx.arc(nd.x + 22, nd.y, 13, 0, TAU); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
-          emo('🧌', nd.x + 22, nd.y + Math.sin(g.t * 2 + nd.c) * 1.5 + (ang ? Math.sin(g.t * 30) * 2 : 0), ang ? 26 : 22); toyText(own >= 0 ? g.ps[own].p.name.slice(0, 7) : 'wild', nd.x + 22, nd.y + 18, 9, own >= 0 ? '#fff' : '#e6ffd9', 'center', TOY.navy); } });
-      // reachable squares + the walker's next options
-      if (g.phase === 'walk' && g.state === 'turn' && !g.walkQ.length) { const f = field(C.node); nodes.forEach((nd, k) => { const d = f.get(k); if (d == null || d === 0 || d > g.left) return; ctx.save(); ctx.globalAlpha = 0.18 + (d === 1 ? pulse * 0.35 : 0.05); ctx.fillStyle = C.p.color; rrX(ctx, OX + nd.c * CS + 1.5, OY + nd.r * CS + 1.5, CS - 3, CS - 3, 6); ctx.fill(); ctx.restore(); }); }
-      nodes.forEach((nd, k) => { if (g.mud.has(k)) { ctx.fillStyle = '#5d4a2a'; ctx.beginPath(); ctx.ellipse(nd.x, nd.y + 2, 13, 9, 0.3, 0, TAU); ctx.fill(); ctx.fillStyle = '#7d9a4a'; ctx.beginPath(); ctx.ellipse(nd.x - 4, nd.y, 4, 2.5, 0.3, 0, TAU); ctx.fill(); }
-        if (g.loot.has(k)) { const L = g.loot.get(k); L.forEach((r, j) => emo(RE(r), nd.x - (L.length - 1) * 7 + j * 14, nd.y - 4 + Math.sin(g.t * 4 + j) * 2, 16)); } });
-      const half = Math.ceil(g.ps.length / 2), cw = Math.min(140, 520 / Math.max(half, 1));
-      g.ps.forEach((o, k) => { const left = k < half, j = left ? k : k - half, x = left ? 568 - (j + 1) * cw : 712 + j * cw; card(o, x + 3, 654, cw - 6); });
-      for (const o of g.ps.slice().sort((a, b) => a.y - b.y)) { const isC = o === C && g.state === 'turn', lift = isC && g.phase === 'walk' && g.walkQ.length ? Math.abs(Math.sin(o.hop)) * 5 : 0;
-        if (isC) { ctx.save(); ctx.globalAlpha = 0.7; ctx.strokeStyle = TOY.sun; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(o.x, o.y + 8, 17, 8, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
-        knight(o, o.x, o.y, isC ? 0.82 : 0.66, lift); }
+      // bridges and trolls
+      BR.forEach(b => { const nd = nodes[b.node]; ctx.save(); polyPath(nd.poly); ctx.fillStyle = b.draw ? (b.v > 0.5 ? '#c99a66' : '#a77a4c') : '#9aa0ad'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = TOY.navy; ctx.stroke();
+        if (b.draw) { ctx.fillStyle = b.up ? '#ff3b4e' : '#3ccf6e'; for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(nd.x + nd.nx * 22 * s, nd.y + nd.ny * 22 * s, 4.5, 0, TAU); ctx.fill(); ctx.strokeStyle = TOY.navy; ctx.lineWidth = 1.5; ctx.stroke(); } if (b.up) { ctx.strokeStyle = '#ff3b4e'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(nd.poly[0][0], nd.poly[0][1]); ctx.lineTo(nd.poly[7][0], nd.poly[7][1]); ctx.moveTo(nd.poly[4][0], nd.poly[4][1]); ctx.lineTo(nd.poly[5][0], nd.poly[5][1]); ctx.stroke(); } }
+        ctx.restore(); if (b.troll) { const own = b.troll.owner, ang = b.troll.angry && g.t - b.troll.angry < 1.2, tx = nd.x + nd.nx * 26, ty = nd.y + nd.ny * 26; if (own >= 0) { ctx.fillStyle = g.ps[own].p.color; ctx.beginPath(); ctx.arc(tx, ty, 13, 0, TAU); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TOY.navy; ctx.stroke(); }
+          emo('🧌', tx, ty + Math.sin(g.t * 2 + nd.x) * 1.5 + (ang ? Math.sin(g.t * 30) * 2 : 0), ang ? 26 : 22); toyText(own >= 0 ? g.ps[own].p.name.slice(0, 7) : 'wild', tx, ty + 18, 9, own >= 0 ? '#fff' : '#e6ffd9', 'center', TOY.navy); } });
+      // timed events
+      for (const ev of EV) { const act = evActive(ev), inN = evIn(ev); for (const t of ev.tiles) { if (t == null) continue; const nd = nodes[t];
+          if (act) { if (nd.poly) { polyPath(nd.poly); ctx.save(); ctx.globalAlpha = 0.6 + pulse * 0.3; ctx.fillStyle = ev.k === 'volcano' ? '#ff5a1f' : ev.k === 'falls' ? '#3fa9ff' : '#8a8f9e'; ctx.fill(); ctx.restore(); } emo(ev.e, nd.x, nd.y - 2 + Math.sin(g.t * 8) * 2, 22); }
+          else if (inN === 1) { ctx.save(); ctx.globalAlpha = 0.35 + pulse * 0.4; ctx.strokeStyle = '#ff3b4e'; ctx.lineWidth = 3; if (nd.poly) { polyPath(nd.poly); ctx.stroke(); } ctx.restore(); } } }
+      // where the walker can still reach
+      if (g.phase === 'walk' && g.state === 'turn' && !g.walkQ.length && !g.landNext) { const f = field(C.node, C); for (const id of ROADTILES) { const d = f.get(id); if (d == null || d === 0 || d > g.left) continue; ctx.save(); ctx.globalAlpha = 0.16 + (d === 1 ? pulse * 0.4 : 0.06); ctx.fillStyle = C.p.color; polyPath(nodes[id].poly); ctx.fill(); ctx.restore(); }
+        for (const [k, id] of Object.entries(JN)) { const d = f.get(id); if (d == null || d === 0 || d > g.left) continue; const nd = nodes[id]; ctx.save(); ctx.globalAlpha = 0.5; ctx.strokeStyle = C.p.color; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(nd.x, nd.y, nd.rad + 3, 0, TAU); ctx.stroke(); ctx.restore(); } }
+      for (const [k, L] of g.loot) { const nd = nodes[k]; L.forEach((r, j) => emo(RE(r), nd.x - (L.length - 1) * 7 + j * 14, nd.y - 4 + Math.sin(g.t * 4 + j) * 2, 16)); }
+      // plinths in the Kingdom
+      const B = nodes[BASE]; g.ps.forEach((o, i) => { const a = -Math.PI / 2 + (i + 0.5) / n * TAU, px = B.x + Math.cos(a) * 30, py = B.y + Math.sin(a) * 18 + 4, glow = g.fx.some(f => f.k === 'plinth' && f.i === i); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(px, py + 9, 7, 3, 0, 0, TAU); ctx.fill();
+        rr(px - 6, py - 6, 12, 15, 3); ctx.fillStyle = o.p.color; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = TOY.navy; ctx.stroke(); if (o.banked.length) { if (glow) { ctx.save(); ctx.globalAlpha = 0.6; ctx.fillStyle = TOY.sun; ctx.beginPath(); ctx.arc(px, py - 10, 12, 0, TAU); ctx.fill(); ctx.restore(); } toyText(o.banked.length + '', px, py - 12, 11, '#fff', 'center', TOY.navy); } });
+      const half = Math.ceil(g.ps.length / 2), cw = Math.min(140, 500 / Math.max(half, 1));
+      g.ps.forEach((o, k) => { const left = k < half, j = left ? k : k - half, x = left ? 560 - (j + 1) * cw : 720 + j * cw; card(o, x + 3, 654, cw - 6); });
+      for (const o of g.ps.slice().sort((a, b) => a.y - b.y)) { const isC = o === C && g.state === 'turn', lift = isC && g.phase === 'walk' && (g.walkQ.length || g.landNext) ? Math.abs(Math.sin(o.hop)) * 5 : 0;
+        if (isC) { ctx.save(); ctx.globalAlpha = 0.7; ctx.strokeStyle = TOY.sun; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(o.x, o.y + 8, 16, 7, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
+        knight(o, o.x, o.y, isC ? 0.8 : 0.64, lift); }
+      // HUD
       if (g.state === 'turn') { rr(10, 8, 280, 86, 18); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); drawAvatar(44, 42, 20, C.p, { happy: true }); toyText(C.p.name, 74, 32, 19, TOY.navy, 'left', null);
-        const ph = { pre: 'Getting ready', rolling: 'Rolling…', walk: '👣 ' + g.left + ' steps left', landing: '', gust: 'Tailwind!', attack: 'Choosing a target…', steal: 'Rob them?', switch: 'At the Rune Stone', spin: 'Wheel of Fate!', spinning: 'Spinning…', pause: '' }[g.phase] || '';
+        const ph = { pre: 'Getting ready', rolling: 'Rolling…', walk: '👣 ' + g.left + ' steps left', gust: 'Tailwind!', hex: 'Picking a victim…', cardshow: 'Drew a card', duelask: 'Duel?', duel: '⚔ Duel!', switch: 'At the Rune Stone', spin: 'Wheel of Fate!', spinning: 'Spinning…' }[g.phase] || '';
         toyText(ph, 74, 56, 14, '#55608f', 'left', null); toyText('Round ' + g.round + ' of ' + MAXR, 74, 78, 12, '#8a92b8', 'left', null);
-        const rolling = g.phase === 'rolling'; const DS = [g.dice, g.dice2, g.dice3].filter(Boolean); DS.forEach((v, k) => die(272 - (DS.length - 1 - k) * 34 - 6, 50, rolling ? 1 + Math.floor(Math.random() * 6) : v, 30, rolling ? Math.random() * 0.6 - 0.3 : (k - 1) * 0.08)); }
-      g.log.slice(0, 2).forEach((m, k) => { ctx.save(); dfont(k ? 13 : 15); const w = ctx.measureText(m).width + 20; rr(W - 14 - w, 10 + k * 26, w, 22, 11); ctx.fillStyle = 'rgba(20,24,50,.6)'; ctx.fill(); ctx.restore(); toyText(m, W - 24, 21 + k * 26, k ? 13 : 15, '#fff', 'right', null); });
+        const rolling = g.phase === 'rolling'; die(g.dice2 ? 220 : 248, 50, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice, 38, rolling ? Math.random() * 0.6 - 0.3 : -0.06); if (g.dice2) die(264, 50, rolling ? 1 + Math.floor(Math.random() * 6) : g.dice2, 38, 0.1); }
+      // event countdowns
+      EV.forEach((ev, k) => { const inN = evIn(ev), act = evActive(ev), txt = ev.e + ' ' + (act ? 'NOW!' : inN === 1 ? 'next round' : 'in ' + inN); ctx.save(); dfont(12); const w = ctx.measureText(txt).width + 18; rr(12, 100 + k * 24, w, 20, 10); ctx.fillStyle = act ? '#ff3b4e' : inN === 1 ? '#ff9a3c' : 'rgba(20,24,50,.6)'; ctx.fill(); ctx.restore(); toyText(txt, 21, 110 + k * 24, 12, '#fff', 'left', null); });
+      g.log.slice(0, 2).forEach((m, k) => { ctx.save(); dfont(k ? 13 : 15); const w = ctx.measureText(m).width + 20; rr(W - 14 - w, 10 + k * 26, w, 22, 11); ctx.fillStyle = 'rgba(20,24,50,.62)'; ctx.fill(); ctx.restore(); toyText(m, W - 24, 21 + k * 26, k ? 13 : 15, '#fff', 'right', null); });
       for (const f of g.fx) { if (f.k === 'txt') { ctx.globalAlpha = Math.max(0, 1 - f.t / 1.8); headline(f.txt, f.x, f.y - 40 - f.t * 36, 20, f.col, TOY.navy); ctx.globalAlpha = 1; }
-        if (f.k === 'ban' && g.phase !== 'spinning') { const a = Math.max(0, Math.min(1, f.t * 5, (2.2 - f.t) * 3)); ctx.globalAlpha = a; headline(f.txt, 640, 290, 36, f.col, TOY.navy); ctx.globalAlpha = 1; }
+        if (f.k === 'ban' && g.phase !== 'spinning') { const a = Math.max(0, Math.min(1, f.t * 5, (2.4 - f.t) * 3)); ctx.globalAlpha = a; headline(f.txt, 640, 290, 34, f.col, TOY.navy); ctx.globalAlpha = 1; }
         if (f.k === 'relic') { const a = Math.max(0, 1 - f.t / 1.6); ctx.save(); ctx.globalAlpha = a * 0.4; ctx.fillStyle = TT_REALMS[f.r].col; ctx.beginPath(); ctx.arc(f.x, f.y - 20, 18 * (1 + f.t * 1.5), 0, TAU); ctx.fill(); ctx.globalAlpha = a; emo(RE(f.r), f.x, f.y - 30 - f.t * 30, 34); ctx.restore(); }
         if (f.k === 'emo') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4); emo(f.e, f.x + Math.sin(f.t * 20) * 6, f.y - 20, 36 + f.t * 10); ctx.restore(); }
         if (f.k === 'boom') for (let k = 0; k < 10; k++) { const an = k / 10 * TAU, d = f.t * 60; ctx.fillStyle = 'rgba(255,' + (150 + k * 8) + ',60,' + Math.max(0, 1 - f.t) + ')'; ctx.beginPath(); ctx.arc(f.x + Math.cos(an) * d, f.y + Math.sin(an) * d * 0.7, 5, 0, TAU); ctx.fill(); }
-        if (f.k === 'bolt' && f.t < 0.6) { ctx.save(); ctx.globalAlpha = 1 - f.t / 0.6; ctx.strokeStyle = '#fff36a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(f.x0, f.y0 - 20); for (let s = 1; s <= 6; s++) { const u = s / 6; ctx.lineTo(f.x0 + (f.x1 - f.x0) * u + (s < 6 ? (Math.random() - 0.5) * 24 : 0), f.y0 - 20 + (f.y1 - f.y0) * u + (s < 6 ? (Math.random() - 0.5) * 24 : 0)); } ctx.stroke(); ctx.restore(); }
+        if (f.k === 'bolt' && f.t < 0.6) { ctx.save(); ctx.globalAlpha = 1 - f.t / 0.6; ctx.strokeStyle = '#d68cff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(f.x0, f.y0 - 20); for (let s = 1; s <= 6; s++) { const u = s / 6; ctx.lineTo(f.x0 + (f.x1 - f.x0) * u + (s < 6 ? (Math.random() - 0.5) * 24 : 0), f.y0 - 20 + (f.y1 - f.y0) * u + (s < 6 ? (Math.random() - 0.5) * 24 : 0)); } ctx.stroke(); ctx.restore(); }
         if (f.k === 'ko') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1.8); emo('💫', f.x, f.y - 30 - f.t * 20, 40); ctx.restore(); }
-        if (f.k === 'zap') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.strokeStyle = '#d6c4ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(f.x, f.y, 10 + f.t * 60, 0, TAU); ctx.stroke(); ctx.restore(); }
-        if (f.k === 'fire') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.45 - f.t * 0.15); const vx = nodes[TT_REALMS[4].node].x, vy = nodes[TT_REALMS[4].node].y, fg = ctx.createRadialGradient(vx, vy, 20, vx, vy, 900); fg.addColorStop(0, '#ffdd55'); fg.addColorStop(0.4, '#ff6a2a'); fg.addColorStop(1, 'rgba(120,0,0,0)'); ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+        if (f.k === 'zap') { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.strokeStyle = '#ffe680'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(f.x, f.y, 10 + f.t * 60, 0, TAU); ctx.stroke(); ctx.restore(); }
+        if (f.k === 'flash') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.3 - f.t * 0.15); ctx.fillStyle = '#bfe6ff'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+        if (f.k === 'fire') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.45 - f.t * 0.15); const fg = ctx.createRadialGradient(TT_REALMS[4].x, TT_REALMS[4].y, 20, TT_REALMS[4].x, TT_REALMS[4].y, 900); fg.addColorStop(0, '#ffdd55'); fg.addColorStop(0.4, '#ff6a2a'); fg.addColorStop(1, 'rgba(120,0,0,0)'); ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H); ctx.restore(); }
         if (f.k === 'jack') { ctx.save(); ctx.globalAlpha = Math.max(0, 0.35 - f.t * 0.1) * (Math.floor(f.t * 8) % 2); ctx.fillStyle = Math.floor(f.t * 4) % 2 ? '#ff2d55' : '#ffd23f'; ctx.fillRect(0, 0, W, H); ctx.restore(); } }
+      // hindrance card on screen
+      if (g.card && (g.phase === 'hex' || g.phase === 'cardshow')) { const c = g.card.c, k = Math.min(1, (g.t - g.card.t) * 4), x0 = 640, y0 = 330; ctx.save(); ctx.translate(x0, y0); ctx.scale(k, k); ctx.rotate(-0.04); ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(-150 + 6, -95 + 8, 300, 190, 18); ctx.fill();
+        rr(-150, -95, 300, 190, 18); ctx.fillStyle = '#fff8e8'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = '#7a2a3a'; ctx.stroke(); rr(-140, -85, 280, 50, 12); ctx.fillStyle = '#e8384f'; ctx.fill();
+        headline(c[1], 0, -60, 30, '#fff', '#7a2a3a'); const words = c[2].split(' '), lines = []; let ln = ''; for (const wd of words) { if ((ln + ' ' + wd).length > 26) { lines.push(ln); ln = wd; } else ln = ln ? ln + ' ' + wd : wd; } lines.push(ln);
+        lines.forEach((l, i) => toyText(l, 0, -5 + i * 26, 20, TOY.navy, 'center', null)); toyText(c[3] ? cur().p.name + ' is choosing…' : 'HINDRANCE CARD', 0, 74, 13, '#a0506a', 'center', null); ctx.restore(); }
+      // duel
+      if (g.duel) { const D = g.duel, rolling = D.t < 1.4; ctx.fillStyle = 'rgba(20,24,50,.55)'; ctx.fillRect(0, 0, W, H); headline('⚔ DUEL! ⚔', 640, 200, 52, TOY.sun, '#e8384f');
+        [[D.a, D.ra, 480], [D.b, D.rb, 800]].forEach(([q, r, x]) => { knight(q, x, 360, 2.2, 0); toyText(q.p.name, x, 420, 24, '#fff', 'center', TOY.navy); die(x, 480, rolling ? 1 + Math.floor(Math.random() * 6) : r, 64, rolling ? Math.random() - 0.5 : 0); });
+        toyText('VS', 640, 380, 40, '#fff', 'center', TOY.navy); }
       if (g.phase === 'spinning') drawWheel();
       if (g.state === 'end' && g.winner) { ctx.fillStyle = 'rgba(20,24,50,.72)'; ctx.fillRect(0, 0, W, H); headline(g.winner.p.name.toUpperCase() + ' RULES THE REALM!', 640, 220, 48, TOY.sun, '#5fae4b');
         knight(g.winner, 640, 310, 2.2, Math.abs(Math.sin(g.t * 4)) * 6); emo(TT_REALMS.map(r => r.e).join(' '), 640, 392, 34);
-        g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.gold - a.gold).slice(0, 6).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ·  ' + q.banked.length + '/5  ' + q.banked.map(RE).join(''), 640, 440 + k * 32, k ? 20 : 26, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
-    banner('QUEST BEGINS! BRING ALL 5 RELICS HOME', TOY.sun); startTurn(); return g;
+        g.ps.slice().sort((a, b) => b.banked.length - a.banked.length || b.coins - a.coins).slice(0, 6).forEach((q, k) => toyText((k + 1) + '. ' + q.p.name + '  ·  ' + q.banked.length + '/5  ' + q.banked.map(RE).join(''), 640, 440 + k * 32, k ? 20 : 26, '#fff', 'center', TOY.navy)); confetti(30, 1); } };
+    banner('QUEST BEGINS! CHECK YOUR SECRET QUEST', TOY.sun); startTurn(); return g;
   } };
 
 const GAMES = { troll: TrollToll, night: NightMarket, haul: Haul, syd: SurvivingSydney, robo: RoboRumble, arms: ArmsRace, dice: LiarsDice, turf: TurfWars, qdraw: QuickDraw, shake: ShakeRace, head: Forehead, says: PhoneSays, whosaid: WhoSaid, likely: MostLikely, hot: HotTakes, meld: MindMeld, lie: TwoTruths, bomb: BombSquad, draw: DrawPass, heist: Heist, shit: Shithead, big2: BigTwo, odd: OddOneOut, cards: ColourClash, gems: TeamGems, zones: TeamZones, ball: TeamBall, train: TeamTrain, raid: GloomRaid, fort: FortFrenzy, goal: GoalGuard, sumo: IceSumo, tile: TileTakeover, arena: BattleArena, smash: FightSmash, duel: FightDuel, tag: FightTag, race: Racing };
