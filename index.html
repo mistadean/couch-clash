@@ -254,6 +254,53 @@ html,body{background:var(--sky1)}
 .recbox{margin-top:12px;padding:10px;border-radius:16px;background:#fff6e0;border:2px dashed #ffc61a}.pbtn.recording{background:#ff5a6e!important;color:#fff!important;animation:recp 1s infinite}@keyframes recp{50%{opacity:.6}}
 #padMsg .syd-cash{font:38px "Lilita One",system-ui;color:#2bb35a;-webkit-text-stroke:1.5px #1b1f5e;line-height:1.1}.syd-dot{display:inline-block;width:12px;height:12px;border-radius:4px;border:2px solid #1b1f5e;margin-right:6px;vertical-align:-1px}.syd-lv{font-size:12px;color:#ff3a5c;display:inline!important}.syd-row{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;padding:5px 8px;margin:3px 0;border-radius:10px;background:#f4f6fd;font-size:14px}.syd-act{display:flex;gap:4px;flex-shrink:0}#padMsg .pbtn.mini{font-size:12px;padding:5px 8px;margin:0;min-height:0}.syd-props{margin-top:10px;max-height:34vh;overflow:auto}.syd-trade{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;margin:6px 0}.syd-pick{display:block;width:100%;text-align:left;font-size:13px;padding:6px 8px;margin:3px 0;border-radius:10px;border:2px solid #c9cfee;background:#fff;color:#1b1f5e}.syd-pick.on{border-color:#1b1f5e;background:#ffe9a8}
 .sydk-top{display:flex;justify-content:center;gap:28px;align-items:flex-end}#padMsg .sydk-keys{font:38px "Lilita One",system-ui;color:#ffc61a;-webkit-text-stroke:1.5px #1b1f5e;line-height:1.1}
+/* ===================== SHITHEAD APP (one phone = table + controller) ===================== */
+body.app #tv{visibility:hidden}
+body.app.inplay.hosting #tv{visibility:visible}
+#appVid{display:none}
+body.app.inplay.guest #appVid{display:block;position:fixed;inset:0;width:100%;height:100%;object-fit:contain;background:var(--sky1)}
+body.app #rotate{display:none}
+.apptitle{font:clamp(54px,12vw,96px) "Lilita One",Fredoka,system-ui,sans-serif;color:#fff;-webkit-text-stroke:10px var(--navy);paint-order:stroke fill;filter:drop-shadow(0 8px 0 rgba(16,30,90,.25))}
+#appName{width:min(320px,86vw);padding:14px;border-radius:14px;border:4px solid var(--navy);box-shadow:0 6px 0 var(--navy);font:22px Fredoka,system-ui;text-align:center;color:var(--navy);margin-top:-8px}
+body.app #menu{gap:18px;overflow:auto;justify-content:center}
+body.app .mbtn{min-width:200px;padding:16px 20px;font-size:21px}
+.mbtn.join{background:linear-gradient(#ffd1dc,#ff8fb5)}
+.appcode{font:54px "Lilita One",system-ui;letter-spacing:8px;color:var(--navy);line-height:1.1}
+.appppl{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0}
+.appp{padding:5px 11px;border-radius:14px;background:#eef1ff;border:3px solid var(--c,#c9cfee);font-weight:600;font-size:15px}
+.appp.bot{border-style:dashed;border-color:#c9cfee;opacity:.8}
+/* in play: the table fills the screen, the hand panel is a strip along the bottom */
+body.app.inplay #pad{inset:auto 0 0 0;background:transparent!important;pointer-events:none}
+body.app.inplay #padTop{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));background:none;border:0;box-shadow:none;padding:0;min-height:0;pointer-events:auto;z-index:4}
+body.app.inplay #chip,body.app.inplay #pname,body.app.inplay #phint{display:none}
+body.app.inplay #padBody{display:block}
+body.app.inplay #stickZone,body.app.inplay #btnZone,body.app.inplay #gPad,body.app.inplay #racePad{display:none!important}
+body.app.inplay #padMsg,body.app.inplay #pad.panelmode #padMsg{position:relative;left:auto;top:auto;transform:none;width:min(100%,1100px);margin:0 auto;max-height:56vh;border-radius:24px 24px 0 0;border-bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));box-shadow:0 -5px 0 rgba(16,30,90,.2);overflow-y:auto}
+body.app.inplay #padMsg b{font-size:18px;margin-bottom:2px}
+#padMsg .appstrip{display:flex;align-items:stretch;gap:12px;text-align:left}
+#padMsg .appstrip .grps{flex:1;display:flex;gap:12px;min-width:0;overflow-x:auto;align-items:flex-end}
+#padMsg .appstrip .grp{flex:none;display:flex;flex-direction:column;min-width:0}
+#padMsg .appstrip .grp.main{flex:0 1 auto}
+#padMsg .appstrip .grp>.small{margin:0;font-size:12px;white-space:nowrap}
+#padMsg .appstrip .hand{flex-wrap:nowrap;justify-content:flex-start;margin:0;padding-top:12px;overflow-x:auto;overflow-y:hidden;gap:5px}
+#padMsg .appstrip .pcard{flex:none;width:48px;height:68px;border-width:2.5px;box-shadow:0 3px 0 #1b1f5e}
+#padMsg .appstrip .pcard b{font-size:24px}#padMsg .appstrip .pcard i{font-size:19px}
+#padMsg .appstrip .pcard.sm,#padMsg .appstrip .pcard.xs{width:40px;height:56px}
+#padMsg .appstrip .pcard.sm b,#padMsg .appstrip .pcard.xs b{font-size:19px}#padMsg .appstrip .pcard.sm i,#padMsg .appstrip .pcard.xs i{font-size:15px}
+#padMsg .appstrip .pcard.sel{transform:translateY(-10px)}
+#padMsg .appstrip .pcard.back{width:34px;height:50px;outline-width:2px}#padMsg .appstrip .pcard.back i{font-size:14px}
+#padMsg .appstrip .side{flex:0 0 184px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+#padMsg .appstrip .side>.small{display:none}
+#padMsg .appstrip .side b{font-size:17px}
+#padMsg .appstrip .side .pbtn.big{margin-top:5px;padding:8px;font-size:16px}
+#padMsg .appstrip .side .rxrow{margin-top:5px;gap:3px;flex-wrap:nowrap}
+#padMsg .appstrip .side .rxb{font-size:15px;padding:3px 3px;border-radius:10px}
+body.app #stickZone,body.app #btnZone{visibility:hidden}
+body.app.inplay.res #padMsg{width:auto;min-width:260px;margin:0 max(10px,env(safe-area-inset-right)) 0 auto;border-radius:22px 22px 0 0}
+#appRot{display:none}
+@media (orientation:portrait){body.app.inplay #appRot{display:flex;position:fixed;inset:0;z-index:30;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(27,31,94,.92);color:#fff;font:26px "Lilita One",system-ui;text-align:center;padding:30px}
+  #appRot div{font-size:80px;animation:appspin 2s ease-in-out infinite}}
+@keyframes appspin{50%{transform:rotate(90deg)}}
 </style>
 </head>
 <body>
@@ -6412,7 +6459,8 @@ const MAXP = 10;
 // How many players each mode takes. Extra people in the lobby watch that game from their phones.
 const MODE_MAX = { troll: 8, night: 8, haul: 8, syd: 6, cup: 4, goal: 4, sumo: 4, tile: 4, arena: 4, smash: 4, duel: 4, tag: 4, race: 4, fort: 10, raid: 10, gems: 10, zones: 10, ball: 10, train: 10, odd: 10, cards: 8, shit: 10, big2: 4, bomb: 10, draw: 10, heist: 10, whosaid: 10, likely: 10, hot: 10, meld: 10, lie: 10, qdraw: 10, shake: 10, head: 10, says: 10, robo: 8, arms: 10, dice: 8, turf: 10 };
 // Bots fill up to this many seats: a full 5v5 for team modes, 4 for everything else.
-const botTarget = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
+const botTarget = m => APP && m === 'shit' ? Math.min(MAXP, Math.max(2, humans().length + (host.appBots || 0))) : botTarget0(m);
+const botTarget0 = m => GAMES[m] && GAMES[m].noBots ? 0 : GAMES[m] && GAMES[m].practiceBots ? (active().filter(p => p.kind === 'phone').length >= 3 ? 0 : 4) : MODE_CAT[m] === 'team' ? 10 : Math.min(4, MODE_MAX[m] || 4);
 const PEER_PREFIX = 'couchclash-v1-';
 const SPEED = clampSpeed();
 function clampSpeed() { const v = +new URLSearchParams(location.search).get('speed'); return v >= 1 && v <= 20 ? Math.floor(v) : 1; }
@@ -6429,19 +6477,21 @@ function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return n
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
 const params = new URLSearchParams(location.search);
+const APP = !!window.SH_APP; // Shithead phone app: this phone is the table and the controller
 const urlCode = (params.get('join') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 
 
 /* =====================================================================
    AUDIO (host only): tiny synth, sound-effect bus + music bus
    ===================================================================== */
-let actx = null, sfxBus = null, musicBus = null, noiseBuf = null;
+let actx = null, sfxBus = null, musicBus = null, noiseBuf = null, outBus = null;
 const audioState = { sound: lsGet('cc_sound') !== '0', music: lsGet('cc_music') !== '0', duck: false };
 function unlockAudio() {
   if (!actx) {
     try {
       actx = new (window.AudioContext || window.webkitAudioContext)();
-      const master = actx.createDynamicsCompressor(); master.connect(actx.destination);
+      outBus = actx.createGain(); outBus.connect(actx.destination);
+      const master = actx.createDynamicsCompressor(); master.connect(outBus);
       sfxBus = actx.createGain(); sfxBus.connect(master);
       musicBus = actx.createGain(); musicBus.gain.value = 0; musicBus.connect(master);
       applyVolume();
@@ -6473,12 +6523,12 @@ function punchUp(buf) { try { const ch = buf.numberOfChannels, len = buf.length,
     return out; } catch (e) { return buf; } }
 function setBotBombSnd(url) { try { const bin = atob(url.split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
   if (!actx) { toast('Turn TV sound on first, then record again'); return; } actx.decodeAudioData(u8.buffer.slice(0), buf => { host.botBombBuf = punchUp(buf); toast('🤖 Bots have a new bomb sound'); playBuf(host.botBombBuf); broadcastPhase(); }, () => toast("That recording didn't work on this TV")); } catch (e) {} }
-function playBuf(buf) { if (!actx || !buf || !audioState.sound) return false; const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination); src.start(); if (audioState.music) duckMusic(Math.min(2.5, buf.duration + 0.3)); return true; }
+function playBuf(buf) { if (!actx || !buf || !audioState.sound) return false; const src = actx.createBufferSource(); src.buffer = buf; src.connect(outBus || actx.destination); src.start(); if (audioState.music) duckMusic(Math.min(2.5, buf.duration + 0.3)); return true; }
 // what a bot's burn sounds like (setting in the Shithead lobby); false means use the normal boom
 function botBombSound(o) { const m = host.botBomb; if (m === 'none') return 'silent'; if (m === 'mine') { const L = leader(); return L ? playBombSnd(L) : false; }
   if (m === 'random') { const pool = host.players.filter(q => q && q.bombBuf); return pool.length ? playBombSnd(pool[Math.floor(Math.random() * pool.length)]) : false; }
   if (m === 'bot') return playBuf(host.botBombBuf); return false; }
-function playBombSnd(p) { if (!actx || !p || !p.bombBuf || !audioState.sound) return false; const src = actx.createBufferSource(), g = actx.createGain(); src.buffer = p.bombBuf; g.gain.value = 1.0; src.connect(g); g.connect(actx.destination); src.start(); if (audioState.music) { duckMusic(Math.min(2.5, p.bombBuf.duration + 0.3)); } return true; }
+function playBombSnd(p) { if (!actx || !p || !p.bombBuf || !audioState.sound) return false; const src = actx.createBufferSource(), g = actx.createGain(); src.buffer = p.bombBuf; g.gain.value = 1.0; src.connect(g); g.connect(outBus || actx.destination); src.start(); if (audioState.music) { duckMusic(Math.min(2.5, p.bombBuf.duration + 0.3)); } return true; }
 function duckMusic(sec) { try { if (!musicBus) return; const t = actx.currentTime, gv = musicBus.gain, v = gv.value; gv.cancelScheduledValues(t); gv.setValueAtTime(v, t); gv.linearRampToValueAtTime(v * 0.25, t + 0.05); gv.setValueAtTime(v * 0.25, t + sec); gv.linearRampToValueAtTime(v, t + sec + 0.4); } catch (e) {} }
 function tone(f1, f2, dur, type = 'square', vol = 0.12, delay = 0, bus = null) {
   if (!actx) return;
@@ -6573,7 +6623,7 @@ const KEYSETS = [
 
 function startHost() {
   if (host.started) return; host.started = true; loadSession();
-  $('#menu').classList.add('hidden'); $('#pad').classList.add('hidden'); canvas.classList.remove('hidden');
+  $('#menu').classList.add('hidden'); if (!APP) $('#pad').classList.add('hidden'); canvas.classList.remove('hidden');
   addEventListener('resize', resize); if (window.visualViewport) visualViewport.addEventListener('resize', resize);
   resize(); loadCritterArt(); setSong('lobby');
   addEventListener('keydown', e => {
@@ -6654,17 +6704,17 @@ function onCtrlMsg(conn, d) {
     let p = host.players.find(q => q && q.pid === pid);
     if (p) { // reconnect
       p.conn = conn; p.connected = true; conn.player = p; p.name = name;
-      sendPhase(p); return;
+      sendPhase(p); if (APP) appStreamTo(conn); return;
     }
     if (host.phase === 'lobby') {
       const slot = host.players.findIndex(q => !q);
       if (slot < 0) { send(conn, { t: 'full' }); return; }
       p = makePlayer(slot, 'phone', name); p.pid = pid; p.conn = conn; p.connected = true; conn.player = p;
       host.players[slot] = p; SFX.join(); toast(name + ' joined!');
-      broadcastPhase();
+      broadcastPhase(); if (APP) appStreamTo(conn);
     } else {
       if (!host.pending.find(q => q.pid === pid)) host.pending.push({ pid, name, conn });
-      send(conn, { t: 'wait' });
+      send(conn, { t: 'wait' }); if (APP) appStreamTo(conn);
     }
     return;
   }
@@ -6676,6 +6726,7 @@ function onCtrlMsg(conn, d) {
   else if (d.t === 'g' && host.phase === 'play' && !host.paused && GESTURE_KINDS.includes(d.k)) { (p.gq || (p.gq = [])).push({ k: d.k, p: +d.p || 0, d: d.d === 'l' || d.d === 'r' ? d.d : '' }); if (p.gq.length > 8) p.gq.shift(); }
 }
 function onCtrlClose(conn) {
+  if (APP && conn.peer) { const c = appNet.calls.get(conn.peer); if (c) { try { c.close(); } catch (e) {} appNet.calls.delete(conn.peer); } }
   host.pending = host.pending.filter(q => q.conn !== conn);
   const p = conn.player; if (!p || p.conn !== conn) return;
   p.connected = false; p.input = { x: 0, y: 0, a: false };
@@ -6709,6 +6760,8 @@ function hostCmd(p, c, v) {
     case 'mode': if (host.phase === 'lobby' && MODES.includes(v)) { host.mode = v; SFX.click(); } break;
     case 'cardopt': if (host.phase === 'lobby' && (v === 'timer' || v === 'four' || v === 'botbomb' || v === 'seats' || v === 'sydmins' || v === 'nmrounds' || v === 'ttcam')) { cardOpt(v); return; } break;
     case 'newnight': if (host.phase === 'lobby') { resetSession(); return; } break;
+    case 'appbots': if (host.phase === 'lobby') { host.appBots = clamp((host.appBots || 0) + (+v > 0 ? 1 : -1), 0, MAXP - humans().length); lsSet('sh_bots', host.appBots); SFX.click(); } break;
+    case 'decks': if (host.phase === 'lobby' && [0, 1, 2, 3].includes(+v)) { host.shDecks = +v; lsSet('sh_decks', host.shDecks); SFX.click(); } break;
     case 'bots': if (host.phase === 'lobby') { host.botsFill = !host.botsFill; SFX.click(); } break;
     case 'controls': if (host.phase === 'lobby') { host.controls = host.controls === 'gestures' ? 'buttons' : 'gestures'; lsSet('cc_controls', host.controls); SFX.click(); toast('Arena controls: ' + host.controls); } break;
     case 'fit': host.fit = clamp(Math.round((host.fit + (+v > 0 ? 0.02 : -0.02)) * 100) / 100, 0.8, 1); lsSet('cc_fit', host.fit); resize(); toast('TV screen size ' + Math.round(host.fit * 100) + '%'); break;
@@ -6759,6 +6812,8 @@ function phaseInfo(p) {
   Object.assign(msg, { paused: host.paused, mode: host.mode, bots: host.botsFill, fit: host.fit, sound: audioState.sound, music: audioState.music, audioLocked: !audioOn(), session: !!(G && G.session), shTimer: host.shTimer, fourColour: host.fourColour, botBomb: host.botBomb, botBombSet: !!host.botBombBuf, seatMode: host.seatMode, sydRounds: host.sydRounds, nmRounds: host.nmRounds, ttCam: host.ttCam, hasNight: !!(host.session.shit && Object.keys(host.session.shit).length),
     leaderName: l ? l.name : '', count: humans().length, char: p.char, controls: host.controls, fight: !!(G && G.fighter),
     role: host.game && (host.phase === 'play' || host.phase === 'intro') ? (host.inGame && !host.inGame.has(p.slot) ? 'spectator' : host.game.roleOf ? host.game.roleOf(p.slot) : 'fighter') : 'fighter', gestures: !!(G && G.gestures && host.controls === 'gestures' && p.kind === 'phone'), race: !!(G && G.race) });
+  if (APP) Object.assign(msg, { code: host.net.code || '', net: host.net.status, url: host.net.url || '', appBots: host.appBots || 0, shDecks: host.shDecks || 0, solo: !!host.appSolo,
+    plist: active().map(q => ({ n: q.name, k: q.kind, c: q.kind !== 'phone' || q.connected, col: q.color, me: q === p })) });
   if (host.phase === 'lobby') msg.roster = ROSTER.map((c, i) => {
     const owner = host.players.find(q => q && q.char === i);
     return { name: c.name, color: c.color, role: c.role, bio: c.bio, art: c.art, taken: owner && owner !== p ? owner.name : '' };
@@ -11018,7 +11073,7 @@ const Shithead = {
   introT: 11, session: true, rules: [[2, 'Reset: anything can be played on a 2.'], [7, 'Mirror: a 7 copies the card underneath it.'], [10, 'Burn: a 10, or four of a kind, clears the pile.'], ['pair', 'Play equal or higher. Same-rank cards can go down together.'], ['swap', 'Before play starts, swap hand cards with your face-up cards.'], ['pick', 'Can\'t play, or don\'t want to? Pick up the pile.'], ['blind', 'Hand first, then face-up, then 4 blind cards. Last one holding cards is the Shithead.']],
   how: 'Play a card equal or higher than the pile, or pick the whole pile up. 2 resets the pile · 7 is a mirror (beat the card under it) · 10 bombs the pile · four of a kind bombs too. At the start you get time to swap hand cards with your face-up cards. Play several cards of the same rank at once. You can pick up the pile any time on your turn. Empty your hand, then your 4 face-up cards, then your 4 secret face-down cards. Last one holding cards is the Shithead! Up to 10 players: big groups play with 2 or 3 decks shuffled together, and you top your hand back up to 4 from the draw pile.',
   create(players) {
-    const nDecks = players.length <= 3 ? 1 : players.length <= 6 ? 2 : 3, deck = makeDeck(nDecks), g = { t: 0, turnLen: host.shTimer || 35, rx: [], flags: {}, mile: 0, nDecks, reigning: host.sessionLast && host.sessionLast.shit, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: host.shTimer || 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
+    const nDecks = Math.max(Math.ceil(players.length * 12 / 52), host.shDecks || (players.length <= 3 ? 1 : players.length <= 6 ? 2 : 3)), deck = makeDeck(nDecks), g = { t: 0, turnLen: host.shTimer || 35, rx: [], flags: {}, mile: 0, nDecks, reigning: host.sessionLast && host.sessionLast.shit, done: false, panelGame: true, ps: [], pile: [], turn: 0, turnT: host.shTimer || 35, phase: 'swap', swapT: 20, sel: {}, out: [], winner: null, endT: 0, msg: '', msgT: 0, boom: 0, last: null };
     // seating: stay, shuffle, or put last game's Shithead right after the winner
     let seating = players.slice(); const prev = host.seatsPrev && host.seatsPrev.n === players.length ? host.seatsPrev : null;
     if (prev) seating.sort((a, b) => { const ia = prev.names.indexOf(a.name), ib = prev.names.indexOf(b.name); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
@@ -13799,6 +13854,7 @@ function ctlConnect() {
   if (ctl.peer && !ctl.peer.destroyed && ctl.peer.open) { open(); return; }
   try { if (ctl.peer) ctl.peer.destroy(); } catch (e) {}
   ctl.peer = new Peer(peerOpts());
+  if (APP) ctl.peer.on('call', appAnswer);
   ctl.peer.on('open', open);
   ctl.peer.on('error', e => {
     if (e.type === 'peer-unavailable') {
@@ -13811,7 +13867,7 @@ function ctlConnect() {
 }
 function lostHost() {
   if (!ctl.joined) { $('#joinErr').textContent = 'Connection lost. Try again.'; $('#joinGo').disabled = false; return; }
-  banner('Reconnecting to the TV…');
+  banner(APP ? 'Reconnecting…' : 'Reconnecting to the TV…');
   clearTimeout(ctl.retry); ctl.retry = setTimeout(ctlConnect, 1500);
 }
 function banner(m) { const b = $('#netBanner'); if (m) { b.textContent = m; b.classList.remove('hidden'); } else b.classList.add('hidden'); }
@@ -13839,12 +13895,12 @@ function motionStart() { if (SENS.on) return; SENS.on = true;
 function motionOn() { const ok = () => { motionStart(); ctlSend({ t: 'cmd', c: 'pp', v: 'motion:ok' }); };
   try { const asks = []; if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) asks.push(DeviceMotionEvent.requestPermission()); if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) asks.push(DeviceOrientationEvent.requestPermission());
     if (asks.length) Promise.all(asks).then(r => { if (r.every(x => x === 'granted')) ok(); else alert('Motion was blocked. You can still play with the TAP button.'); }).catch(() => ok()); else ok(); } catch (e) { ok(); } }
-function recRow(d) { return `<div class="recbox"><div class="small" style="opacity:1"><b style="display:inline;font-size:15px">🎙 Your bomb sound</b> · plays on the TV when you burn the pile</div><div class="row">` +
+function recRow(d) { return `<div class="recbox"><div class="small" style="opacity:1"><b style="display:inline;font-size:15px">🎙 Your bomb sound</b> · plays ${APP ? 'for everyone' : 'on the TV'} when you bomb the pile</div><div class="row">` +
   `<button class="pbtn" data-rec="bomb">${d.bombSnd ? 'Re-record' : 'Record (3s)'}</button>` + (d.bombSnd ? `<button class="pbtn" data-recplay="1">▶ Hear it</button><button class="pbtn" data-c="bombsnd" data-v="">Remove</button>` : '') + `</div>` +
   (d.leader && d.botBomb === 'bot' ? `<div class="small" style="opacity:1;margin-top:6px"><b style="display:inline;font-size:14px">🤖 Bots' bomb sound</b></div><div class="row"><button class="pbtn" data-rec="bot">${d.botBombSet ? 'Re-record bot sound' : 'Record bot sound'}</button>${d.botBombSet ? '<button class="pbtn" data-c="bombtest" data-v="bot">▶ Hear it</button>' : ''}</div>` : '') + `</div>`; }
 function showMsg(html, interactive) {
   const m = $('#padMsg'); m.classList.toggle('interactive', !!interactive);
-  if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; if (m.querySelector('[data-react]')) window.reactT0 = performance.now(); } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
+  if (html) { if (m._html !== html) { m.innerHTML = html; m._html = html; if (APP) appStrip(m); if (m.querySelector('[data-react]')) window.reactT0 = performance.now(); } m.classList.remove('hidden'); } else { m.classList.add('hidden'); m._html = ''; }
 }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 const MODE_NAMES = { troll: '🧌 Troll Toll', night: '🏮 Night Market', haul: '🛻 Haul', syd: '🏙 Surviving Sydney', cup: '🏆 Party Cup', arena: '⚔ Battle Arena', goal: 'Goal Guard', sumo: 'Ice Sumo', tile: 'Tile Takeover', smash: '🥊 Sky Brawl (FFA)', duel: '🥊 Duel (1v1)', tag: '🥊 Tag Team (2v2)', race: '🏁 Racing', fort: '🏰 Fort Frenzy', raid: '👊 Gloom Raid', gems: '💎 Gem Grab', zones: '🚩 Zone Control', ball: '⚽ Toy Ball', train: '🚂 Push the Train', odd: '🕵 Odd One Out', cards: '🃏 Colour Clash', shit: '💩 Shithead', big2: '🂡 Big 2', bomb: '💣 Bomb Squad', draw: '🎨 Draw & Pass', heist: '💰 The Heist', whosaid: '🕵 Who Said That?', likely: '👉 Most Likely To', hot: '🌶 Hot Takes', meld: '🧠 Mind Meld', lie: '🤥 Two Truths & a Lie', qdraw: '🤠 Quick Draw', shake: '📳 Shake Race', head: '🤪 Forehead', says: '📱 Phone Says', robo: '🤖 Robo Rumble', arms: '💥 Arms Race', dice: "🎲 Liar's Dice", turf: '🗺 Turf Wars' };
@@ -13881,6 +13937,8 @@ function renderPad() {
     html = `<b>⏸ Paused</b>${B('resume', '▶ Resume', null, true, 'big')}` +
       (d.leader ? `<div class="row">${B('restart', '↺ Restart this game')}${B('quit', '✖ Quit to lobby')}</div>`
                 : `<div class="small">${esc(d.leaderName)} (leader) can restart or quit.</div>`);
+  } else if (d.phase === 'lobby' && APP) {
+    hint = 'Shithead'; html = appLobbyHTML(d, B);
   } else if (d.phase === 'lobby') {
     hint = 'Lobby';
     if (d.leader) {
@@ -13915,11 +13973,13 @@ function renderPad() {
     html = `<b>${esc(d.title)}</b><div class="small" style="opacity:.9">Left: joystick · Right: gesture pad</div><div class="glist">${(d.fight ? FIGHT_HELP : GESTURE_HELP).map(([a, b]) => `<span><b>${esc(a)}</b> ${esc(b)}</span>`).join('')}</div>` +
       (d.ability ? `<div class="small" style="opacity:1">★ Your special: <b style="display:inline;font-size:14px">${esc(d.ability.name)}</b>: ${esc(d.ability.desc)}</div>` : '');
   } else if (d.phase === 'intro' && d.race) { hint = d.title + ' · hold phone sideways'; inter = false; html = '';
+  } else if (d.phase === 'intro' && APP) { hint = d.title; inter = false; html = '';
   } else if (d.phase === 'intro') { hint = d.title; inter = false; html = `<b>${esc(d.title)}</b>${esc(d.how)}` + (d.ability ? `<div class="small" style="opacity:1;margin-top:8px">🅱 <b style="display:inline;font-size:15px">${esc(d.ability.name)}</b>: ${esc(d.ability.desc)}</div>` : ''); }
   else if (d.phase === 'play' && d.panel) { hint = d.title; html = d.panel; }
   else if (d.phase === 'play') { hint = d.title + ' · Go!'; inter = false; }
-  else if (d.phase === 'results') { hint = 'Results'; html = d.session ? '<b>Tonight\'s table is on the TV</b>' + recRow(d) + (d.leader ? B('skip', 'Deal again ▶', null, true, 'big') + `<div class="row">${B('quit', 'Back to lobby')}</div>` : '<div class="small">Next game deals in a few seconds.</div>') : '<b>Look at the TV 📺</b>' + (d.leader ? B('skip', 'Next ▶', null, true, 'big') : ''); }
+  else if (d.phase === 'results') { hint = 'Results'; html = d.session ? (APP ? (d.leader ? `<div class="row">${B('skip', 'Deal again ▶', null, true, 'go')}${B('quit', 'Lobby')}</div>` : '<div class="small" style="opacity:1">Next game deals in a few seconds.</div>') : '<b>Tonight\'s table is on the TV</b>' + recRow(d) + (d.leader ? B('skip', 'Deal again ▶', null, true, 'big') + `<div class="row">${B('quit', 'Back to lobby')}</div>` : '<div class="small">Next game deals in a few seconds.</div>')) : '<b>Look at the TV 📺</b>' + (d.leader ? B('skip', 'Next ▶', null, true, 'big') : ''); }
   else if (d.phase === 'podium') { hint = 'Cup over'; html = '<b>Cup over! 🏆</b>Check the podium on the TV.' + (d.leader ? B('skip', 'Back to lobby ▶', null, true, 'big') : ''); }
+  if (APP) { document.body.classList.toggle('inplay', d.phase !== 'lobby'); document.body.classList.toggle('res', d.phase === 'results' || d.phase === 'podium' || !!d.paused); }
   showMsg(html, inter);
   $('#phint').textContent = hint;
 }
@@ -14110,7 +14170,98 @@ function setupPadInput() {
   document.addEventListener('gesturestart', e => e.preventDefault());
 }
 
+/* ---------- Shithead app: this phone is the table AND the controller; friends get the table streamed to their phones ---------- */
+const appNet = { stream: null, calls: new Map(), dest: null };
+function appStream() {
+  if (appNet.stream) return appNet.stream;
+  try {
+    const s = canvas.captureStream(24); unlockAudio();
+    if (actx && outBus && actx.createMediaStreamDestination) { appNet.dest = actx.createMediaStreamDestination(); outBus.connect(appNet.dest); appNet.dest.stream.getAudioTracks().forEach(t => s.addTrack(t)); }
+    appNet.stream = s;
+  } catch (e) { appNet.stream = null; }
+  return appNet.stream;
+}
+function appStreamTo(conn) {
+  if (!host.peer || !conn || !conn.peer || conn.peer === 'local') return; const s = appStream(); if (!s) return;
+  const old = appNet.calls.get(conn.peer); if (old) { try { old.close(); } catch (e) {} }
+  try { const call = host.peer.call(conn.peer, s); if (!call) return; appNet.calls.set(conn.peer, call); call.on('close', () => { if (appNet.calls.get(conn.peer) === call) appNet.calls.delete(conn.peer); }); call.on('error', () => {}); } catch (e) {}
+}
+function appAnswer(call) {
+  call.answer();
+  call.on('stream', s => { const v = $('#appVid'); if (v.srcObject !== s) v.srcObject = s; v.muted = false; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); });
+}
+// any tap turns the table's sound on (phones block sound until you touch the screen)
+function appUnmute() { const v = $('#appVid'); if (v && v.srcObject && v.muted) { v.muted = false; v.play().catch(() => {}); } }
+function appLocal(name) {
+  const hostSide = { open: true, peer: 'local', send: m => onHostMsg(m) };
+  const ctlSide = { open: true, send: m => onCtrlMsg(hostSide, m) };
+  phoneGuards(); $('#pad').classList.remove('hidden'); $('#joinForm').classList.add('hidden');
+  ctl.pid = 'local-host'; ctl.name = name; ctl.conn = ctlSide; setupPadInput();
+  ctlSend({ t: 'hi', pid: ctl.pid, name });
+}
+function appStart(solo) {
+  const n = cleanName($('#appName').value) || 'Player'; lsSet('cc_name', n);
+  document.body.classList.add('hosting');
+  host.mode = 'shit'; host.botsFill = true; host.appSolo = solo;
+  host.appBots = solo ? clamp(+(lsGet('sh_bots') || 3) || 3, 1, MAXP - 1) : 0; host.shDecks = +(lsGet('sh_decks') || 0) || 0;
+  unlockAudio(); startHost(); appLocal(n);
+}
+function appLobbyHTML(d, B) {
+  const room = d.solo ? '' : d.net === 'ready' ? `<div class="small">Room code</div><div class="appcode">${esc(d.code)}</div><button class="pbtn" data-appshare="1">📲 Invite friends</button>`
+    : d.net === 'connecting' ? '<div class="small" style="opacity:1">Opening a room…</div>' : '<div class="small" style="opacity:1">Can\'t open a room right now (no internet?). Bots still work.</div>';
+  const ppl = d.plist || [], bots = d.leader ? d.appBots : 0, nPl = ppl.length + bots;
+  const people = `<div class="appppl">${ppl.map(q => `<span class="appp" style="--c:${q.col}">${q.k === 'bot' ? '🤖 ' : ''}${esc(q.n)}${q.me ? ' (you)' : ''}${q.c ? '' : ' · lost'}</span>`).join('')}${bots ? `<span class="appp bot">+ ${bots} bot${bots > 1 ? 's' : ''}</span>` : ''}</div>`;
+  const quit = '<button class="pbtn" data-appquit="1">⬅ Leave</button>';
+  if (!d.leader) return `<b>✅ You're in, ${esc(d.name)}!</b>${room}${people}<div class="small">Waiting for ${esc(d.leaderName || 'the host')} to deal.</div>` + recRow(d) + `<div class="row">${quit}</div>`;
+  const minD = Math.ceil(Math.max(2, nPl) * 12 / 52), autoD = nPl <= 3 ? 1 : nPl <= 6 ? 2 : 3;
+  return `<b>💩 Shithead</b>${room}<div class="small">Players</div>${people}
+    <div class="row"><span class="small" style="opacity:1">🤖 Bots</span>${B('appbots', '−', -1)}<span class="val">${d.appBots}</span>${B('appbots', '+', 1)}</div>
+    <div class="row"><span class="small" style="opacity:1">🃏 Decks</span>${[[0, 'Auto (' + Math.max(minD, autoD) + ')'], [1, '1'], [2, '2'], [3, '3']].map(([v, l]) => v && v < minD ? '' : B('decks', l, v, d.shDecks === v)).join('')}</div>
+    <div class="row">${B('cardopt', '⏱ ' + d.shTimer + 's turns', 'timer')}${B('cardopt', d.fourColour ? '4-colour ON' : '4-colour', 'four', d.fourColour)}${B('cardopt', '💺 Seats: ' + ({ off: 'Stay', shuffle: 'Shuffle', chase: 'Loser chases' }[d.seatMode] || 'Stay'), 'seats', d.seatMode !== 'off')}${B('cardopt', '🤖 Bot bombs: ' + ({ boom: 'Boom', none: 'Silent', mine: 'Mine', random: 'Random', bot: 'Custom' }[d.botBomb] || 'Boom'), 'botbomb', d.botBomb !== 'boom')}${d.hasNight ? B('newnight', 'New night') : ''}</div>
+    <div class="row">${B('sound', '🔊 Sound ' + (d.sound ? 'ON' : 'OFF'), null, d.sound)}${B('music', '🎵 Music ' + (d.music ? 'ON' : 'OFF'), null, d.music)}${quit}</div>
+    ${nPl < 2 ? '<div class="small" style="opacity:1">Add a bot or wait for a friend to join.</div>' : ''}${B('start', 'DEAL ▶', null, true, 'big go')}` + recRow(d);
+}
+// During play the hand panel becomes a strip along the bottom: card rows on the left, title and buttons on the right.
+function appStrip(m) {
+  if (!document.body.classList.contains('inplay') || !m.querySelector(':scope > .hand')) return;
+  const kids = [...m.childNodes], strip = document.createElement('div'), grps = document.createElement('div'), side = document.createElement('div');
+  strip.className = 'appstrip'; grps.className = 'grps'; side.className = 'side';
+  const grp = (lab, hand) => { const g = document.createElement('div'); g.className = 'grp' + (grps.children.length ? '' : ' main'); if (lab) g.appendChild(lab); g.appendChild(hand); grps.appendChild(g); };
+  for (let i = 0; i < kids.length; i++) {
+    const k = kids[i], nx = kids[i + 1], isEl = x => x && x.nodeType === 1;
+    if (isEl(k) && k.classList.contains('small') && isEl(nx) && nx.classList.contains('hand')) { grp(k, nx); i++; continue; }
+    if (isEl(k) && k.classList.contains('hand')) { grp(null, k); continue; }
+    side.appendChild(k);
+  }
+  m.textContent = ''; strip.append(grps, side); m.appendChild(strip);
+}
+function appBoot() {
+  document.body.classList.add('app'); document.title = 'Shithead';
+  const v = document.createElement('video'); v.id = 'appVid'; v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.autoplay = true; v.muted = true; document.body.insertBefore(v, $('#pad'));
+  const rot = document.createElement('div'); rot.id = 'appRot'; rot.innerHTML = '<div>↻</div>Turn your phone sideways'; document.body.appendChild(rot);
+  $('#menu').innerHTML = `<h1 class="apptitle">Shithead</h1><p>Couch Clash card night, on your phone.</p>
+    <input id="appName" maxlength="10" placeholder="Your name" autocomplete="off">
+    <div class="mbtns"><button class="mbtn tv" id="appSolo">🤖 Play solo<small>You vs bots</small></button><button class="mbtn phone" id="appHost">👥 Host a game<small>Friends join on their phones</small></button><button class="mbtn join" id="appJoin">🔑 Join a game<small>Got a room code?</small></button></div>`;
+  $('#appName').value = lsGet('cc_name') || '';
+  $('#appSolo').onclick = () => appStart(true); $('#appHost').onclick = () => appStart(false);
+  const join = code => { const n = cleanName($('#appName').value); if (n) lsSet('cc_name', n); document.body.classList.add('guest'); startController(code); };
+  $('#appJoin').onclick = () => join('');
+  const jl = document.querySelector('#joinForm .jlogo'); if (jl) jl.remove();
+  const jh = document.querySelector('#joinForm h2'); if (jh) jh.textContent = 'Join a Shithead game';
+  const a2 = $('#a2hs'); if (a2) a2.innerHTML = a2.innerHTML.replace(/Couch Clash/g, 'Shithead').replace(/on the TV/g, 'from the host');
+  document.addEventListener('pointerdown', appUnmute, { capture: true, passive: true });
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-appquit]')) { e.stopPropagation(); location.href = location.pathname; return; }
+    if (e.target.closest('[data-appshare]')) { e.stopPropagation(); const d = ctl.info || {}; const url = d.url || location.href, text = 'Join my Shithead game. Room ' + (d.code || '');
+      if (navigator.share) navigator.share({ title: 'Shithead', text, url }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toastPad('Link copied')).catch(() => {}); }
+  }, true);
+  if (urlCode) join(urlCode);
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('shithead/sw.js', { scope: 'shithead/' }).catch(() => {});
+}
+function toastPad(m) { const b = $('#netBanner'); b.textContent = m; b.classList.remove('hidden'); setTimeout(() => b.classList.add('hidden'), 1600); }
+
 /* ---------- boot ---------- */
+if (APP) appBoot(); else {
 $('#hostBtn').onclick = () => { unlockAudio(); startHost(); };
 $('#joinBtn').onclick = () => startController('');
 if (urlCode) startController(urlCode);
@@ -14121,6 +14272,7 @@ else if (!params.has('menu')) {
   const small = Math.min(screen.width, screen.height) < 600;
   if (!touch) startHost();
   else if (small) startController('');
+}
 }
 </script>
 </body>
