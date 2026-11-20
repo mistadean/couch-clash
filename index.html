@@ -260,7 +260,7 @@ body.app.inplay.hosting #tv{visibility:visible}
 #appVid{display:none}
 body.app.inplay.guest #appVid{display:block;position:fixed;inset:0;width:100%;height:100%;object-fit:contain;background:var(--sky1)}
 body.app #rotate{display:none}
-.apptitle{font:clamp(54px,12vw,96px) "Lilita One",Fredoka,system-ui,sans-serif;color:#fff;-webkit-text-stroke:10px var(--navy);paint-order:stroke fill;filter:drop-shadow(0 8px 0 rgba(16,30,90,.25))}
+.apptitle{font:clamp(54px,12vw,96px) "Lilita One",Fredoka,system-ui,sans-serif;color:#fff;-webkit-text-stroke:0;text-shadow:0 0 0 var(--navy),3px 3px 0 var(--navy),-3px 3px 0 var(--navy),3px -3px 0 var(--navy),-3px -3px 0 var(--navy),0 4px 0 var(--navy),0 -4px 0 var(--navy),4px 0 0 var(--navy),-4px 0 0 var(--navy),0 9px 0 var(--navy);filter:drop-shadow(0 8px 0 rgba(16,30,90,.25))}
 #appName{width:min(320px,86vw);padding:14px;border-radius:14px;border:4px solid var(--navy);box-shadow:0 6px 0 var(--navy);font:22px Fredoka,system-ui;text-align:center;color:var(--navy);margin-top:-8px}
 body.app #menu{gap:18px;overflow:auto;justify-content:center}
 body.app .mbtn{min-width:200px;padding:16px 20px;font-size:21px}
@@ -277,28 +277,28 @@ body.app.inplay #chip,body.app.inplay #pname,body.app.inplay #phint{display:none
 body.app.inplay #padBody{display:block}
 body.app.inplay #stickZone,body.app.inplay #btnZone,body.app.inplay #gPad,body.app.inplay #racePad{display:none!important}
 body.app.inplay #padMsg,body.app.inplay #pad.panelmode #padMsg{position:relative;left:auto;top:auto;transform:none;width:100%;max-width:none;margin:0;max-height:62vh;border:0;border-radius:0;box-shadow:none;color:#fff;
-  background:linear-gradient(180deg,rgba(9,46,28,0) 0,rgba(9,46,28,.72) 26px,rgba(9,46,28,.9));padding:22px max(14px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));overflow:visible}
-body.app.inplay #padMsg b{font-size:18px;color:#fff;-webkit-text-stroke:4px var(--navy);paint-order:stroke fill;margin-bottom:2px}
+  background:linear-gradient(180deg,rgba(9,46,28,0) 0,rgba(9,46,28,.7) 18px,rgba(9,46,28,.88));padding:14px max(14px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));overflow:visible}
+body.app.inplay #padMsg b{font-size:16px;color:#fff;-webkit-text-stroke:4px var(--navy);paint-order:stroke fill;margin-bottom:2px}
 body.app.inplay #padMsg .small{color:#fff;opacity:.85}
-#padMsg .appstrip{--ch:clamp(50px,19vh,86px);display:flex;align-items:flex-end;gap:14px;text-align:left}
+#padMsg .appstrip{--ch:clamp(46px,16vh,74px);display:flex;align-items:flex-end;gap:14px;text-align:left}
 #padMsg .appstrip .grps{flex:1;display:flex;gap:18px;min-width:0;overflow-x:auto;overflow-y:visible;align-items:flex-end;padding-top:14px;scrollbar-width:none}
 #padMsg .appstrip .grps::-webkit-scrollbar{display:none}
 #padMsg .appstrip .grp{flex:none;display:flex;flex-direction:column;min-width:0}
-#padMsg .appstrip .grp>.small{margin:0 0 3px 2px;font:12px "Lilita One",system-ui;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;opacity:.75}
+#padMsg .appstrip .grp>.small{margin:0 0 2px 2px;font:11px "Lilita One",system-ui;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;opacity:.75}
 #padMsg .appstrip .hand{flex-wrap:nowrap;justify-content:flex-start;margin:0;gap:0;overflow:visible}
 #padMsg .appstrip .pcard{flex:none;height:var(--ch);width:calc(var(--ch) * .71);margin-right:calc(var(--ch) * -.12);border-radius:calc(var(--ch) * .11);border-width:3px;box-shadow:0 4px 0 #1b1f5e,0 8px 14px rgba(0,0,0,.25)}
 #padMsg .appstrip .pcard:last-child{margin-right:0}
 #padMsg .appstrip .pcard b{font-size:calc(var(--ch) * .36)}#padMsg .appstrip .pcard i{font-size:calc(var(--ch) * .3)}
-#padMsg .appstrip .grp:not(.main) .pcard{--ch:clamp(40px,14vh,64px);height:var(--ch);width:calc(var(--ch) * .71);margin-right:4px}
+#padMsg .appstrip .grp:not(.main) .pcard{--ch:clamp(38px,12.5vh,58px);height:var(--ch);width:calc(var(--ch) * .71);margin-right:4px}
 #padMsg .appstrip .pcard.back{outline-width:2px}
 #padMsg .appstrip .pcard.dim{opacity:1;filter:brightness(.62) saturate(.5)}
 #padMsg .appstrip .pcard.sel{transform:translateY(-14px)}
-#padMsg .appstrip .side{flex:0 0 auto;width:clamp(150px,22vw,210px);display:flex;flex-direction:column;justify-content:flex-end;text-align:center;padding-bottom:2px}
+#padMsg .appstrip .side{flex:0 0 auto;width:clamp(140px,19vw,190px);display:flex;flex-direction:column;justify-content:flex-end;text-align:center;padding-bottom:2px}
 #padMsg .appstrip .side>.small{display:none}
-#padMsg .appstrip .side .pbtn.big{margin-top:6px;padding:9px 8px;font-size:17px;border:3px solid var(--navy);box-shadow:0 4px 0 var(--navy);background:linear-gradient(#fff,#e7ebff);color:var(--navy)}
+#padMsg .appstrip .side .pbtn.big{margin-top:5px;padding:7px 8px;font-size:15px;border:3px solid var(--navy);box-shadow:0 4px 0 var(--navy);background:linear-gradient(#fff,#e7ebff);color:var(--navy)}
 #padMsg .appstrip .side .pbtn.big.go{background:linear-gradient(#7cf5c4,var(--mint));color:#fff;-webkit-text-stroke:4px var(--navy);paint-order:stroke fill}
 #padMsg .appstrip .side .rxrow{margin-top:6px;gap:2px;flex-wrap:nowrap;justify-content:center}
-#padMsg .appstrip .side .rxb{font-size:14px;padding:3px;border:0;background:rgba(255,255,255,.14);box-shadow:none;border-radius:9px}
+#padMsg .appstrip .side .rxb{font-size:12px;padding:2px;border:0;background:rgba(255,255,255,.14);box-shadow:none;border-radius:9px}
 body.app #stickZone,body.app #btnZone{visibility:hidden}
 body.app.inplay.res #padMsg{width:auto;min-width:240px;margin:0 max(10px,env(safe-area-inset-right)) 8px auto;border-radius:20px;background:rgba(9,46,28,.88);border:3px solid rgba(255,255,255,.25);padding:10px 14px}
 #appRot{display:none}
@@ -6423,7 +6423,7 @@ var qrcode = function() {
    Networking: PeerJS (WebRTC peer-to-peer via the free PeerJS broker).
    ===================================================================== */
 const $ = s => document.querySelector(s);
-let W = 1280; const H = 720;
+let W = 1280, H = 720;
 let TCY = 360, TRX = 520, TRY = 270; // card-table centre and radii (the app lifts the table above your hand)
 /* ROSTER: every playable character. Add a new entry (plus assets/<art>) to grow the lineup.
    stats/ability are stored for a future ability-based game mode; the current games ignore them. */
@@ -6660,12 +6660,24 @@ function resize() {
   const vv = window.visualViewport;
   const cw = Math.max(320, Math.round(vv ? vv.width : innerWidth)), ch = Math.max(180, Math.round(vv ? vv.height : innerHeight));
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-  if (APP) { W = clamp(Math.round(H * cw / ch), 1100, 2000); TCY = 262; TRX = Math.min(W / 2 - 190, 760); TRY = 178; }
   canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
   canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr);
   const s = Math.min(canvas.width / W, canvas.height / H) * host.fit;
   view = { s, ox: (canvas.width - W * s) / 2, oy: (canvas.height - H * s) / 2, dpr: canvas.width / cw };
   if (host.game) host.game.bg = null; // re-render cached arena art at the new resolution
+  if (APP) appFit(true);
+}
+// App: the stage follows the phone's shape, and while a hand is being played it zooms in (shorter stage) so the table reads bigger.
+function appFit(force, zoomNow) {
+  if (!APP || !canvas.width) return;
+  const zoom = zoomNow || host.phase === 'intro' || host.phase === 'play', h = zoom ? 600 : 720;
+  if (!force && h === H && appFit.cw === canvas.width && appFit.ch === canvas.height) return;
+  appFit.cw = canvas.width; appFit.ch = canvas.height;
+  H = h; W = clamp(Math.round(H * canvas.width / canvas.height), 960, 2000);
+  if (zoom) { TCY = 215; TRY = 160; TRX = Math.min(W / 2 - 160, 600); } else { TCY = H / 2; TRY = 270; TRX = 520; }
+  const sc = Math.min(canvas.width / W, canvas.height / H);
+  view = { s: sc, ox: (canvas.width - W * sc) / 2, oy: (canvas.height - H * sc) / 2, dpr: view.dpr };
+  if (host.game) host.game.bg = null;
 }
 
 /* ---------- networking (host) ---------- */
@@ -6886,7 +6898,7 @@ function beginGame() {
   const ps = pool.slice().sort((a, b) => (a.kind === 'bot') - (b.kind === 'bot') || a.slot - b.slot).slice(0, max).sort((a, b) => a.slot - b.slot);
   active().forEach(p => p.gs = -1); ps.forEach((p, i) => p.gs = i);
   host.inGame = new Set(ps.map(p => p.slot));
-  disposeGame(); host.game = G.create(ps);
+  disposeGame(); if (APP) appFit(true, true); host.game = G.create(ps);
   host.phase = 'intro'; host.timer = host.introMax = G.introT || 5; host.paused = false; audioState.duck = false; applyVolume();
   parts.length = 0;
   broadcastPhase();
@@ -7404,6 +7416,7 @@ function hudPanel(x, y, p, out, n, max, prefix = '', flash = 0) {
    HOST DRAW
    ===================================================================== */
 function hostDraw() {
+  if (APP) appFit();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const gl3 = host.phase !== 'lobby' && host.game && host.game.gl && R3;
   if (R3) R3.c.style.display = gl3 ? 'block' : 'none';
@@ -11094,7 +11107,7 @@ const Shithead = {
     const fx = cardFX(), BIGT = players.length > 6, PILE = [W / 2 + (BIGT ? 80 : 30), TCY + 4], DECK = [W / 2 - (BIGT ? 150 : 250), TCY + 4], DECKS = BIGT ? 0.85 : 1.05, seat = o => seatXY(g.ps.indexOf(o), g.ps.length); g.fx = fx;
     const face = c => (x, y, s2, r, front) => front ? drawPCard(x, y, c, s2, r) : drawPBack(x, y, s2, r), back = (x, y, s2, r) => drawPBack(x, y, s2, r);
     g.dealT = (g.slide ? 1.6 : 0.6) + g.ps.length * 6 * 0.045 + 0.35; if (g.slide) say(host.seatMode === 'chase' ? 'New seats: the Shithead chases the winner' : 'Seats shuffled'); // deal animation: cards fly from the deck to each seat
-    const NP = g.ps.length, big = NP <= 4 ? 0.7 : NP <= 6 ? 0.6 : 0.42, gap = NP <= 4 ? 61 : NP <= 6 ? 52 : 36, off = NP <= 4 ? 100 : NP <= 6 ? 92 : 58; g.tab = { big, gap, off };
+    const NP = g.ps.length, big = (NP <= 4 ? 0.7 : NP <= 6 ? 0.6 : 0.42) * (APP ? 1.12 : 1), gap = NP <= 4 ? 61 : NP <= 6 ? 52 : 36, off = NP <= 4 ? 100 : NP <= 6 ? 92 : 58; g.tab = { big, gap, off };
     const tabX = x => clamp(x, gap * 1.5 + 46 * big + 26, W - gap * 1.5 - 46 * big - 26);
     const tabAt = (x, y) => APP && Math.abs(x - W / 2) < 260 ? [x + 104 + gap * 1.5 + 46 * big, y] : NP > 6 && Math.abs(y - (TCY + 10)) < 110 ? [x + (x < W / 2 ? 206 : -206), y] : [tabX(x), y + (y > TCY ? -off : off)]; g.tabAt = tabAt;
     const slotXY = (i, k) => { const [x, y] = seatXY(i, g.ps.length); const [tx, ty] = tabAt(x, y); return [tx + (k - 1.5) * gap, ty]; };
@@ -11208,7 +11221,7 @@ const Shithead = {
     g.fxs = { land: 0, call: null, hits: new Map() };
     const ordinal = k => k + (k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th');
     function callout() { const c = g.fxs.call; if (!c || c.t <= 0) return; const a = Math.min(1, c.t * 3), age = c.max - c.t, pop = Math.min(1, age * 5), sc = 0.7 + 0.3 * (1 - Math.pow(1 - pop, 3)) + Math.sin(Math.min(1, age * 3) * Math.PI) * 0.06;
-      ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, TCY + 120); ctx.scale(sc, sc);
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, TCY + (APP ? 92 : 120)); ctx.scale(sc, sc);
       dfont(30); const tw = ctx.measureText(c.title).width; font(18, 600); const sw = ctx.measureText(c.sub || '').width, w = Math.max(tw, sw) + (c.card ? 116 : 70), h = 66;
       rr(-w / 2, -h / 2 + 6, w, h, 28); ctx.fillStyle = 'rgba(20,24,60,.35)'; ctx.fill(); rr(-w / 2, -h / 2, w, h, 28); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = TOY.navy; ctx.stroke();
       ctx.save(); rr(-w / 2, -h / 2, w, h, 28); ctx.clip(); ctx.fillStyle = c.col; ctx.fillRect(-w / 2, -h / 2, 14, h); ctx.restore();
@@ -11233,7 +11246,7 @@ const Shithead = {
       if (!g.pile.length) { ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.setLineDash([10, 8]); ctx.lineWidth = 3; rr(W / 2 - 22, TCY - 66, 104, 140, 12); ctx.stroke(); ctx.setLineDash([]); }
       else if (g.pile.length > 4) { rr(W / 2 + 74, TCY + 54, 50, 30, 15); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = TOY.navy; ctx.stroke(); toyText(String(g.pile.length), W / 2 + 99, TCY + 69, 16, TOY.navy, 'center', null); }
       if (deck.length) { for (let k = 0; k < Math.min(5, Math.ceil(deck.length / 6)); k++) drawPBack(DECK[0] - k * 2, DECK[1] - k * 2, DECKS); toyText(deck.length + ' left', DECK[0], DECK[1] + 86 * DECKS, 18, '#fff', 'center', TOY.navy); }
-      if (g.phase === 'play' && !g.winner) { const t = effTop(); toyText(!t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+', PILE[0], TCY - 104, 24, '#fff', 'center', TOY.navy); }
+      if (g.phase === 'play' && !g.winner) { const t = effTop(); toyText(!t || t.r === 2 ? 'Anything goes' : 'Beat ' + rankName(t.r) + '+', PILE[0], TCY - (APP ? 80 : 104), 24, '#fff', 'center', TOY.navy); }
       g.ps.forEach((o, i) => { const [x0, y] = seatAt(o, i, n), act = cur() === o && !g.winner && g.phase === 'play' && g.dealT <= 0, hit = F.hits.get(o), x = x0 + (hit ? Math.sin(hit.t * 50) * hit.t * 14 : 0);
         const badge = act ? ['⏱ ' + Math.ceil(g.turnT), g.turnT < Math.min(10, g.turnLen / 3) ? TOY.coral : '#ff8a3d'] : g.loser === o ? ['💩', '#8a5a3a'] : o.done ? [ordinal(g.out.indexOf(o) + 1), TOY.mint] : (g.reigning === o.p.name && !g.winner ? ['💩 last', '#8a5a3a'] : null);
         seatCard(x, y, o.p, act, o.done ? 'OUT ✓' : '✋ ' + o.hand.length + '  ·  🙈 ' + o.down.length, badge);
@@ -11241,7 +11254,7 @@ const Shithead = {
         if (g.phase === 'swap' && g.dealT <= 0.2 && !g.winner) toyText(o.ready ? '✅' : '⏳', x0 + 86, y - 40, 22, '#fff', 'center', null);
         if (hit && hit.n) { ctx.globalAlpha = Math.min(1, hit.t * 2); headline('+' + hit.n, x0, y - 70 - (0.9 - hit.t) * 50, 40, TOY.coral, '#fff'); ctx.globalAlpha = 1; } });
       fx.draw();
-      if (g.phase === 'swap' && g.dealT <= 0) { headline('SWAP TIME', W / 2, TCY - 150, 54, TOY.sun, '#c4402a'); toyText('Swap hand cards with your face-up cards on your phone · ⏱ ' + Math.ceil(g.swapT), W / 2, TCY + 150, 24, '#fff', 'center', TOY.navy); }
+      if (g.phase === 'swap' && g.dealT <= 0) { headline('SWAP TIME', W / 2, TCY - (APP ? 70 : 150), 54, TOY.sun, '#c4402a'); toyText((APP ? 'Swap hand cards with your face-up cards below' : 'Swap hand cards with your face-up cards on your phone') + ' · ⏱ ' + Math.ceil(g.swapT), W / 2, TCY + (APP ? 92 : 150), 24, '#fff', 'center', TOY.navy); }
       if (g.boom > 0 && g.boom < 1.5) { const k = 1.5 - g.boom; if (k < 0.1) { ctx.fillStyle = `rgba(255,245,210,${0.55 - k * 5})`; ctx.fillRect(0, 0, W, H); }
         ctx.save(); ctx.globalAlpha = Math.min(1, g.boom * 2); ctx.strokeStyle = '#ffb067'; ctx.lineWidth = 30 * g.boom; ctx.beginPath(); ctx.arc(PILE[0], TCY + 4, 40 + k * 520, 0, 7); ctx.stroke(); ctx.strokeStyle = '#fff3a0'; ctx.lineWidth = 12 * g.boom; ctx.beginPath(); ctx.arc(PILE[0], TCY + 4, 30 + k * 380, 0, 7); ctx.stroke(); ctx.restore();
         ctx.globalAlpha = Math.min(1, g.boom * 2); headline('BOOM!', W / 2, TCY - 150 - Math.min(1, k) * 20, 90 * (0.9 + Math.min(1, k) * 0.15), TOY.sun, TOY.coral); ctx.globalAlpha = 1; }
@@ -11257,7 +11270,7 @@ const Shithead = {
         ctx.save(); ctx.globalAlpha = Math.min(1, (1 - k) * 3); ctx.translate(rx + 70 + Math.sin(r.t * 6 + i) * 8, ry - 30 - k * 70); ctx.scale(pop * (1 + Math.sin(Math.min(1, r.t * 3) * Math.PI) * 0.3), pop); toyText(r.e, 0, 0, 46, '#fff', 'center', null); ctx.restore(); }
       callout();
       sessionPanel();
-      if (g.msgT > 0 && !(F.call && F.call.t > 0)) { ctx.globalAlpha = Math.min(1, g.msgT * 2); toyText(g.msg, W / 2, TCY + 150, 28, '#fff', 'center', TOY.navy); ctx.globalAlpha = 1; }
+      if (g.msgT > 0 && !(F.call && F.call.t > 0)) { ctx.globalAlpha = Math.min(1, g.msgT * 2); toyText(g.msg, W / 2, TCY + (APP ? 92 : 150), 28, '#fff', 'center', TOY.navy); ctx.globalAlpha = 1; }
       if (g.winner) { ctx.fillStyle = 'rgba(27,31,94,.55)'; ctx.fillRect(0, 0, W, H); headline(g.loser ? g.loser.p.name.toUpperCase() + ' IS THE SHITHEAD!' : 'GAME OVER', W / 2, TCY - 30, 60, TOY.sun, '#8a5a3a'); toyText('💩', W / 2, TCY + 70, 90, '#fff', 'center', null); }
     };
     return g;
